@@ -1,0 +1,63 @@
+{
+  "name": "ai-review",
+  "displayName": "ai review",
+  "description": "ai review",
+  "publisher": "cpulvermacher",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cpulvermacher/ai-review.git"
+  },
+  "engines": {
+    "vscode": "^1.91.1"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "review"
+  ],
+  "icon": "images/icon.png",
+  "license": "SEE LICENSE IN LICENSE",
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "close-any-bracket.close-to-indent",
+        "title": "Close all open brackets to current indent",
+        "category": "Close Any Bracket"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "rm -rf ./out && npm run esbuild-base -- --minify --pure:console.debug",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "watch": "npm run esbuild-base -- --sourcemap --watch",
+    "build": "npx vsce package",
+    "pretest": "tsc -p ./",
+    "lint": "eslint src --ext ts && tsc --noEmit && prettier src --check",
+    "test": "vitest --run && node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.7",
+    "@types/node": "20.x",
+    "@types/prismjs": "^1.26.4",
+    "@types/vscode": "^1.89.0",
+    "@typescript-eslint/eslint-plugin": "^7.16.1",
+    "@typescript-eslint/parser": "^7.16.1",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^2.30.0",
+    "esbuild": "^0.23.0",
+    "eslint": "^8.57.0",
+    "glob": "^11.0.0",
+    "mocha": "^10.6.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.3"
+  },
+  "dependencies": {
+  }
+}
