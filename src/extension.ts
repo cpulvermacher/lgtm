@@ -1,7 +1,14 @@
 import simpleGit, { SimpleGit } from 'simple-git';
 import * as vscode from 'vscode';
 
-let git: SimpleGit;
+type Config = {
+    workspaceRoot: string;
+    gitRoot: string;
+    git: SimpleGit;
+};
+
+let _config: Config;
+
 // called the first time a command is executed
 export function activate() {
     vscode.chat.createChatParticipant('ai-reviewer', handler);
@@ -11,6 +18,12 @@ export function deactivate() {
     /* nothing to do here */
 }
 
+type FileReview = {
+    target: string; // target file
+    comment: string; // review comment
+    severity: number; // in 0..5
+};
+
 async function handler(
     request: vscode.ChatRequest,
     context: vscode.ChatContext,
@@ -19,9 +32,7 @@ async function handler(
 ): Promise<void> {
     console.debug('Received request:', request, 'with context:', context);
 
-    if (!git) {
-        git = await initializeGit();
-    }
+    const config = await getConfig();
 
     if (request.command === 'review') {
         // 3.5 is not enough for reasonable responses
@@ -53,22 +64,28 @@ async function handler(
 
         stream.markdown(`Reviewing ${diffRevisionRange}.\n`);
         //get list of files in the commit
-        const fileString = await git.diff(['--name-only', diffRevisionRange]);
-        const files = fileString.split('\n');
+        const fileString = await config.git.diff([
+            '--name-only',
+            diffRevisionRange,
+        ]);
+        const files = fileString.split('\n').filter((f) => f.length > 0);
 
         stream.markdown(`Found ${files.length} files.\n\n`);
 
-        for (const file of files) {
+        const reviewComments: FileReview[] = [];
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
             if (token.isCancellationRequested) {
                 return;
             }
+
             console.debug('Reviewing file:', file);
+            stream.progress(
+                `Reviewing file ${file} (${i + 1}/${files.length})`
+            );
 
-            if (file.length === 0) {
-                continue;
-            }
-
-            let diff = await git.diff([
+            let diff = await config.git.diff([
                 '--no-prefix',
                 diffRevisionRange,
                 '--',
@@ -80,7 +97,13 @@ async function handler(
                 continue;
             }
 
+            const originalSize = diff.length;
             diff = await limitTokens(model, diff);
+            if (diff.length < originalSize) {
+                console.debug(
+                    `Diff truncated from ${originalSize} to ${diff.length}`
+                );
+            }
 
             const prompt = [
                 vscode.LanguageModelChatMessage.User(createReviewPrompt()),
@@ -99,38 +122,73 @@ async function handler(
                 }
                 return;
             }
-            console.debug('prompt/response:', prompt, response);
 
+            let comment = '';
             try {
                 for await (const fragment of response.text) {
-                    stream.markdown(fragment);
+                    comment += fragment;
                 }
-                stream.markdown('\n---\n');
             } catch (e) {
                 stream.markdown(`Error: ${e}`);
                 return;
             }
+
+            const severityMatch = comment.match(/\n(\d)\/5$/);
+            if (!severityMatch) {
+                console.debug('No severity found in:', comment);
+            }
+            const severity = severityMatch ? parseInt(severityMatch[1]) : 3;
+
+            reviewComments.push({
+                target: file,
+                comment,
+                severity,
+            });
+        }
+
+        //sort by descending severity
+        reviewComments.sort((a, b) => b.severity - a.severity);
+
+        for (const review of reviewComments) {
+            if (review.severity === 0) {
+                continue;
+            }
+
+            stream.anchor(toUri(config, review.target), review.target);
+            stream.markdown('\n' + review.comment);
+            stream.markdown('\n\n');
         }
     }
 }
 
-/** Return an initialized git instance  */
-async function initializeGit(): Promise<SimpleGit> {
+/** Return config */
+async function getConfig(): Promise<Config> {
+    if (_config) {
+        return _config;
+    }
+
+    //TODO if there are multiple workspaces, ask the user to select one
     const mainWorkspace = vscode.workspace.workspaceFolders?.[0];
     if (!mainWorkspace) {
         vscode.window.showErrorMessage('No workspace found');
         throw new Error('No workspace found');
     }
-    const git = simpleGit(mainWorkspace.uri.fsPath);
+    const workspaceRoot = mainWorkspace.uri.fsPath;
+    const git = simpleGit(workspaceRoot);
     const toplevel = await git.revparse(['--show-toplevel']);
     git.cwd(toplevel);
-    console.debug(
-        'working directory',
-        mainWorkspace.uri.fsPath,
-        'toplevel',
-        toplevel
-    );
-    return git;
+    console.debug('working directory', workspaceRoot, 'toplevel', toplevel);
+    _config = {
+        git,
+        workspaceRoot,
+        gitRoot: toplevel,
+    };
+    return _config;
+}
+
+/** Converts file path relative to gitRoot to a vscode.Uri */
+function toUri(config: Config, file: string): vscode.Uri {
+    return vscode.Uri.file(config.gitRoot + '/' + file);
 }
 
 /** Limit the number of tokens to within the model's capacity */
@@ -155,5 +213,5 @@ async function limitTokens(
 }
 
 function createReviewPrompt(): string {
-    return `You are a senior software engineer reviewing a pull request. Please review the following diff for any problems. Be succinct in your response. End your answer with a newline (\n) and the severity of issues as an integer between 1 and 5 and nothing else.`;
+    return `You are a senior software engineer reviewing a pull request. Please review the following diff for any problems. Be succinct in your response. You must end your answer with "\\nN/5", replacing N with an integer in 0..5 denoting the severity (0: nothing to do, 5: blocker).`;
 }
