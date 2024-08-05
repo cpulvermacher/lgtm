@@ -15,12 +15,12 @@ export function deactivate() {
     /* nothing to do here */
 }
 
-const handler: vscode.ChatRequestHandler = async (
+async function handler(
     request: vscode.ChatRequest,
     context: vscode.ChatContext,
     stream: vscode.ChatResponseStream,
     token: vscode.CancellationToken
-): Promise<void> => {
+): Promise<void> {
     console.debug('Received request:', request, 'with context:', context);
 
     if (!git) {
@@ -44,7 +44,6 @@ const handler: vscode.ChatRequestHandler = async (
         // stream.markdown(
         //     "Awesome! Let's review your code. Which commit would you like me to review?\n"
         // );
-
         // well, use HEAD for now
         const target = 'HEAD';
         const reference = 'HEAD~1';
@@ -111,9 +110,10 @@ const handler: vscode.ChatRequestHandler = async (
             }
         }
     }
-};
+}
 
-const initializeGit = async () => {
+/** Return an initialized git instance  */
+async function initializeGit(): Promise<SimpleGit> {
     const mainWorkspace = vscode.workspace.workspaceFolders?.[0];
     if (!mainWorkspace) {
         vscode.window.showErrorMessage('No workspace found');
@@ -129,8 +129,13 @@ const initializeGit = async () => {
         toplevel
     );
     return git;
-};
-async function limitTokens(model: vscode.LanguageModelChat, text: string) {
+}
+
+/** Limit the number of tokens to within the model's capacity */
+async function limitTokens(
+    model: vscode.LanguageModelChat,
+    text: string
+): Promise<string> {
     const maxDiffTokens = model.maxInputTokens * 0.8;
 
     while (true) {
