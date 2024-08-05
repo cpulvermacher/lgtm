@@ -2,10 +2,6 @@ import simpleGit, { SimpleGit } from 'simple-git';
 import * as vscode from 'vscode';
 
 let git: SimpleGit;
-
-const reviewPrompt =
-    'Please review the following diff for any problems. Only provide code examples if you see a problem. End your answer with the severity of issues, as an integer between 1 and 5.';
-
 // called the first time a command is executed
 export function activate() {
     vscode.chat.createChatParticipant('ai-reviewer', handler);
@@ -28,9 +24,10 @@ async function handler(
     }
 
     if (request.command === 'review') {
-        //TODO can select gpt-4o, but get strange exception when reading response
-        // const models = await vscode.lm.selectChatModels({ family: 'gpt-4o' });
-        const models = await vscode.lm.selectChatModels({});
+        // 3.5 is not enough for reasonable responses
+        // 4 untested
+        // 4o seems to yield fair results?
+        const models = await vscode.lm.selectChatModels({ family: 'gpt-4o' });
         console.debug('Found models:', models);
 
         if (models.length === 0) {
@@ -39,7 +36,12 @@ async function handler(
         }
 
         const model = models[0];
-        console.debug('Selected model:', model.name);
+        console.debug(
+            'Selected model:',
+            model.name,
+            ' with #tokens:',
+            model.maxInputTokens
+        );
 
         // stream.markdown(
         //     "Awesome! Let's review your code. Which commit would you like me to review?\n"
@@ -81,7 +83,7 @@ async function handler(
             diff = await limitTokens(model, diff);
 
             const prompt = [
-                vscode.LanguageModelChatMessage.User(reviewPrompt),
+                vscode.LanguageModelChatMessage.User(createReviewPrompt()),
                 vscode.LanguageModelChatMessage.User(
                     '```diff\n' + diff + '\n```'
                 ),
@@ -150,4 +152,8 @@ async function limitTokens(
         text = text.slice(0, adjustedLength);
     }
     return text;
+}
+
+function createReviewPrompt(): string {
+    return `You are a senior software engineer reviewing a pull request. Please review the following diff for any problems. Be succinct in your response. End your answer with a newline (\n) and the severity of issues as an integer between 1 and 5 and nothing else.`;
 }
