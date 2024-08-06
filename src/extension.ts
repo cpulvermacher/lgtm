@@ -54,13 +54,17 @@ async function handler(
             model.maxInputTokens
         );
 
-        // stream.markdown(
-        //     "Awesome! Let's review your code. Which commit would you like me to review?\n"
-        // );
-        // well, use HEAD for now
-        const target = 'HEAD';
-        const reference = 'HEAD~1';
-        const diffRevisionRange = `${reference}..${target}`;
+        const branches = await config.git.branch();
+        const branchNames = branches.all;
+        //select via quick input
+        const targetBranch = await vscode.window.showQuickPick(branchNames, {
+            title: 'Select a branch to review (1/2)',
+        });
+        const baseBranch = await vscode.window.showQuickPick(branchNames, {
+            title: 'Select a base branch (2/2)',
+        });
+
+        const diffRevisionRange = `${baseBranch}..${targetBranch}`;
 
         stream.markdown(`Reviewing ${diffRevisionRange}.\n`);
         //get list of files in the commit
