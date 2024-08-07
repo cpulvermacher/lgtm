@@ -1,13 +1,19 @@
 import * as vscode from 'vscode';
+
 import { getConfig, toUri } from './config';
+import { getReviewComment } from './review';
+
+let chatParticipant: vscode.ChatParticipant;
 
 // called the first time a command is executed
 export function activate() {
-    vscode.chat.createChatParticipant('ai-reviewer', handler);
+    chatParticipant = vscode.chat.createChatParticipant('ai-reviewer', handler);
 }
 
 export function deactivate() {
-    /* nothing to do here */
+    if (chatParticipant) {
+        chatParticipant.dispose();
+    }
 }
 
 type FileReview = {
@@ -20,7 +26,7 @@ async function handler(
     request: vscode.ChatRequest,
     context: vscode.ChatContext,
     stream: vscode.ChatResponseStream,
-    token: vscode.CancellationToken
+    cancellationToken: vscode.CancellationToken
 ): Promise<void> {
     console.debug('Received request:', request, 'with context:', context);
 
@@ -55,16 +61,15 @@ async function handler(
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            if (token.isCancellationRequested) {
+            if (cancellationToken.isCancellationRequested) {
                 return;
             }
 
-            console.debug('Reviewing file:', file);
             stream.progress(
                 `Reviewing file ${file} (${i + 1}/${files.length})`
             );
 
-            let diff = await config.git.diff([
+            const diff = await config.git.diff([
                 '--no-prefix',
                 diffRevisionRange,
                 '--',
@@ -76,47 +81,11 @@ async function handler(
                 continue;
             }
 
-            const originalSize = diff.length;
-            diff = await limitTokens(model, diff);
-            if (diff.length < originalSize) {
-                console.debug(
-                    `Diff truncated from ${originalSize} to ${diff.length}`
-                );
-            }
-
-            const prompt = [
-                vscode.LanguageModelChatMessage.User(createReviewPrompt()),
-                vscode.LanguageModelChatMessage.User(
-                    '```diff\n' + diff + '\n```'
-                ),
-            ];
-            let response: vscode.LanguageModelChatResponse;
-            try {
-                response = await model.sendRequest(prompt, {}, token);
-            } catch (e) {
-                if (e instanceof vscode.LanguageModelError) {
-                    stream.markdown(`Error: ${e.message}`);
-                } else {
-                    console.error('Error:', e);
-                }
-                return;
-            }
-
-            let comment = '';
-            try {
-                for await (const fragment of response.text) {
-                    comment += fragment;
-                }
-            } catch (e) {
-                stream.markdown(`Error: ${e}`);
-                return;
-            }
-
-            const severityMatch = comment.match(/\n(\d)\/5$/);
-            if (!severityMatch) {
-                console.debug('No severity found in:', comment);
-            }
-            const severity = severityMatch ? parseInt(severityMatch[1]) : 3;
+            const { comment, severity } = await getReviewComment(
+                model,
+                diff,
+                cancellationToken
+            );
 
             reviewComments.push({
                 target: file,
@@ -138,31 +107,6 @@ async function handler(
             stream.markdown('\n\n');
         }
     }
-}
-
-/** Limit the number of tokens to within the model's capacity */
-async function limitTokens(
-    model: vscode.LanguageModelChat,
-    text: string
-): Promise<string> {
-    const maxDiffTokens = model.maxInputTokens * 0.8;
-
-    while (true) {
-        const tokenCount = await model.countTokens(text);
-        if (tokenCount <= maxDiffTokens) {
-            break;
-        }
-
-        const tokensPerChar = tokenCount / text.length;
-        const adjustedLength = maxDiffTokens / tokensPerChar;
-        // adjustedLength is guaranteed to be less than text.length
-        text = text.slice(0, adjustedLength);
-    }
-    return text;
-}
-
-function createReviewPrompt(): string {
-    return `You are a senior software engineer reviewing a pull request. Please review the following diff for any problems. Be succinct in your response. You must end your answer with "\\nN/5", replacing N with an integer in 0..5 denoting the severity (0: nothing to do, 5: blocker).`;
 }
 
 async function getModel(): Promise<vscode.LanguageModelChat> {
