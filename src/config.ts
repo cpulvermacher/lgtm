@@ -33,3 +33,8 @@ export async function getConfig(): Promise<Config> {
     };
     return _config;
 }
+
+/** Converts file path relative to gitRoot to a vscode.Uri */
+export function toUri(config: Config, file: string): vscode.Uri {
+    return vscode.Uri.file(config.gitRoot + '/' + file);
+}

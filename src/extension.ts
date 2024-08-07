@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Config, getConfig } from './config';
+import { getConfig, toUri } from './config';
 
 // called the first time a command is executed
 export function activate() {
@@ -27,24 +27,7 @@ async function handler(
     const config = await getConfig();
 
     if (request.command === 'review') {
-        // 3.5 is not enough for reasonable responses
-        // 4 untested
-        // 4o seems to yield fair results?
-        const models = await vscode.lm.selectChatModels({ family: 'gpt-4o' });
-        console.debug('Found models:', models);
-
-        if (models.length === 0) {
-            stream.markdown('No models found');
-            return;
-        }
-
-        const model = models[0];
-        console.debug(
-            'Selected model:',
-            model.name,
-            ' with #tokens:',
-            model.maxInputTokens
-        );
+        const model = await getModel();
 
         const branches = await config.git.branch();
         const branchNames = branches.all;
@@ -157,11 +140,6 @@ async function handler(
     }
 }
 
-/** Converts file path relative to gitRoot to a vscode.Uri */
-function toUri(config: Config, file: string): vscode.Uri {
-    return vscode.Uri.file(config.gitRoot + '/' + file);
-}
-
 /** Limit the number of tokens to within the model's capacity */
 async function limitTokens(
     model: vscode.LanguageModelChat,
@@ -185,4 +163,25 @@ async function limitTokens(
 
 function createReviewPrompt(): string {
     return `You are a senior software engineer reviewing a pull request. Please review the following diff for any problems. Be succinct in your response. You must end your answer with "\\nN/5", replacing N with an integer in 0..5 denoting the severity (0: nothing to do, 5: blocker).`;
+}
+
+async function getModel(): Promise<vscode.LanguageModelChat> {
+    // 3.5 is not enough for reasonable responses
+    // 4 untested
+    // 4o seems to yield fair results?
+    const models = await vscode.lm.selectChatModels({ family: 'gpt-4o' });
+    console.debug('Found models:', models);
+
+    if (models.length === 0) {
+        throw new Error('No models found');
+    }
+
+    const model = models[0];
+    console.debug(
+        'Selected model:',
+        model.name,
+        ' with #tokens:',
+        model.maxInputTokens
+    );
+    return model;
 }
