@@ -1,4 +1,6 @@
-# AI-review
+# LGTMate
+
+Use GitHub Copilot Chat to review your code.
 
 ## References
 - https://code.visualstudio.com/api/extension-guides/chat

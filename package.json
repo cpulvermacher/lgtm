@@ -1,7 +1,7 @@
 {
-  "name": "ai-review",
-  "displayName": "ai review",
-  "description": "ai review",
+  "name": "lgtmate",
+  "displayName": "LGTMate",
+  "description": "Use Copilot to review your code",
   "publisher": "cpulvermacher",
   "version": "0.1.0",
   "repository": {
@@ -23,24 +23,17 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "close-any-bracket.close-to-indent",
-        "title": "Close all open brackets to current indent",
-        "category": "Close Any Bracket"
-      }
-    ],
     "chatParticipants":[
       {
-        "id": "ai-reviewer",
-        "name": "reviewer",
-        "fullName": "AI Reviewer",
-        "description": "Meow! What can I teach you?",
+        "id": "lgtm",
+        "name": "lgtm",
+        "fullName": "LGTMate",
+        "description": "What do you want to review?",
         "isSticky": true,
         "commands": [
           {
-            "name": "review",
-            "description": "Review a commit"
+            "name": "branch",
+            "description": "Review changes on a branch"
           }
         ]
       }

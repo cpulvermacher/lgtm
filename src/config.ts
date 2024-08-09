@@ -5,6 +5,7 @@ export type Config = {
     workspaceRoot: string;
     gitRoot: string;
     git: SimpleGit;
+    model: vscode.LanguageModelChat;
 };
 
 let _config: Config;
@@ -26,10 +27,14 @@ export async function getConfig(): Promise<Config> {
     const toplevel = await git.revparse(['--show-toplevel']);
     git.cwd(toplevel);
     console.debug('working directory', workspaceRoot, 'toplevel', toplevel);
+
+    const model = await getModel();
+
     _config = {
         git,
         workspaceRoot,
         gitRoot: toplevel,
+        model,
     };
     return _config;
 }
@@ -37,4 +42,25 @@ export async function getConfig(): Promise<Config> {
 /** Converts file path relative to gitRoot to a vscode.Uri */
 export function toUri(config: Config, file: string): vscode.Uri {
     return vscode.Uri.file(config.gitRoot + '/' + file);
+}
+
+async function getModel(): Promise<vscode.LanguageModelChat> {
+    // 3.5 is not enough for reasonable responses
+    // 4 untested
+    // 4o seems to yield fair results?
+    const models = await vscode.lm.selectChatModels({ family: 'gpt-4o' });
+    console.debug('Found models:', models);
+
+    if (models.length === 0) {
+        throw new Error('No models found');
+    }
+
+    const model = models[0];
+    console.debug(
+        'Selected model:',
+        model.name,
+        ' with #tokens:',
+        model.maxInputTokens
+    );
+    return model;
 }

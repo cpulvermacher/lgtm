@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 
 import { getConfig, toUri } from './config';
-import { getReviewComment } from './review';
+import { reviewDiff } from './review';
 
 let chatParticipant: vscode.ChatParticipant;
 
 // called the first time a command is executed
 export function activate() {
-    chatParticipant = vscode.chat.createChatParticipant('ai-reviewer', handler);
+    chatParticipant = vscode.chat.createChatParticipant('lgtm', handler);
 }
 
 export function deactivate() {
@@ -15,12 +15,6 @@ export function deactivate() {
         chatParticipant.dispose();
     }
 }
-
-type FileReview = {
-    target: string; // target file
-    comment: string; // review comment
-    severity: number; // in 0..5
-};
 
 async function handler(
     request: vscode.ChatRequest,
@@ -32,9 +26,7 @@ async function handler(
 
     const config = await getConfig();
 
-    if (request.command === 'review') {
-        const model = await getModel();
-
+    if (request.command === 'branch') {
         const branches = await config.git.branch();
         const branchNames = branches.all;
         //select via quick input
@@ -48,56 +40,23 @@ async function handler(
         const diffRevisionRange = `${baseBranch}..${targetBranch}`;
 
         stream.markdown(`Reviewing ${diffRevisionRange}.\n`);
-        //get list of files in the commit
-        const fileString = await config.git.diff([
-            '--name-only',
+        const reviewComments = await reviewDiff(
+            config,
+            stream,
             diffRevisionRange,
-        ]);
-        const files = fileString.split('\n').filter((f) => f.length > 0);
-
-        stream.markdown(`Found ${files.length} files.\n\n`);
-
-        const reviewComments: FileReview[] = [];
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            if (cancellationToken.isCancellationRequested) {
-                return;
-            }
-
-            stream.progress(
-                `Reviewing file ${file} (${i + 1}/${files.length})`
-            );
-
-            const diff = await config.git.diff([
-                '--no-prefix',
-                diffRevisionRange,
-                '--',
-                file,
-            ]);
-
-            if (diff.length === 0) {
-                console.debug('No changes in file:', file);
-                continue;
-            }
-
-            const { comment, severity } = await getReviewComment(
-                model,
-                diff,
-                cancellationToken
-            );
-
-            reviewComments.push({
-                target: file,
-                comment,
-                severity,
-            });
+            cancellationToken
+        );
+        if (!reviewComments) {
+            return;
         }
 
         //sort by descending severity
         reviewComments.sort((a, b) => b.severity - a.severity);
 
         for (const review of reviewComments) {
+            if (cancellationToken.isCancellationRequested) {
+                return;
+            }
             if (review.severity === 0) {
                 continue;
             }
@@ -107,25 +66,4 @@ async function handler(
             stream.markdown('\n\n');
         }
     }
-}
-
-async function getModel(): Promise<vscode.LanguageModelChat> {
-    // 3.5 is not enough for reasonable responses
-    // 4 untested
-    // 4o seems to yield fair results?
-    const models = await vscode.lm.selectChatModels({ family: 'gpt-4o' });
-    console.debug('Found models:', models);
-
-    if (models.length === 0) {
-        throw new Error('No models found');
-    }
-
-    const model = models[0];
-    console.debug(
-        'Selected model:',
-        model.name,
-        ' with #tokens:',
-        model.maxInputTokens
-    );
-    return model;
 }

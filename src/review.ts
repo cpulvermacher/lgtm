@@ -1,6 +1,64 @@
 import * as vscode from 'vscode';
 
+import { Config } from './config';
 import { limitTokens } from './utils';
+export type FileReview = {
+    target: string; // target file
+    comment: string; // review comment
+    severity: number; // in 0..5
+};
+
+export async function reviewDiff(
+    config: Config,
+    stream: vscode.ChatResponseStream,
+    diffRevisionRange: string,
+    cancellationToken: vscode.CancellationToken
+) {
+    //get list of files in the commit
+    const fileString = await config.git.diff([
+        '--name-only',
+        diffRevisionRange,
+    ]);
+    const files = fileString.split('\n').filter((f) => f.length > 0);
+
+    stream.markdown(`Found ${files.length} files.\n\n`);
+
+    const reviewComments: FileReview[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (cancellationToken.isCancellationRequested) {
+            return;
+        }
+
+        stream.progress(`Reviewing file ${file} (${i + 1}/${files.length})`);
+
+        const diff = await config.git.diff([
+            '--no-prefix',
+            diffRevisionRange,
+            '--',
+            file,
+        ]);
+
+        if (diff.length === 0) {
+            console.debug('No changes in file:', file);
+            continue;
+        }
+
+        const { comment, severity } = await getReviewComment(
+            config.model,
+            diff,
+            cancellationToken
+        );
+
+        reviewComments.push({
+            target: file,
+            comment,
+            severity,
+        });
+    }
+    return reviewComments;
+}
 
 export async function getReviewComment(
     model: vscode.LanguageModelChat,
