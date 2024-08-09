@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
-import { getConfig, toUri } from './config';
-import { reviewDiff } from './review';
+import { Config, getConfig, toUri } from './config';
+import { FileReview, reviewDiff } from './review';
 
 let chatParticipant: vscode.ChatParticipant;
 
@@ -46,24 +46,62 @@ async function handler(
             diffRevisionRange,
             cancellationToken
         );
-        if (!reviewComments) {
+
+        showReviewComments(reviewComments, stream, config, cancellationToken);
+    } else if (request.command === 'commit') {
+        //TODO handle any arguments in request.prompt
+
+        const commit = await vscode.window.showInputBox({
+            title: 'Enter a commit hash',
+            value: 'HEAD',
+            ignoreFocusOut: true,
+        });
+        if (!commit) {
             return;
         }
 
-        //sort by descending severity
-        reviewComments.sort((a, b) => b.severity - a.severity);
+        const diffRevisionRange = `${commit}^..${commit}`;
 
-        for (const review of reviewComments) {
-            if (cancellationToken.isCancellationRequested) {
-                return;
-            }
-            if (review.severity === 0) {
-                continue;
-            }
+        stream.markdown(`Reviewing ${diffRevisionRange}.\n`);
+        const reviewComments = await reviewDiff(
+            config,
+            stream,
+            diffRevisionRange,
+            cancellationToken
+        );
 
-            stream.anchor(toUri(config, review.target), review.target);
-            stream.markdown('\n' + review.comment);
-            stream.markdown('\n\n');
+        showReviewComments(reviewComments, stream, config, cancellationToken);
+    } else {
+        stream.markdown(`Please use one of the following commands:
+            - \`@lgtm /branch\` to review changes in a branch
+            - \`@lgtm /commit\` to review changes in a commit`);
+    }
+}
+
+function showReviewComments(
+    reviewComments: FileReview[] | undefined,
+    stream: vscode.ChatResponseStream,
+    config: Config,
+    cancellationToken: vscode.CancellationToken
+) {
+    if (!reviewComments) {
+        stream.markdown('No problems found.');
+        return;
+    }
+
+    //sort by descending severity
+    reviewComments.sort((a, b) => b.severity - a.severity);
+
+    for (const review of reviewComments) {
+        if (cancellationToken.isCancellationRequested) {
+            return;
         }
+        if (review.severity === 0) {
+            continue;
+        }
+
+        stream.anchor(toUri(config, review.target), review.target);
+        stream.markdown('\n' + review.comment);
+        stream.markdown('\n\n');
     }
 }

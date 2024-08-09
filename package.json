@@ -34,6 +34,10 @@
           {
             "name": "branch",
             "description": "Review changes on a branch"
+          },
+          {
+            "name": "commit",
+            "description": "Review changes in a commit"
           }
         ]
       }
