@@ -72,9 +72,11 @@ async function handler(
 
         showReviewComments(reviewComments, stream, config, cancellationToken);
     } else {
-        stream.markdown(`Please use one of the following commands:
-            - \`@lgtm /branch\` to review changes in a branch
-            - \`@lgtm /commit\` to review changes in a commit`);
+        stream.markdown(
+            'Please use one of the following commands:\n' +
+                ' - `@lgtm /branch` to review changes in a branch\n' +
+                ' - `@lgtm /commit` to review changes in a commit'
+        );
     }
 }
 
