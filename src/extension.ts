@@ -74,7 +74,7 @@ async function handler(
     } else {
         stream.markdown(
             'Please use one of the following commands:\n' +
-                ' - `@lgtm /branch` to review changes in a branch\n' +
+                ' - `@lgtm /branch` to review changes on a branch (compared to a reference branch)\n' +
                 ' - `@lgtm /commit` to review changes in a commit'
         );
     }

@@ -96,5 +96,16 @@ export async function getReviewComment(
 }
 
 function createReviewPrompt(): string {
-    return `You are a senior software engineer reviewing a pull request. Please review the following diff for any problems. Be succinct in your response. You must end your answer with "\\nN/5", replacing N with an integer in 0..5 denoting the severity (0: nothing to do, 5: blocker).`;
+    return `
+You are a senior software engineer reviewing a pull request. 
+Please review the following diff for any problems, bearing in mind that it will not show the full context of the code.
+Be succinct in your response.
+For each issue you find, put the comment on a new line starting with \` - \` and ending in \` 1/5\` to \` 5/5\` to indicate the severity of the issue.
+For example:
+\`\`\`
+ - Using \`eval()\` with a possibly user-supplied string is likely to result in code injection. 5/5
+ - This code is not formatted correctly. 2/5
+ - The <script> tag is missspelled as <scirpt>. 4/5
+\`\`\`
+`;
 }

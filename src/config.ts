@@ -45,10 +45,11 @@ export function toUri(config: Config, file: string): vscode.Uri {
 }
 
 async function getModel(): Promise<vscode.LanguageModelChat> {
-    // 3.5 is not enough for reasonable responses
-    // 4 untested
-    // 4o seems to yield fair results?
-    const models = await vscode.lm.selectChatModels({ family: 'gpt-4o' });
+    // 3.5 not enough to produce useful comments
+    const models = await vscode.lm.selectChatModels({
+        vendor: 'copilot',
+        family: 'gpt-4o',
+    });
     console.debug('Found models:', models);
 
     if (models.length === 0) {

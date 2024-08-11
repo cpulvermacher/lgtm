@@ -1,22 +1,24 @@
 {
-  "name": "lgtmate",
-  "displayName": "LGTMate",
-  "description": "Use Copilot to review your code",
+  "name": "lgtm",
+  "displayName": "LGTM",
+  "description": "Use GitHub Copilot Chat to review your code",
   "publisher": "cpulvermacher",
   "version": "0.1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cpulvermacher/ai-review.git"
+    "url": "https://github.com/cpulvermacher/lgtm.git"
   },
   "engines": {
     "vscode": "^1.92.0"
   },
   "categories": [
-    "Other"
+    "AI",
+    "Chat"
   ],
   "keywords": [
     "ai",
-    "review"
+    "review",
+    "copilot"
   ],
   "icon": "",
   "license": "SEE LICENSE IN LICENSE",
@@ -27,7 +29,7 @@
       {
         "id": "lgtm",
         "name": "lgtm",
-        "fullName": "LGTMate",
+        "fullName": "LGTM",
         "description": "What do you want to review?",
         "isSticky": true,
         "commands": [
