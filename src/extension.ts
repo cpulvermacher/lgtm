@@ -93,7 +93,7 @@ function showReviewComments(
     config: Config,
     cancellationToken: vscode.CancellationToken
 ) {
-    if (!reviewComments) {
+    if (!reviewComments || reviewComments.length === 0) {
         stream.markdown('No problems found.');
         return;
     }

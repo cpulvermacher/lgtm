@@ -39,22 +39,28 @@ export async function reviewDiff(
             continue;
         }
 
-        const { comment, severity } = await getReviewComment(
+        const response = await getReviewComments(
             config.model,
             diff,
             cancellationToken
         );
-
-        reviewComments.push({
-            target: file,
-            comment,
-            severity,
-        });
+        console.debug('Response:', response);
+        splitResponseIntoComments(response)
+            .map(parseComment)
+            .forEach((comment) => {
+                reviewComments.push({
+                    target: file,
+                    comment: comment.comment,
+                    severity: comment.severity,
+                });
+            });
     }
+
+    console.debug('Final review comments:', reviewComments);
     return reviewComments;
 }
 
-export async function getReviewComment(
+export async function getReviewComments(
     model: vscode.LanguageModelChat,
     diff: string,
     cancellationToken: vscode.CancellationToken
@@ -71,22 +77,56 @@ export async function getReviewComment(
     ];
     const response = await model.sendRequest(prompt, {}, cancellationToken);
 
+    return await readStream(response);
+}
+
+/** Parse model response into individual comments  */
+function splitResponseIntoComments(response: string): string[] {
+    const rawComments: string[] = [];
+    const lines = response.split('\n');
     let comment = '';
+    for (const line of lines) {
+        if (line.startsWith(' - ')) {
+            if (comment) {
+                rawComments.push(comment);
+            }
+            comment = line;
+        } else {
+            comment += '\n' + line;
+        }
+    }
+    if (comment) {
+        rawComments.push(comment);
+    }
+
+    return rawComments;
+}
+
+function parseComment(comment: string) {
+    comment = comment.trim();
+    const severityRegex = /(\d)\/5$/;
+    const severityMatch = comment.match(severityRegex);
+
+    return {
+        comment: comment.replace(severityRegex, '').trim(),
+        severity: severityMatch ? parseInt(severityMatch[1]) : 3,
+    };
+}
+
+/** Read response stream into a string */
+async function readStream(
+    responseStream: vscode.LanguageModelChatResponse
+): Promise<string> {
+    let text = '';
     try {
-        for await (const fragment of response.text) {
-            comment += fragment;
+        for await (const fragment of responseStream.text) {
+            text += fragment;
         }
     } catch (e) {
         throw new Error(`Stream error: ${e}`);
     }
 
-    const severityMatch = comment.match(/\n(\d)\/5$/);
-    if (!severityMatch) {
-        console.debug('No severity found in:', comment);
-    }
-    const severity = severityMatch ? parseInt(severityMatch[1]) : 3;
-
-    return { comment, severity };
+    return text;
 }
 
 function createReviewPrompt(): string {
