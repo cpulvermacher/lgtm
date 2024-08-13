@@ -3,7 +3,7 @@
 .github
 .gitignore
 .yarnrc
-**/.eslintrc.json
+eslint.config.mjs
 **/tsconfig.json
 vitest.config.js
 **/*.map
