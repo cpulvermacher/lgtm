@@ -16,24 +16,30 @@ export async function getConfig(): Promise<Config> {
         return _config;
     }
 
-    //TODO if there are multiple workspaces, ask the user to select one
-    const mainWorkspace = vscode.workspace.workspaceFolders?.[0];
+    let mainWorkspace = vscode.workspace.workspaceFolders?.[0];
+    if ((vscode.workspace.workspaceFolders?.length || 0) > 1) {
+        //if there are multiple workspaces, ask the user to select one
+        mainWorkspace = await vscode.window.showWorkspaceFolderPick();
+    }
+
     if (!mainWorkspace) {
         vscode.window.showErrorMessage('No workspace found');
         throw new Error('No workspace found');
     }
+
     const workspaceRoot = mainWorkspace.uri.fsPath;
     const git = simpleGit(workspaceRoot);
-    const toplevel = await git.revparse(['--show-toplevel']);
-    git.cwd(toplevel);
-    console.debug('working directory', workspaceRoot, 'toplevel', toplevel);
+    const gitRoot = await git.revparse(['--show-toplevel']);
+
+    git.cwd(gitRoot); // make gitRoot the base for all git commands
+    console.debug('working directory:', workspaceRoot, ' git repo:', gitRoot);
 
     const model = await selectChatModel();
 
     _config = {
         git,
         workspaceRoot,
-        gitRoot: toplevel,
+        gitRoot,
         model,
     };
     return _config;
