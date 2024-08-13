@@ -28,7 +28,7 @@ export async function getConfig(): Promise<Config> {
     git.cwd(toplevel);
     console.debug('working directory', workspaceRoot, 'toplevel', toplevel);
 
-    const model = await getModel();
+    const model = await selectChatModel();
 
     _config = {
         git,
@@ -44,7 +44,8 @@ export function toUri(config: Config, file: string): vscode.Uri {
     return vscode.Uri.file(config.gitRoot + '/' + file);
 }
 
-async function getModel(): Promise<vscode.LanguageModelChat> {
+/** Select chat model (asks for permissions the first time) */
+async function selectChatModel(): Promise<vscode.LanguageModelChat> {
     // 3.5 not enough to produce useful comments
     const models = await vscode.lm.selectChatModels({
         vendor: 'copilot',
@@ -57,11 +58,8 @@ async function getModel(): Promise<vscode.LanguageModelChat> {
     }
 
     const model = models[0];
-    console.debug(
-        'Selected model:',
-        model.name,
-        ' with #tokens:',
-        model.maxInputTokens
+    console.log(
+        `Selected model: ${model.name} with #tokens: ${model.maxInputTokens}`
     );
     return model;
 }
