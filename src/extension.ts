@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { Config, getConfig, toUri } from './config';
-import { FileReview, reviewDiff } from './review';
+import { ReviewComment, reviewDiff } from './review';
 
 let chatParticipant: vscode.ChatParticipant;
 
@@ -47,13 +47,11 @@ async function handler(
             return;
         }
 
-        const diffRevisionRange = `${baseBranch}..${targetBranch}`;
-
-        stream.markdown(`Reviewing ${diffRevisionRange}.\n`);
         const reviewComments = await reviewDiff(
             config,
             stream,
-            diffRevisionRange,
+            baseBranch,
+            targetBranch,
             cancellationToken
         );
 
@@ -70,13 +68,12 @@ async function handler(
             return;
         }
 
-        const diffRevisionRange = `${commit}^..${commit}`;
-
-        stream.markdown(`Reviewing ${diffRevisionRange}.\n`);
+        const lastRevision = `${commit}^`;
         const reviewComments = await reviewDiff(
             config,
             stream,
-            diffRevisionRange,
+            lastRevision,
+            commit,
             cancellationToken
         );
 
@@ -91,7 +88,7 @@ async function handler(
 }
 
 function showReviewComments(
-    reviewComments: FileReview[] | undefined,
+    reviewComments: ReviewComment[] | undefined,
     stream: vscode.ChatResponseStream,
     config: Config,
     cancellationToken: vscode.CancellationToken

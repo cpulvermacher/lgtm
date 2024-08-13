@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
 
 import { Config } from './config';
+import { getChangedFiles, getCommitRange, getFileDiff } from './git';
 import { limitTokens } from './utils';
-export type FileReview = {
+
+export type ReviewComment = {
     target: string; // target file
     comment: string; // review comment
     severity: number; // in 0..5
@@ -11,20 +13,18 @@ export type FileReview = {
 export async function reviewDiff(
     config: Config,
     stream: vscode.ChatResponseStream,
-    diffRevisionRange: string,
+    oldRev: string,
+    newRev: string,
     cancellationToken: vscode.CancellationToken
-) {
-    //get list of files in the commit
-    const fileString = await config.git.diff([
-        '--name-only',
-        diffRevisionRange,
-    ]);
-    const files = fileString.split('\n').filter((f) => f.length > 0);
+): Promise<ReviewComment[] | undefined> {
+    const diffRevisionRange = await getCommitRange(config.git, oldRev, newRev);
+    stream.markdown(`Reviewing ${diffRevisionRange}.\n`);
+
+    const files = await getChangedFiles(config.git, diffRevisionRange);
 
     stream.markdown(`Found ${files.length} files.\n\n`);
 
-    const reviewComments: FileReview[] = [];
-
+    const reviewComments: ReviewComment[] = [];
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (cancellationToken.isCancellationRequested) {
@@ -33,13 +33,7 @@ export async function reviewDiff(
 
         stream.progress(`Reviewing file ${file} (${i + 1}/${files.length})`);
 
-        const diff = await config.git.diff([
-            '--no-prefix',
-            diffRevisionRange,
-            '--',
-            file,
-        ]);
-
+        const diff = await getFileDiff(config.git, diffRevisionRange, file);
         if (diff.length === 0) {
             console.debug('No changes in file:', file);
             continue;
