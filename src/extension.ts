@@ -33,9 +33,19 @@ async function handler(
         const targetBranch = await vscode.window.showQuickPick(branchNames, {
             title: 'Select a branch to review (1/2)',
         });
-        const baseBranch = await vscode.window.showQuickPick(branchNames, {
-            title: 'Select a base branch (2/2)',
-        });
+        if (!targetBranch) {
+            return;
+        }
+
+        const baseBranch = await vscode.window.showQuickPick(
+            branchNames.filter((name) => name !== targetBranch),
+            {
+                title: 'Select a base branch (2/2)',
+            }
+        );
+        if (!baseBranch) {
+            return;
+        }
 
         const diffRevisionRange = `${baseBranch}..${targetBranch}`;
 
