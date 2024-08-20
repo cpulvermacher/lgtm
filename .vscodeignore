@@ -5,7 +5,6 @@
 .yarnrc
 eslint.config.mjs
 **/tsconfig.json
-vitest.config.js
 **/*.map
 **/*.ts
 src/
