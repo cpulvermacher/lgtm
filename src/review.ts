@@ -4,6 +4,12 @@ import { Config } from './config';
 import { getChangedFiles, getCommitRange, getFileDiff } from './git';
 import { limitTokens } from './utils';
 
+export type FileComments = {
+    target: string; // target file
+    comments: ReviewComment[];
+    maxSeverity: number; // max comment severity in 0..5
+};
+
 export type ReviewComment = {
     target: string; // target file
     comment: string; // review comment
@@ -56,7 +62,6 @@ export async function reviewDiff(
             });
     }
 
-    console.debug('Final review comments:', reviewComments);
     return reviewComments;
 }
 
@@ -142,4 +147,36 @@ For example:
  - The <script> tag is missspelled as <scirpt>. 4/5
 \`\`\`
 `;
+}
+
+/** Returns array of review comments grouped by file path, sorted by descending severity */
+export function groupByFile(reviewComments: ReviewComment[]): FileComments[] {
+    const commentsByFile = new Map<string, FileComments>();
+    reviewComments.forEach((review) => {
+        let fileComment = commentsByFile.get(review.target);
+        if (!fileComment) {
+            fileComment = {
+                target: review.target,
+                comments: [],
+                maxSeverity: 0,
+            };
+            commentsByFile.set(review.target, fileComment);
+        }
+        fileComment.comments.push(review);
+        if (review.severity > fileComment.maxSeverity) {
+            fileComment.maxSeverity = review.severity;
+        }
+    });
+
+    //sort each file by descending severity
+    for (const fileComments of commentsByFile.values()) {
+        fileComments.comments.sort((a, b) => b.severity - a.severity);
+    }
+
+    //sort all files by descending max severity
+    const sortedFiles = Array.from(commentsByFile.values()).sort(
+        (a, b) => b.maxSeverity - a.maxSeverity
+    );
+
+    return sortedFiles;
 }

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { Config, getConfig, toUri } from './config';
-import { ReviewComment, reviewDiff } from './review';
+import { groupByFile, ReviewComment, reviewDiff } from './review';
 
 let chatParticipant: vscode.ChatParticipant;
 
@@ -98,19 +98,21 @@ function showReviewComments(
         return;
     }
 
-    //sort by descending severity
-    reviewComments.sort((a, b) => b.severity - a.severity);
-
-    for (const review of reviewComments) {
+    const fileComments = groupByFile(reviewComments);
+    for (const file of fileComments) {
         if (cancellationToken.isCancellationRequested) {
             return;
         }
-        if (review.severity === 0) {
+        if (file.maxSeverity === 0) {
             continue;
         }
 
-        stream.anchor(toUri(config, review.target), review.target);
-        stream.markdown('\n' + review.comment);
+        stream.anchor(toUri(config, file.target), file.target);
+        for (const comment of file.comments) {
+            stream.markdown(
+                '\n' + comment.comment + ' ' + comment.severity + '/5'
+            );
+        }
         stream.markdown('\n\n');
     }
 }
