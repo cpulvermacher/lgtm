@@ -1,22 +1,15 @@
 {
-	"compilerOptions": {
-		"module": "Node16",
-		"target": "ES2022",
-		"outDir": "out",
-		"lib": [
-			"ES2022",
-			"DOM"
-		],
-		"sourceMap": true,
-		"rootDir": "src",
-		"strict": true,
-		"noImplicitReturns": true,
-		"noFallthroughCasesInSwitch": true,
-		"noUnusedParameters": true
-	},
-	"exclude": [
-		// unit tests use vitest, which doesn't work with commonjs
-		// exclude it from compilation via tsc and rely on IDE instead
-		"src/test/unit"
-	]
+    "compilerOptions": {
+        "module": "Node16",
+        "target": "ES2022",
+        "outDir": "out",
+        "lib": ["ES2022", "DOM"],
+        "sourceMap": true,
+        "rootDir": "src",
+        "strict": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUnusedParameters": true
+    },
+    "exclude": []
 }

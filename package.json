@@ -25,7 +25,7 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "chatParticipants":[
+    "chatParticipants": [
       {
         "id": "lgtm",
         "name": "lgtm",
@@ -53,7 +53,8 @@
     "build": "npx vsce package",
     "pretest": "tsc -p ./",
     "lint": "eslint src && tsc --noEmit && prettier src --check",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "unit": "mocha ./out/test/unit/**/*.test.js"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.7",
