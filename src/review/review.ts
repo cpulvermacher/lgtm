@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
+import type { CancellationToken, ChatResponseStream } from 'vscode';
 
-import { Config } from './config';
-import { getChangedFiles, getCommitRange, getFileDiff } from './git';
-import { limitTokens } from './utils';
+import { Config } from '../utils/config';
+import { getChangedFiles, getCommitRange, getFileDiff } from '../utils/git';
+import { Model } from '../utils/model';
 
 export type FileComments = {
     target: string; // target file
@@ -18,10 +18,10 @@ export type ReviewComment = {
 
 export async function reviewDiff(
     config: Config,
-    stream: vscode.ChatResponseStream,
+    stream: ChatResponseStream,
     oldRev: string,
     newRev: string,
-    cancellationToken: vscode.CancellationToken
+    cancellationToken: CancellationToken
 ): Promise<ReviewComment[] | undefined> {
     const diffRevisionRange = await getCommitRange(config.git, oldRev, newRev);
     stream.markdown(`Reviewing ${diffRevisionRange}.\n`);
@@ -66,23 +66,18 @@ export async function reviewDiff(
 }
 
 export async function getReviewComments(
-    model: vscode.LanguageModelChat,
+    model: Model,
     diff: string,
-    cancellationToken: vscode.CancellationToken
+    cancellationToken: CancellationToken
 ) {
     const originalSize = diff.length;
-    diff = await limitTokens(model, diff);
+    diff = await model.limitTokens(diff);
     if (diff.length < originalSize) {
         console.debug(`Diff truncated from ${originalSize} to ${diff.length}`);
     }
 
-    const prompt = [
-        vscode.LanguageModelChatMessage.User(createReviewPrompt()),
-        vscode.LanguageModelChatMessage.User('```diff\n' + diff + '\n```'),
-    ];
-    const response = await model.sendRequest(prompt, {}, cancellationToken);
-
-    return await readStream(response);
+    const prompt = createReviewPrompt(diff);
+    return await model.sendRequest(prompt, cancellationToken);
 }
 
 /** Parse model response into individual comments  */
@@ -118,23 +113,7 @@ function parseComment(comment: string) {
     };
 }
 
-/** Read response stream into a string */
-async function readStream(
-    responseStream: vscode.LanguageModelChatResponse
-): Promise<string> {
-    let text = '';
-    try {
-        for await (const fragment of responseStream.text) {
-            text += fragment;
-        }
-    } catch (e) {
-        throw new Error(`Stream error: ${e}`);
-    }
-
-    return text;
-}
-
-function createReviewPrompt(): string {
+function createReviewPrompt(diff: string): string {
     return `
 You are a senior software engineer reviewing a pull request. 
 Please review the following diff for any problems, bearing in mind that it will not show the full context of the code.
@@ -145,6 +124,10 @@ For example:
  - Using \`eval()\` with a possibly user-supplied string is likely to result in code injection. 5/5
  - This code is not formatted correctly. 2/5
  - The <script> tag is missspelled as <scirpt>. 4/5
+\`\`\`
+
+\`\`\`diff
+${diff}
 \`\`\`
 `;
 }

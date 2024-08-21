@@ -1,11 +1,13 @@
 import simpleGit, { SimpleGit } from 'simple-git';
 import * as vscode from 'vscode';
 
+import { Model, selectChatModel } from './model';
+
 export type Config = {
     workspaceRoot: string;
     gitRoot: string;
     git: SimpleGit;
-    model: vscode.LanguageModelChat;
+    model: Model;
 };
 
 let _config: Config;
@@ -48,24 +50,4 @@ export async function getConfig(): Promise<Config> {
 /** Converts file path relative to gitRoot to a vscode.Uri */
 export function toUri(config: Config, file: string): vscode.Uri {
     return vscode.Uri.file(config.gitRoot + '/' + file);
-}
-
-/** Select chat model (asks for permissions the first time) */
-async function selectChatModel(): Promise<vscode.LanguageModelChat> {
-    // 3.5 not enough to produce useful comments
-    const models = await vscode.lm.selectChatModels({
-        vendor: 'copilot',
-        family: 'gpt-4o',
-    });
-    console.debug('Found models:', models);
-
-    if (models.length === 0) {
-        throw new Error('No models found');
-    }
-
-    const model = models[0];
-    console.log(
-        `Selected model: ${model.name} with #tokens: ${model.maxInputTokens}`
-    );
-    return model;
 }

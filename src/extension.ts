@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
-import { Config, getConfig, toUri } from './config';
-import { groupByFile, ReviewComment, reviewDiff } from './review';
+import { groupByFile, ReviewComment, reviewDiff } from './review/review';
+import { Config, getConfig, toUri } from './utils/config';
 
 let chatParticipant: vscode.ChatParticipant;
 
