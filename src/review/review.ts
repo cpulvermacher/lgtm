@@ -87,7 +87,7 @@ You are a senior software engineer reviewing a change with the following descrip
 \`\`\`
 ${changeDescription}
 \`\`\`
-Please review the following diff for any problems, bearing in mind that it will not show the full context of the code.
+Please review the following diff for any problems, bearing in mind that only changes in a single file are shown.
 For each issue you find, put the comment on a new line starting with \` - \` and ending in \` 1/5\` to \` 5/5\` to indicate the severity of the issue.
 For example:
  - Using \`eval()\` with a possibly user-supplied string is likely to result in code injection. 5/5
