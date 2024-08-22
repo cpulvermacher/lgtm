@@ -1,9 +1,9 @@
 import * as assert from 'assert';
-import { it } from 'mocha';
+import { describe, it } from 'mocha';
 import type { CancellationToken } from 'vscode';
 
-import { getReviewComments } from '../../review/review';
-import { Model } from '../../utils/model';
+import { getReviewComments } from '../../../review/review';
+import { Model } from '../../../utils/model';
 
 describe('getReviewComment_test', () => {
     const model = {
