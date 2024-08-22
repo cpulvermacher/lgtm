@@ -18,6 +18,6 @@ To start, open Copilot Chat and send one of the following messages:
 - Review content remains in chat history. You can ask follow-up questions to Copilot (without `@lgtm`).
 
 ## Data Usage
-Source code data checked into Git will be sent to GitHub Copilot. Avoid using it on repositories where you would not use Copilot.
+Source code checked into Git and selected for review will be sent to GitHub Copilot. Avoid using it on repositories where you would not use Copilot.
 
 
