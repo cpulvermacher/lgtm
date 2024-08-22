@@ -15,13 +15,17 @@ export function parseComment(comment: string) {
 export function splitResponseIntoComments(response: string): string[] {
     const rawComments: string[] = [];
     const lines = response.split('\n');
+    const commentStartRegex = /^\s*- /;
+
     let comment = '';
     for (const line of lines) {
-        if (line.trimStart().startsWith('- ')) {
+        if (line.match(commentStartRegex)) {
             if (comment) {
                 rawComments.push(comment);
             }
-            comment = line;
+            comment = line.replace(commentStartRegex, '');
+        } else if (comment === '') {
+            console.warn('Line does not match comment format, skipping:', line);
         } else {
             comment += '\n' + line;
         }

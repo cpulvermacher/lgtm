@@ -33,9 +33,9 @@ describe('splitResponseIntoComments', () => {
         const result = splitResponseIntoComments(response);
 
         expect(result).toEqual([
-            ' - Some comment',
-            ' - Another comment\n  continued',
-            '- Without leading space',
+            'Some comment',
+            'Another comment\n  continued',
+            'Without leading space',
         ]);
     });
 
@@ -44,6 +44,13 @@ describe('splitResponseIntoComments', () => {
         const result = splitResponseIntoComments(response);
 
         expect(result).toEqual([]);
+    });
+
+    it('skips lines that do not match comment format', () => {
+        const response = 'Here is the review you asked for\n- Comment';
+        const result = splitResponseIntoComments(response);
+
+        expect(result).toEqual(['Comment']);
     });
 });
 
