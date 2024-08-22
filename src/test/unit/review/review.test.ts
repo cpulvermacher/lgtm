@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { CancellationToken } from 'vscode';
 
 import { getReviewResponse } from '../../../review/review';
@@ -6,10 +6,10 @@ import { Model } from '../../../types/Model';
 
 describe('getReviewResponse', () => {
     const model = {
-        sendRequest: async () => {
+        sendRequest: vi.fn(async () => {
             return 'Some review comment\n3/5';
-        },
-        limitTokens: async (text: string) => text,
+        }),
+        limitTokens: vi.fn(async (text: string) => text),
     } as unknown as Model;
 
     const diff = 'Some diff content';
@@ -24,12 +24,17 @@ describe('getReviewResponse', () => {
         );
 
         expect(result).toBe('Some review comment\n3/5');
+        expect(model.limitTokens).toHaveBeenCalledWith(diff);
+        expect(model.sendRequest).toHaveBeenCalledWith(
+            expect.stringMatching(/^\nYou are a senior software engineer/),
+            cancellationToken
+        );
     });
 
     it('should throw an error if there is a stream error', async () => {
-        model.sendRequest = async () => {
-            throw new Error('Stream error');
-        };
+        vi.mocked(model.sendRequest).mockRejectedValue(
+            new Error('Stream error')
+        );
 
         await expect(async () => {
             await getReviewResponse(
