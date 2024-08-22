@@ -25,9 +25,6 @@ export async function reviewDiff(
     cancellationToken: CancellationToken
 ): Promise<ReviewComment[] | undefined> {
     const scope = await getReviewScope(config.git, request);
-
-    stream.markdown(`Reviewing ${scope.revisionRange}.\n`);
-
     const files = await getChangedFiles(config.git, scope.revisionRange);
 
     stream.markdown(`Found ${files.length} files.\n\n`);

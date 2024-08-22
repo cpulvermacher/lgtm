@@ -52,6 +52,10 @@ async function handler(
             return;
         }
 
+        stream.markdown(
+            `Reviewing changes on branch \`${targetBranch}\` compared to \`${baseBranch}\`\n`
+        );
+
         const reviewComments = await reviewDiff(
             config,
             stream,
@@ -72,6 +76,7 @@ async function handler(
             return;
         }
 
+        stream.markdown(`Reviewing changes in commit \`${commit}\`\n`);
         const reviewComments = await reviewDiff(
             config,
             stream,
