@@ -14,6 +14,13 @@ CHANGELOG=$(awk -v version="$VERSION" '
     print_it {print}
     ' "CHANGELOG.md")
 
+# Check if changelog has "pre-release" after the version
+RELEASE_OPTS=""
+if grep -q "^## \[$VERSION\] (pre-release)" <<< "$CHANGELOG"; then
+    echo "Marking release as pre-release"
+    RELEASE_OPTS="--prerelease"
+fi
+
 # Abort if empty
 if [ -z "$CHANGELOG" ]; then
     echo "No matching changelog section found!"
@@ -22,5 +29,6 @@ fi
 
 gh release create "${TAG}" \
     --title "${TAG}" \
+    $RELEASE_OPTS \
     ./*"${VERSION}".vsix \
     -n "$CHANGELOG"
