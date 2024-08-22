@@ -17,7 +17,7 @@ export function splitResponseIntoComments(response: string): string[] {
     const lines = response.split('\n');
     let comment = '';
     for (const line of lines) {
-        if (line.startsWith(' - ')) {
+        if (line.trimStart().startsWith('- ')) {
             if (comment) {
                 rawComments.push(comment);
             }
