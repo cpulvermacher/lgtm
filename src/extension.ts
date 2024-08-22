@@ -6,8 +6,12 @@ import { Config, getConfig, toUri } from './utils/config';
 let chatParticipant: vscode.ChatParticipant;
 
 // called the first time a command is executed
-export function activate() {
+export function activate(context: vscode.ExtensionContext) {
     chatParticipant = vscode.chat.createChatParticipant('lgtm', handler);
+    chatParticipant.iconPath = vscode.Uri.joinPath(
+        context.extensionUri,
+        'images/icon.png'
+    );
 }
 
 export function deactivate() {
