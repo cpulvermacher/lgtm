@@ -1,5 +1,5 @@
-import { SimpleGit } from 'simple-git';
-import { describe, expect, it } from 'vitest';
+import { LogResult, SimpleGit } from 'simple-git';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     getChangedFiles,
@@ -9,26 +9,42 @@ import {
 
 describe('git', () => {
     const mockGit = {
-        revparse: async () => 'rev',
-        log: async () => {
-            return { all: [{ message: 'message' }, { message: 'message2' }] };
-        },
-        diff: async () => 'diff\n\ndiff',
+        revparse: vi.fn(),
+        log: vi.fn(),
+        diff: vi.fn(),
     } as unknown as SimpleGit;
 
     it('getChangedFiles', async () => {
+        vi.mocked(mockGit.diff).mockResolvedValue('\nfile1\nfile2');
+
         const result = await getChangedFiles(mockGit, 'rev..rev');
 
-        expect(result).toEqual(['diff', 'diff']);
+        expect(mockGit.diff).toHaveBeenCalledWith(['--name-only', 'rev..rev']);
+        expect(result).toEqual(['file1', 'file2']);
     });
 
     it('getFileDiff', async () => {
+        vi.mocked(mockGit.diff).mockResolvedValue('diff');
+
         const result = await getFileDiff(mockGit, 'rev..rev', 'file');
 
-        expect(result).toBe('diff\n\ndiff');
+        expect(mockGit.diff).toHaveBeenCalledWith([
+            '--no-prefix',
+            'rev..rev',
+            '--',
+            'file',
+        ]);
+        expect(result).toBe('diff');
     });
 
     describe('getReviewScope', () => {
+        beforeEach(() => {
+            vi.mocked(mockGit.revparse).mockResolvedValue('rev');
+            vi.mocked(mockGit.log).mockResolvedValue({
+                all: [{ message: 'message' }, { message: 'message2' }],
+            } as unknown as LogResult);
+        });
+
         it('for commit', async () => {
             const request = { commit: 'rev' };
             const result = await getReviewScope(mockGit, request);
