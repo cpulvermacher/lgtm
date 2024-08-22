@@ -4,7 +4,11 @@ import { ReviewRequest } from '../types/ReviewRequest';
 import { Config } from '../utils/config';
 import { getChangedFiles, getFileDiff, getReviewScope } from '../utils/git';
 import { Model } from '../utils/model';
-import { parseComment, splitResponseIntoComments } from './comment';
+import {
+    groupByFile,
+    parseComment,
+    splitResponseIntoComments,
+} from './comment';
 
 export type FileComments = {
     target: string; // target file
@@ -23,7 +27,7 @@ export async function reviewDiff(
     stream: ChatResponseStream,
     request: ReviewRequest,
     cancellationToken: CancellationToken
-): Promise<ReviewComment[] | undefined> {
+): Promise<FileComments[]> {
     const scope = await getReviewScope(config.git, request);
     const files = await getChangedFiles(config.git, scope.revisionRange);
 
@@ -33,7 +37,7 @@ export async function reviewDiff(
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (cancellationToken.isCancellationRequested) {
-            return;
+            return [];
         }
 
         stream.progress(`Reviewing file ${file} (${i + 1}/${files.length})`);
@@ -44,13 +48,14 @@ export async function reviewDiff(
             continue;
         }
 
-        const response = await getReviewComments(
+        const response = await getReviewResponse(
             config.model,
             scope.changeDescription,
             diff,
             cancellationToken
         );
         console.debug('Response:', response);
+
         splitResponseIntoComments(response)
             .map(parseComment)
             .forEach((comment) => {
@@ -62,15 +67,15 @@ export async function reviewDiff(
             });
     }
 
-    return reviewComments;
+    return groupByFile(reviewComments);
 }
 
-export async function getReviewComments(
+export async function getReviewResponse(
     model: Model,
     changeDescription: string,
     diff: string,
     cancellationToken: CancellationToken
-) {
+): Promise<string> {
     const originalSize = diff.length;
     diff = await model.limitTokens(diff);
     if (diff.length < originalSize) {

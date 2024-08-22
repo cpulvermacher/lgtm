@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 
-import { groupByFile } from './review/comment';
-import { ReviewComment, reviewDiff } from './review/review';
+import { FileComments, reviewDiff } from './review/review';
 import { Config, getConfig, toUri } from './utils/config';
 
 let chatParticipant: vscode.ChatParticipant;
@@ -95,19 +94,17 @@ async function handler(
 }
 
 function showReviewComments(
-    reviewComments: ReviewComment[] | undefined,
+    fileComments: FileComments[],
     stream: vscode.ChatResponseStream,
     config: Config,
     cancellationToken: vscode.CancellationToken
 ) {
-    if (!reviewComments || reviewComments.length === 0) {
+    if (fileComments.length === 0) {
         stream.markdown('No problems found.');
         return;
     }
 
     const options = config.getOptions();
-
-    const fileComments = groupByFile(reviewComments);
     for (const file of fileComments) {
         if (cancellationToken.isCancellationRequested) {
             return;

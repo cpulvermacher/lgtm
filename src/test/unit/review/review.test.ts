@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { CancellationToken } from 'vscode';
 
-import { getReviewComments } from '../../../review/review';
+import { getReviewResponse } from '../../../review/review';
 import { Model } from '../../../utils/model';
 
-describe('getReviewComments', () => {
+describe('getReviewResponse', () => {
     const model = {
         sendRequest: async () => {
             return 'Some review comment\n3/5';
@@ -16,7 +16,7 @@ describe('getReviewComments', () => {
     const cancellationToken = null as unknown as CancellationToken;
 
     it('should return a comment and severity', async () => {
-        const result = await getReviewComments(
+        const result = await getReviewResponse(
             model,
             'chore: dummy change',
             diff,
@@ -32,7 +32,7 @@ describe('getReviewComments', () => {
         };
 
         await expect(async () => {
-            await getReviewComments(
+            await getReviewResponse(
                 model,
                 'chore: dummy change',
                 diff,
