@@ -5,14 +5,7 @@ import {
     type LanguageModelChat,
     type LanguageModelChatResponse,
 } from 'vscode';
-
-export interface Model {
-    limitTokens: (text: string) => Promise<string>;
-    sendRequest: (
-        prompt: string,
-        cancellationToken: CancellationToken
-    ) => Promise<string>;
-}
+import { Model } from '../types/Model';
 
 /** Select chat model (asks for permissions the first time) */
 export async function selectChatModel(): Promise<Model> {

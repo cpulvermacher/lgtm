@@ -1,4 +1,5 @@
-import { FileComments, ReviewComment } from './review';
+import { FileComments } from '../types/FileComments';
+import { ReviewComment } from '../types/ReviewComment';
 
 export function parseComment(comment: string) {
     comment = comment.trim();

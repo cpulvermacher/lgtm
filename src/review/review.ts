@@ -1,26 +1,16 @@
 import type { CancellationToken, ChatResponseStream } from 'vscode';
 
+import { Config } from '../types/Config';
+import { FileComments } from '../types/FileComments';
+import { Model } from '../types/Model';
+import { ReviewComment } from '../types/ReviewComment';
 import { ReviewRequest } from '../types/ReviewRequest';
-import { Config } from '../utils/config';
 import { getChangedFiles, getFileDiff, getReviewScope } from '../utils/git';
-import { Model } from '../utils/model';
 import {
     groupByFile,
     parseComment,
     splitResponseIntoComments,
 } from './comment';
-
-export type FileComments = {
-    target: string; // target file
-    comments: ReviewComment[];
-    maxSeverity: number; // max comment severity in 0..5
-};
-
-export type ReviewComment = {
-    target: string; // target file
-    comment: string; // review comment
-    severity: number; // in 0..5
-};
 
 export async function reviewDiff(
     config: Config,

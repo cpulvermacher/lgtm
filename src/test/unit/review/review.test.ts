@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CancellationToken } from 'vscode';
 
 import { getReviewResponse } from '../../../review/review';
-import { Model } from '../../../utils/model';
+import { Model } from '../../../types/Model';
 
 describe('getReviewResponse', () => {
     const model = {

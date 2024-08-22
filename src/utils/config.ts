@@ -1,19 +1,8 @@
-import simpleGit, { SimpleGit } from 'simple-git';
+import simpleGit from 'simple-git';
 import * as vscode from 'vscode';
 
-import { Model, selectChatModel } from './model';
-
-export type Config = {
-    workspaceRoot: string;
-    gitRoot: string;
-    git: SimpleGit;
-    model: Model;
-    getOptions: () => Options;
-};
-
-export type Options = {
-    minSeverity: number;
-};
+import { Config, Options } from '../types/Config';
+import { selectChatModel } from './model';
 
 let _config: Config;
 
