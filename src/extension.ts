@@ -112,7 +112,7 @@ function showReviewComments(
         stream.anchor(toUri(config, file.target), file.target);
         for (const comment of file.comments) {
             stream.markdown(
-                '\n' + comment.comment + ' ' + comment.severity + '/5'
+                '\n - ' + comment.comment + ' ' + comment.severity + '/5'
             );
         }
         stream.markdown('\n\n');
