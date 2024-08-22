@@ -4,7 +4,7 @@ import type { CancellationToken } from 'vscode';
 import { getReviewComments } from '../../../review/review';
 import { Model } from '../../../utils/model';
 
-describe('getReviewComment_test', () => {
+describe('getReviewComments', () => {
     const model = {
         sendRequest: async () => {
             return 'Some review comment\n3/5';
