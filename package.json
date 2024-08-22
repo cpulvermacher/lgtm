@@ -18,7 +18,8 @@
   "keywords": [
     "ai",
     "review",
-    "copilot"
+    "copilot",
+    "chat"
   ],
   "icon": "images/icon.png",
   "license": "SEE LICENSE IN LICENSE",
@@ -43,7 +44,19 @@
           }
         ]
       }
-    ]
+    ],
+    "configuration": {
+      "title": "LGTM",
+      "properties": {
+        "lgtm.minSeverity": {
+          "type": "number",
+          "default": 2,
+          "description": "Minimal severity of issues to report (1 to show all issues)",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "rm -rf ./out && npm run esbuild-base -- --minify --pure:console.debug",

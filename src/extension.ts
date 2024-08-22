@@ -105,17 +105,23 @@ function showReviewComments(
         return;
     }
 
+    const options = config.getOptions();
+
     const fileComments = groupByFile(reviewComments);
     for (const file of fileComments) {
         if (cancellationToken.isCancellationRequested) {
             return;
         }
-        if (file.maxSeverity === 0) {
+        if (file.maxSeverity < options.minSeverity) {
             continue;
         }
 
         stream.anchor(toUri(config, file.target), file.target);
         for (const comment of file.comments) {
+            if (comment.severity < options.minSeverity) {
+                continue;
+            }
+
             stream.markdown(
                 '\n - ' + comment.comment + ' ' + comment.severity + '/5'
             );

@@ -8,6 +8,11 @@ export type Config = {
     gitRoot: string;
     git: SimpleGit;
     model: Model;
+    getOptions: () => Options;
+};
+
+export type Options = {
+    minSeverity: number;
 };
 
 let _config: Config;
@@ -43,6 +48,7 @@ export async function getConfig(): Promise<Config> {
         workspaceRoot,
         gitRoot,
         model,
+        getOptions,
     };
     return _config;
 }
@@ -50,4 +56,12 @@ export async function getConfig(): Promise<Config> {
 /** Converts file path relative to gitRoot to a vscode.Uri */
 export function toUri(config: Config, file: string): vscode.Uri {
     return vscode.Uri.file(config.gitRoot + '/' + file);
+}
+
+function getOptions(): Options {
+    const config = vscode.workspace.getConfiguration('lgtm');
+
+    const minSeverity = config.get<number>('minSeverity');
+
+    return { minSeverity: minSeverity ?? 1 };
 }
