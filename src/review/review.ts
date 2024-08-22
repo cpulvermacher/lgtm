@@ -1,7 +1,8 @@
 import type { CancellationToken, ChatResponseStream } from 'vscode';
 
+import { ReviewRequest } from '../types/ReviewRequest';
 import { Config } from '../utils/config';
-import { getChangedFiles, getCommitRange, getFileDiff } from '../utils/git';
+import { getChangedFiles, getFileDiff, getReviewScope } from '../utils/git';
 import { Model } from '../utils/model';
 
 export type FileComments = {
@@ -19,14 +20,14 @@ export type ReviewComment = {
 export async function reviewDiff(
     config: Config,
     stream: ChatResponseStream,
-    oldRev: string,
-    newRev: string,
+    request: ReviewRequest,
     cancellationToken: CancellationToken
 ): Promise<ReviewComment[] | undefined> {
-    const diffRevisionRange = await getCommitRange(config.git, oldRev, newRev);
-    stream.markdown(`Reviewing ${diffRevisionRange}.\n`);
+    const scope = await getReviewScope(config.git, request);
 
-    const files = await getChangedFiles(config.git, diffRevisionRange);
+    stream.markdown(`Reviewing ${scope.revisionRange}.\n`);
+
+    const files = await getChangedFiles(config.git, scope.revisionRange);
 
     stream.markdown(`Found ${files.length} files.\n\n`);
 
@@ -39,7 +40,7 @@ export async function reviewDiff(
 
         stream.progress(`Reviewing file ${file} (${i + 1}/${files.length})`);
 
-        const diff = await getFileDiff(config.git, diffRevisionRange, file);
+        const diff = await getFileDiff(config.git, scope.revisionRange, file);
         if (diff.length === 0) {
             console.debug('No changes in file:', file);
             continue;
@@ -47,6 +48,7 @@ export async function reviewDiff(
 
         const response = await getReviewComments(
             config.model,
+            scope.changeDescription,
             diff,
             cancellationToken
         );
@@ -67,6 +69,7 @@ export async function reviewDiff(
 
 export async function getReviewComments(
     model: Model,
+    changeDescription: string,
     diff: string,
     cancellationToken: CancellationToken
 ) {
@@ -76,7 +79,7 @@ export async function getReviewComments(
         console.debug(`Diff truncated from ${originalSize} to ${diff.length}`);
     }
 
-    const prompt = createReviewPrompt(diff);
+    const prompt = createReviewPrompt(changeDescription, diff);
     return await model.sendRequest(prompt, cancellationToken);
 }
 
@@ -113,18 +116,18 @@ function parseComment(comment: string) {
     };
 }
 
-function createReviewPrompt(diff: string): string {
+function createReviewPrompt(changeDescription: string, diff: string): string {
     return `
-You are a senior software engineer reviewing a pull request. 
+You are a senior software engineer reviewing a change with the following description:
+\`\`\`
+${changeDescription}
+\`\`\`
 Please review the following diff for any problems, bearing in mind that it will not show the full context of the code.
-Be succinct in your response.
 For each issue you find, put the comment on a new line starting with \` - \` and ending in \` 1/5\` to \` 5/5\` to indicate the severity of the issue.
 For example:
-\`\`\`
  - Using \`eval()\` with a possibly user-supplied string is likely to result in code injection. 5/5
  - This code is not formatted correctly. 2/5
  - The <script> tag is missspelled as <scirpt>. 4/5
-\`\`\`
 
 \`\`\`diff
 ${diff}

@@ -17,7 +17,12 @@ describe('getReviewComment_test', () => {
     const cancellationToken = null as unknown as CancellationToken;
 
     it('should return a comment and severity', async () => {
-        const result = await getReviewComments(model, diff, cancellationToken);
+        const result = await getReviewComments(
+            model,
+            'chore: dummy change',
+            diff,
+            cancellationToken
+        );
 
         assert.strictEqual(result, 'Some review comment\n3/5');
     });
@@ -30,7 +35,12 @@ describe('getReviewComment_test', () => {
 
         // Assert that the function throws the expected error
         await assert.rejects(async () => {
-            await getReviewComments(model, diff, cancellationToken);
+            await getReviewComments(
+                model,
+                'chore: dummy change',
+                diff,
+                cancellationToken
+            );
         }, new Error('Stream error'));
     });
 });

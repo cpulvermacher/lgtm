@@ -54,8 +54,7 @@ async function handler(
         const reviewComments = await reviewDiff(
             config,
             stream,
-            baseBranch,
-            targetBranch,
+            { targetBranch, baseBranch },
             cancellationToken
         );
 
@@ -72,12 +71,10 @@ async function handler(
             return;
         }
 
-        const lastRevision = `${commit}^`;
         const reviewComments = await reviewDiff(
             config,
             stream,
-            lastRevision,
-            commit,
+            { commit },
             cancellationToken
         );
 
