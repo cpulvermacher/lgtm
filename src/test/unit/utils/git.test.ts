@@ -1,6 +1,5 @@
-import * as assert from 'assert';
-import { describe, it } from 'mocha';
 import { SimpleGit } from 'simple-git';
+import { describe, expect, it } from 'vitest';
 
 import {
     getChangedFiles,
@@ -20,13 +19,13 @@ describe('git', () => {
     it('getChangedFiles', async () => {
         const result = await getChangedFiles(mockGit, 'rev..rev');
 
-        assert.deepStrictEqual(result, ['diff', 'diff']);
+        expect(result).toEqual(['diff', 'diff']);
     });
 
     it('getFileDiff', async () => {
         const result = await getFileDiff(mockGit, 'rev..rev', 'file');
 
-        assert.strictEqual(result, 'diff\n\ndiff');
+        expect(result).toBe('diff\n\ndiff');
     });
 
     describe('getReviewScope', () => {
@@ -34,7 +33,7 @@ describe('git', () => {
             const request = { commit: 'rev' };
             const result = await getReviewScope(mockGit, request);
 
-            assert.deepStrictEqual(result, {
+            expect(result).toEqual({
                 request,
                 revisionRange: 'rev^..rev',
                 changeDescription: 'message\nmessage2',
@@ -45,7 +44,7 @@ describe('git', () => {
             const request = { baseBranch: 'base', targetBranch: 'target' };
             const result = await getReviewScope(mockGit, request);
 
-            assert.deepStrictEqual(result, {
+            expect(result).toEqual({
                 request,
                 revisionRange: 'base..target',
                 changeDescription: 'message\nmessage2',

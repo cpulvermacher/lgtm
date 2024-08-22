@@ -54,7 +54,7 @@
     "pretest": "tsc -p ./",
     "lint": "eslint src && tsc --noEmit && prettier src --check",
     "test": "node ./out/test/runTest.js",
-    "unit": "mocha -require ts-node/register ./src/test/unit/**/*.test.ts"
+    "unit": "vitest run ./src/test/unit/**/*.test.ts"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.7",
@@ -70,8 +70,8 @@
     "glob": "^11.0.0",
     "mocha": "^10.7.3",
     "prettier": "^3.3.3",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
   },
   "dependencies": {
     "simple-git": "^3.25.0"

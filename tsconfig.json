@@ -11,5 +11,9 @@
         "noFallthroughCasesInSwitch": true,
         "noUnusedParameters": true
     },
-    "exclude": []
+    "exclude": [
+        // unit tests use vitest, which doesn't work with commonjs
+        // exclude it from compilation via tsc and rely on IDE instead
+        "src/test/unit"
+    ]
 }
