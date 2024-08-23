@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.1.1] (pre-release)
+
+- Add more context to prompt
+- Add `lgtm.minSeverity` configuration option
+- Make AI response parsing more permissive
+
 ## [0.1.0] (pre-release)
 
 - Initial release
