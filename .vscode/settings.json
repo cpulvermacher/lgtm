@@ -7,6 +7,9 @@
     },
     "typescript.tsc.autoDetect": "off",
     "typescript.format.semicolons": "insert",
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
     "editor.codeActionsOnSave": {
         "source.organizeImports": "always"
     }
