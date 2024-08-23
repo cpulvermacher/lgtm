@@ -12,7 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
     chatParticipant = vscode.chat.createChatParticipant('lgtm', handler);
     chatParticipant.iconPath = vscode.Uri.joinPath(
         context.extensionUri,
-        'images/icon.png'
+        'images/chat_icon.png'
     );
 }
 
