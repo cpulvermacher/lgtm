@@ -10,6 +10,7 @@ eslint.config.mjs
 src/
 images/
 !images/icon.png
+!images/chat_icon.png
 node_modules
 tmp/
 out/test
