@@ -26,6 +26,7 @@ export async function selectChatModel(): Promise<Model> {
     );
 
     return {
+        countTokens: async (text: string) => model.countTokens(text),
         limitTokens: async (text: string) => limitTokens(model, text),
         sendRequest: async (
             prompt: string,
