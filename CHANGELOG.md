@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.2.0]
+- Make branch/commit selection more user friendly
+
 ## [0.1.2]
 - Add `lgtm.enableDebugOutput` configuration option
 
