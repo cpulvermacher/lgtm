@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-    groupByFile,
     parseComment,
+    sortFileCommentsBySeverity,
     splitResponseIntoComments,
 } from '../../../review/comment';
+import { ReviewComment } from '../../../types/ReviewComment';
 
 describe('parseComment', () => {
     it('normal', () => {
@@ -54,44 +55,48 @@ describe('splitResponseIntoComments', () => {
     });
 });
 
-describe('groupByFile', () => {
+describe('sortFileCommentsBySeverity', () => {
     it('normal', () => {
-        const reviewComments = [
+        const fileComments = [
             {
                 target: 'file2',
-                comment: 'Yet another review comment',
-                severity: 3,
+                comments: [
+                    {
+                        comment: 'Yet another review comment',
+                        severity: 3,
+                    },
+                    {
+                        comment: 'Another review comment',
+                        severity: 5,
+                    },
+                ],
             },
             {
                 target: 'file1',
-                comment: 'Another review comment',
-                severity: 2,
-            },
-            {
-                target: 'file1',
-                comment: 'Some review comment',
-                severity: 4,
-            },
-            {
-                target: 'file2',
-                comment: 'Another review comment',
-                severity: 5,
+                comments: [
+                    {
+                        comment: 'Another review comment',
+                        severity: 2,
+                    },
+                    {
+                        comment: 'Some review comment',
+                        severity: 4,
+                    },
+                ],
             },
         ];
 
-        const result = groupByFile(reviewComments);
+        const result = sortFileCommentsBySeverity(fileComments);
 
         expect(result).toEqual([
             {
                 target: 'file2',
                 comments: [
                     {
-                        target: 'file2',
                         comment: 'Another review comment',
                         severity: 5,
                     },
                     {
-                        target: 'file2',
                         comment: 'Yet another review comment',
                         severity: 3,
                     },
@@ -102,12 +107,10 @@ describe('groupByFile', () => {
                 target: 'file1',
                 comments: [
                     {
-                        target: 'file1',
                         comment: 'Some review comment',
                         severity: 4,
                     },
                     {
-                        target: 'file1',
                         comment: 'Another review comment',
                         severity: 2,
                     },
@@ -118,8 +121,8 @@ describe('groupByFile', () => {
     });
 
     it('with no comments', () => {
-        const reviewComments = [];
-        const result = groupByFile(reviewComments);
+        const commentsByFile = new Map<string, ReviewComment[]>();
+        const result = sortFileCommentsBySeverity(commentsByFile);
 
         expect(result).toEqual([]);
     });

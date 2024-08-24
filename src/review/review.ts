@@ -3,12 +3,11 @@ import type { CancellationToken, ChatResponseStream } from 'vscode';
 import { Config } from '../types/Config';
 import { FileComments } from '../types/FileComments';
 import { Model } from '../types/Model';
-import { ReviewComment } from '../types/ReviewComment';
 import { ReviewRequest } from '../types/ReviewRequest';
 import { getChangedFiles, getFileDiff, getReviewScope } from '../utils/git';
 import {
-    groupByFile,
     parseComment,
+    sortFileCommentsBySeverity,
     splitResponseIntoComments,
 } from './comment';
 
@@ -23,7 +22,7 @@ export async function reviewDiff(
 
     stream.markdown(`Found ${files.length} files.\n\n`);
 
-    const reviewComments: ReviewComment[] = [];
+    const fileComments = [];
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (cancellationToken.isCancellationRequested) {
@@ -38,26 +37,26 @@ export async function reviewDiff(
             continue;
         }
 
-        const response = await getReviewResponse(
-            config.model,
-            scope.changeDescription,
-            diff,
-            cancellationToken
-        );
+        const { response, promptTokens, responseTokens } =
+            await getReviewResponse(
+                config.model,
+                scope.changeDescription,
+                diff,
+                cancellationToken
+            );
         console.debug('Response:', response);
 
-        splitResponseIntoComments(response)
-            .map(parseComment)
-            .forEach((comment) => {
-                reviewComments.push({
-                    target: file,
-                    comment: comment.comment,
-                    severity: comment.severity,
-                });
-            });
+        fileComments.push({
+            target: file,
+            comments: splitResponseIntoComments(response).map(parseComment),
+            debug: {
+                promptTokens,
+                responseTokens,
+            },
+        });
     }
 
-    return groupByFile(reviewComments);
+    return sortFileCommentsBySeverity(fileComments);
 }
 
 export async function getReviewResponse(
@@ -65,7 +64,7 @@ export async function getReviewResponse(
     changeDescription: string,
     diff: string,
     cancellationToken: CancellationToken
-): Promise<string> {
+) {
     const originalSize = diff.length;
     diff = await model.limitTokens(diff);
     if (diff.length < originalSize) {
@@ -73,7 +72,13 @@ export async function getReviewResponse(
     }
 
     const prompt = createReviewPrompt(changeDescription, diff);
-    return await model.sendRequest(prompt, cancellationToken);
+    const response = await model.sendRequest(prompt, cancellationToken);
+
+    return {
+        response,
+        promptTokens: await model.countTokens(prompt),
+        responseTokens: await model.countTokens(response),
+    };
 }
 
 function createReviewPrompt(changeDescription: string, diff: string): string {

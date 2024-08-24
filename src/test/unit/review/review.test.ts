@@ -10,6 +10,7 @@ describe('getReviewResponse', () => {
             return 'Some review comment\n3/5';
         }),
         limitTokens: vi.fn(async (text: string) => text),
+        countTokens: vi.fn(async () => 4),
     } as unknown as Model;
 
     const diff = 'Some diff content';
@@ -23,7 +24,9 @@ describe('getReviewResponse', () => {
             cancellationToken
         );
 
-        expect(result).toBe('Some review comment\n3/5');
+        expect(result.response).toBe('Some review comment\n3/5');
+        expect(result.promptTokens).toBe(4);
+        expect(result.responseTokens).toBe(4);
         expect(model.limitTokens).toHaveBeenCalledWith(diff);
         expect(model.sendRequest).toHaveBeenCalledWith(
             expect.stringMatching(/^\nYou are a senior software engineer/),

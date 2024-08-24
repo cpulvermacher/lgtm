@@ -1,5 +1,4 @@
 import { FileComments } from '../types/FileComments';
-import { ReviewComment } from '../types/ReviewComment';
 
 export function parseComment(comment: string) {
     comment = comment.trim();
@@ -38,28 +37,26 @@ export function splitResponseIntoComments(response: string): string[] {
     return rawComments;
 }
 
-/** Returns array of review comments grouped by file path, sorted by descending severity */
-export function groupByFile(reviewComments: ReviewComment[]): FileComments[] {
+/** Returns comments in descending order of severity */
+export function sortFileCommentsBySeverity(
+    comments: Omit<FileComments, 'maxSeverity'>[]
+): FileComments[] {
     const commentsByFile = new Map<string, FileComments>();
-    reviewComments.forEach((review) => {
-        let fileComment = commentsByFile.get(review.target);
-        if (!fileComment) {
-            fileComment = {
-                target: review.target,
-                comments: [],
-                maxSeverity: 0,
-            };
-            commentsByFile.set(review.target, fileComment);
-        }
-        fileComment.comments.push(review);
-        if (review.severity > fileComment.maxSeverity) {
-            fileComment.maxSeverity = review.severity;
-        }
-    });
+    for (const comment of comments) {
+        //sort comments for this file by descending severity
+        const sortedComments = Array.from(comment.comments);
+        sortedComments.sort((a, b) => b.severity - a.severity);
 
-    //sort each file by descending severity
-    for (const fileComments of commentsByFile.values()) {
-        fileComments.comments.sort((a, b) => b.severity - a.severity);
+        if (sortedComments.length === 0) {
+            continue;
+        }
+        const maxSeverity = sortedComments[0].severity;
+
+        commentsByFile.set(comment.target, {
+            ...comment,
+            comments: sortedComments,
+            maxSeverity,
+        });
     }
 
     //sort all files by descending max severity
