@@ -12,6 +12,8 @@ To start, open Copilot Chat and send one of the following messages:
 - `@lgtm /branch` to review changes on a branch (compared to a reference branch)
 - `@lgtm /commit` to review changes in a commit
 
+You'll receive review comments grouped by file after selecting the desired commit or branches in the quick select.
+
 ## Features
 - Uses the GPT-4o version of Copilot Chat, no separate subscription or API key required.
 - 4000 token context window. As a result, you will get mostly comments about local issues, rather than architecture-level comments looking at how multiple files work together.

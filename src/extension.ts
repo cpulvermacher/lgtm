@@ -125,24 +125,25 @@ function showReviewComments(
 
 /** Asks user to select a commit. Returns short commit hash, or undefined when aborted. */
 async function pickCommit(config: Config): Promise<string | undefined> {
-    const commits = await config.git.log({ maxCount: 20 });
+    const commits = await config.git.log({ maxCount: 30 });
     const quickPickOptions: vscode.QuickPickItem[] = commits.all.map(
         (commit) => ({
             label: commit.hash.substring(0, 7),
             description: commit.message,
+            iconPath: new vscode.ThemeIcon('git-commit'),
         })
     );
-    quickPickOptions.push({
-        label: '',
-        kind: vscode.QuickPickItemKind.Separator,
-    });
     const manualInputOption = {
         label: 'Input commit hash manually...',
     };
-    quickPickOptions.push(manualInputOption);
+    quickPickOptions.unshift(manualInputOption, {
+        label: 'Recent Commits',
+        kind: vscode.QuickPickItemKind.Separator,
+    });
 
     const selected = await vscode.window.showQuickPick(quickPickOptions, {
         title: 'Select a commit to review',
+        matchOnDescription: true,
     });
 
     if (selected === manualInputOption) {
@@ -159,8 +160,11 @@ async function pickCommit(config: Config): Promise<string | undefined> {
 /** Asks user to select base and target branch. Returns undefined if aborted. */
 async function pickBranches(config: Config) {
     const branches = await config.git.branch();
-    const branchNames = branches.all;
-    //select via quick input
+    const branchNames = branches.all.map((branch) => ({
+        label: branch,
+        iconPath: new vscode.ThemeIcon('git-branch'),
+    }));
+
     const targetBranch = await vscode.window.showQuickPick(branchNames, {
         title: 'Select a branch to review (1/2)',
     });
@@ -178,5 +182,5 @@ async function pickBranches(config: Config) {
         return;
     }
 
-    return { baseBranch, targetBranch };
+    return { baseBranch: baseBranch.label, targetBranch: targetBranch.label };
 }
