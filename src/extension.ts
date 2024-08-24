@@ -82,18 +82,11 @@ function showReviewComments(
     config: Config,
     cancellationToken: vscode.CancellationToken
 ) {
-    if (fileComments.length === 0) {
-        stream.markdown('No problems found.');
-        return;
-    }
-
     const options = config.getOptions();
+    let noProblemsFound = true;
     for (const file of fileComments) {
         if (cancellationToken.isCancellationRequested) {
             return;
-        }
-        if (file.maxSeverity < options.minSeverity) {
-            continue;
         }
 
         stream.anchor(toUri(config, file.target), file.target);
@@ -105,6 +98,7 @@ function showReviewComments(
             stream.markdown(
                 '\n - ' + comment.comment + ' ' + comment.severity + '/5'
             );
+            noProblemsFound = false;
         }
         if (options.enableDebugOutput && file.debug) {
             stream.markdown(`\n\n**Debug Info:**`);
@@ -121,6 +115,11 @@ function showReviewComments(
             }
         }
         stream.markdown('\n\n');
+    }
+
+    if (noProblemsFound) {
+        stream.markdown('No problems found.');
+        return;
     }
 }
 
