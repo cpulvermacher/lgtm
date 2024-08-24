@@ -54,6 +54,11 @@
           "description": "Minimal severity of issues to report (1 to show all issues)",
           "minimum": 1,
           "maximum": 5
+        },
+        "lgtm.enableDebugOutput": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include additional debug information (token count, etc.) in the output"
         }
       }
     }

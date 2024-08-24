@@ -12,4 +12,5 @@ export type Config = {
 
 export type Options = {
     minSeverity: number;
+    enableDebugOutput: boolean;
 };

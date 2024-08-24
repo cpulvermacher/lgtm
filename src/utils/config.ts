@@ -51,6 +51,10 @@ function getOptions(): Options {
     const config = vscode.workspace.getConfiguration('lgtm');
 
     const minSeverity = config.get<number>('minSeverity');
+    const enableDebugOutput = config.get<boolean>('enableDebugOutput');
 
-    return { minSeverity: minSeverity ?? 1 };
+    return {
+        minSeverity: minSeverity ?? 1,
+        enableDebugOutput: enableDebugOutput ?? false,
+    };
 }

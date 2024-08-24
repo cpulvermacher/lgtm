@@ -125,6 +125,20 @@ function showReviewComments(
                 '\n - ' + comment.comment + ' ' + comment.severity + '/5'
             );
         }
+        if (options.enableDebugOutput && file.debug) {
+            stream.markdown(`\n\n**Debug Info:**`);
+            stream.markdown(`\nInput tokens: ${file.debug?.promptTokens}`);
+            stream.markdown(`\nResponse tokens: ${file.debug?.responseTokens}`);
+
+            const numCommentsSkipped = file.comments.reduce(
+                (acc, comment) =>
+                    comment.severity < options.minSeverity ? acc + 1 : acc,
+                0
+            );
+            if (numCommentsSkipped > 0) {
+                stream.markdown(`\nSkipped comments: ${numCommentsSkipped}`);
+            }
+        }
         stream.markdown('\n\n');
     }
 }
