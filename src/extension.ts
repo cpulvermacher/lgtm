@@ -33,34 +33,19 @@ async function handler(
     const config = await getConfig();
 
     if (request.command === 'branch') {
-        const branches = await config.git.branch();
-        const branchNames = branches.all;
-        //select via quick input
-        const targetBranch = await vscode.window.showQuickPick(branchNames, {
-            title: 'Select a branch to review (1/2)',
-        });
-        if (!targetBranch) {
-            return;
-        }
-
-        const baseBranch = await vscode.window.showQuickPick(
-            branchNames.filter((name) => name !== targetBranch),
-            {
-                title: 'Select a base branch (2/2)',
-            }
-        );
-        if (!baseBranch) {
+        const scope = await pickBranches(config);
+        if (!scope) {
             return;
         }
 
         stream.markdown(
-            `Reviewing changes on branch \`${targetBranch}\` compared to \`${baseBranch}\`\n`
+            `Reviewing changes on branch \`${scope.targetBranch}\` compared to \`${scope.baseBranch}\`\n`
         );
 
         const reviewComments = await reviewDiff(
             config,
             stream,
-            { targetBranch, baseBranch },
+            scope,
             cancellationToken
         );
 
@@ -68,11 +53,7 @@ async function handler(
     } else if (request.command === 'commit') {
         //TODO handle any arguments in request.prompt
 
-        const commit = await vscode.window.showInputBox({
-            title: 'Enter a commit hash',
-            value: 'HEAD',
-            ignoreFocusOut: true,
-        });
+        const commit = await pickCommit(config);
         if (!commit) {
             return;
         }
@@ -141,4 +122,62 @@ function showReviewComments(
         }
         stream.markdown('\n\n');
     }
+}
+
+/** Asks user to select a commit. Returns short commit hash, or undefined when aborted. */
+async function pickCommit(config: Config): Promise<string | undefined> {
+    const commits = await config.git.log({ maxCount: 20 });
+    const quickPickOptions: vscode.QuickPickItem[] = commits.all.map(
+        (commit) => ({
+            label: commit.hash.substring(0, 7),
+            description: commit.message,
+        })
+    );
+    quickPickOptions.push({
+        label: '',
+        kind: vscode.QuickPickItemKind.Separator,
+    });
+    const manualInputOption = {
+        label: 'Input commit hash manually...',
+    };
+    quickPickOptions.push(manualInputOption);
+
+    const selected = await vscode.window.showQuickPick(quickPickOptions, {
+        title: 'Select a commit to review',
+    });
+
+    if (selected === manualInputOption) {
+        return await vscode.window.showInputBox({
+            title: 'Enter a commit hash',
+            value: 'HEAD',
+            ignoreFocusOut: true,
+        });
+    }
+
+    return selected?.label;
+}
+
+/** Asks user to select base and target branch. Returns undefined if aborted. */
+async function pickBranches(config: Config) {
+    const branches = await config.git.branch();
+    const branchNames = branches.all;
+    //select via quick input
+    const targetBranch = await vscode.window.showQuickPick(branchNames, {
+        title: 'Select a branch to review (1/2)',
+    });
+    if (!targetBranch) {
+        return;
+    }
+
+    const baseBranch = await vscode.window.showQuickPick(
+        branchNames.filter((name) => name !== targetBranch),
+        {
+            title: 'Select a base branch (2/2)',
+        }
+    );
+    if (!baseBranch) {
+        return;
+    }
+
+    return { baseBranch, targetBranch };
 }
