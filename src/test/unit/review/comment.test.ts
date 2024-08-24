@@ -5,7 +5,6 @@ import {
     sortFileCommentsBySeverity,
     splitResponseIntoComments,
 } from '../../../review/comment';
-import { ReviewComment } from '../../../types/ReviewComment';
 
 describe('parseComment', () => {
     it('normal', () => {
@@ -121,8 +120,7 @@ describe('sortFileCommentsBySeverity', () => {
     });
 
     it('with no comments', () => {
-        const commentsByFile = new Map<string, ReviewComment[]>();
-        const result = sortFileCommentsBySeverity(commentsByFile);
+        const result = sortFileCommentsBySeverity([]);
 
         expect(result).toEqual([]);
     });
