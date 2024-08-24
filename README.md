@@ -15,7 +15,7 @@ To start, open Copilot Chat and send one of the following messages:
 ## Features
 - Uses the GPT-4o version of Copilot Chat, no separate subscription or API key required.
 - 4000 token context window. As a result, you will get mostly comments about local issues, rather than architecture-level comments looking at how multiple files work together.
-- Review content remains in chat history. You can ask follow-up questions to Copilot (without `@lgtm`).
+- Review content remains in chat history, so you can ask follow-up questions to Copilot (without `@lgtm`).
 
 ## Data Usage
 Source code checked into Git and selected for review will be sent to GitHub Copilot. Avoid using it on repositories where you would not use Copilot.
