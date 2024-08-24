@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.1.2]
+- Add `lgtm.enableDebugOutput` configuration option
+
 ## [0.1.1] (pre-release)
 
 - Add more context to prompt
