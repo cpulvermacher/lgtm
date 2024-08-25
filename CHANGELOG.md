@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.2.2]
+- Update Readme
+
 ## [0.2.0]
 - Make branch/commit selection more user friendly
 
