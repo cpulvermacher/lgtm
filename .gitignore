@@ -3,3 +3,8 @@ dist
 node_modules
 .vscode-test/
 *.vsix
+
+images/*
+!images/icon.png
+!images/chat_icon.png
+!images/demo.gif

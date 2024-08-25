@@ -5,14 +5,16 @@
 [![Status](https://flat.badgen.net/github/checks/cpulvermacher/lgtm)](https://github.com/cpulvermacher/lgtm/actions/workflows/node.js.yml)
 [![License](https://flat.badgen.net/github/license/cpulvermacher/lgtm)](./LICENSE)
 
-
 Use GitHub Copilot Chat to review your code.
+
 
 To start, open Copilot Chat and send one of the following messages:
 - `@lgtm /branch` to review changes on a branch (compared to a reference branch)
 - `@lgtm /commit` to review changes in a commit
 
 You'll receive review comments grouped by file after selecting the desired commit or branches in the quick select.
+
+![Demo](./images/demo.gif)
 
 ## Features
 - Uses the GPT-4o version of Copilot Chat, no separate subscription or API key required.
