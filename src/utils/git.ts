@@ -34,29 +34,32 @@ export async function getReviewScope(
         oldRev = request.baseBranch;
     }
 
-    const revisionRange = await getCommitRange(git, oldRev, newRev);
-    const changeDescription = await getCommitMessages(git, revisionRange);
+    const { revisionRangeDiff, revisionRangeLog } = await getCommitRange(
+        git,
+        oldRev,
+        newRev
+    );
+    const changeDescription = await getCommitMessages(git, revisionRangeLog);
 
-    return { request, revisionRange, changeDescription };
+    return { request, revisionRangeDiff, revisionRangeLog, changeDescription };
 }
 
-/** Validates the given revisions and returns a diff range `old..new` */
-async function getCommitRange(
-    git: SimpleGit,
-    oldRev: string,
-    newRev: string
-): Promise<string> {
+/** Validates the given revisions and returns diff ranges to get changes between the latest common ancestor and the new revision */
+async function getCommitRange(git: SimpleGit, oldRev: string, newRev: string) {
     await git.revparse(['--verify', '--end-of-options', oldRev]);
     await git.revparse(['--verify', '--end-of-options', newRev]);
 
-    return `${oldRev}..${newRev}`;
+    return {
+        revisionRangeDiff: `${oldRev}...${newRev}`,
+        revisionRangeLog: `${oldRev}..${newRev}`,
+    };
 }
 
 /** return all commit messages in a newline-separated string*/
 async function getCommitMessages(
     git: SimpleGit,
-    diffRevisionRange: string
+    revisionRangeLog: string
 ): Promise<string> {
-    const logs = await git.log([diffRevisionRange]);
+    const logs = await git.log([revisionRangeLog]);
     return logs.all.map((log) => log.message).join('\n');
 }

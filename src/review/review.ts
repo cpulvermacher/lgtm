@@ -18,7 +18,7 @@ export async function reviewDiff(
     cancellationToken: CancellationToken
 ): Promise<FileComments[]> {
     const scope = await getReviewScope(config.git, request);
-    const files = await getChangedFiles(config.git, scope.revisionRange);
+    const files = await getChangedFiles(config.git, scope.revisionRangeDiff);
 
     stream.markdown(`Found ${files.length} files.\n\n`);
 
@@ -31,7 +31,11 @@ export async function reviewDiff(
 
         stream.progress(`Reviewing file ${file} (${i + 1}/${files.length})`);
 
-        const diff = await getFileDiff(config.git, scope.revisionRange, file);
+        const diff = await getFileDiff(
+            config.git,
+            scope.revisionRangeDiff,
+            file
+        );
         if (diff.length === 0) {
             console.debug('No changes in file:', file);
             continue;

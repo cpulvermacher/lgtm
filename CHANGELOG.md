@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.3.0]
+- Branch comparison: use changes relative to latest common ancestor
+- Improve prompt
+
 ## [0.2.2]
 - Update Readme
 

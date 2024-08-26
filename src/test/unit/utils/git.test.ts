@@ -17,20 +17,20 @@ describe('git', () => {
     it('getChangedFiles', async () => {
         vi.mocked(mockGit.diff).mockResolvedValue('\nfile1\nfile2');
 
-        const result = await getChangedFiles(mockGit, 'rev..rev');
+        const result = await getChangedFiles(mockGit, 'rev...rev');
 
-        expect(mockGit.diff).toHaveBeenCalledWith(['--name-only', 'rev..rev']);
+        expect(mockGit.diff).toHaveBeenCalledWith(['--name-only', 'rev...rev']);
         expect(result).toEqual(['file1', 'file2']);
     });
 
     it('getFileDiff', async () => {
         vi.mocked(mockGit.diff).mockResolvedValue('diff');
 
-        const result = await getFileDiff(mockGit, 'rev..rev', 'file');
+        const result = await getFileDiff(mockGit, 'rev...rev', 'file');
 
         expect(mockGit.diff).toHaveBeenCalledWith([
             '--no-prefix',
-            'rev..rev',
+            'rev...rev',
             '--',
             'file',
         ]);
@@ -51,7 +51,8 @@ describe('git', () => {
 
             expect(result).toEqual({
                 request,
-                revisionRange: 'rev^..rev',
+                revisionRangeDiff: 'rev^...rev',
+                revisionRangeLog: 'rev^..rev',
                 changeDescription: 'message\nmessage2',
             });
         });
@@ -62,7 +63,8 @@ describe('git', () => {
 
             expect(result).toEqual({
                 request,
-                revisionRange: 'base..target',
+                revisionRangeDiff: 'base...target',
+                revisionRangeLog: 'base..target',
                 changeDescription: 'message\nmessage2',
             });
         });
