@@ -87,8 +87,9 @@ You are a senior software engineer reviewing a change with the following descrip
 \`\`\`
 ${changeDescription}
 \`\`\`
-Please review the following diff for any problems, bearing in mind that only changes in a single file are shown.
-For each issue you find, put the comment on a new line starting with \` - \` and ending in \` 1/5\` to \` 5/5\` to indicate the severity of the issue.
+Analyze the following git diff for one of the changed files. Lines beginning with \`-\` are deletions, and lines beginning with \`+\` are additions. Lines beginning with \` \` are unchanged lines provided for context.
+Provide insightful comments on how the code could be improved, bugs, and potential issues.
+For each comment, respond with a new line starting with \` - \` and ending in \` 1/5\` to \` 5/5\` to indicate the severity of the issue.
 For example:
  - Using \`eval()\` with a possibly user-supplied string is likely to result in code injection. 5/5
  - This code is not formatted correctly. 2/5
