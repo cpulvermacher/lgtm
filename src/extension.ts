@@ -33,7 +33,7 @@ async function handler(
     const config = await getConfig();
 
     if (request.command === 'branch') {
-        const scope = await pickBranches(config);
+        const scope = await pickBranchesOrTags(config);
         if (!scope) {
             return;
         }
@@ -157,30 +157,47 @@ async function pickCommit(config: Config): Promise<string | undefined> {
     return selected?.label;
 }
 
-/** Asks user to select base and target branch. Returns undefined if aborted. */
-async function pickBranches(config: Config) {
-    const branches = await config.git.branch();
-    const branchNames = branches.all.map((branch) => ({
-        label: branch,
-        iconPath: new vscode.ThemeIcon('git-branch'),
-    }));
+/** Asks user to select base and target. Returns undefined if aborted. */
+async function pickBranchesOrTags(config: Config) {
+    const branchIcon = new vscode.ThemeIcon('git-branch');
+    const tagIcon = new vscode.ThemeIcon('tag');
 
-    const targetBranch = await vscode.window.showQuickPick(branchNames, {
-        title: 'Select a branch to review (1/2)',
+    const branches = await config.git.branch();
+    const tags = await config.git.tags();
+
+    const quickPickOptions: vscode.QuickPickItem[] = [];
+    quickPickOptions.push({
+        label: 'Branches',
+        kind: vscode.QuickPickItemKind.Separator,
     });
-    if (!targetBranch) {
+    branches.all.forEach((branch) => {
+        quickPickOptions.push({ label: branch, iconPath: branchIcon });
+    });
+
+    quickPickOptions.push({
+        label: 'Tags',
+        kind: vscode.QuickPickItemKind.Separator,
+    });
+    tags.all.forEach((tag) => {
+        quickPickOptions.push({ label: tag, iconPath: tagIcon });
+    });
+
+    const target = await vscode.window.showQuickPick(quickPickOptions, {
+        title: 'Select a branch or tag to review (1/2)',
+    });
+    if (!target) {
         return;
     }
 
-    const baseBranch = await vscode.window.showQuickPick(
-        branchNames.filter((name) => name !== targetBranch),
+    const base = await vscode.window.showQuickPick(
+        quickPickOptions.filter((name) => name !== target),
         {
-            title: 'Select a base branch (2/2)',
+            title: 'Select a base branch or tag (2/2)',
         }
     );
-    if (!baseBranch) {
+    if (!base) {
         return;
     }
 
-    return { baseBranch: baseBranch.label, targetBranch: targetBranch.label };
+    return { baseBranch: base.label, targetBranch: target.label };
 }
