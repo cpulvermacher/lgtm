@@ -64,7 +64,8 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "rm -rf ./out && npm run esbuild-base -- --minify --pure:console.debug",
+    "check-exclusive": "ps aux | grep -v grep | grep -q 'esbuild.*--watch' && echo 'esbuild --watch running, aborting!' && exit 1 || exit 0",
+    "vscode:prepublish": "npm run check-exclusive && rm -rf ./out && npm run esbuild-base -- --minify --pure:console.debug",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "watch": "npm run esbuild-base -- --sourcemap --watch",
