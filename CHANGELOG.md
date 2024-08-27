@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.3.1]
+- Build fixes
+
 ## [0.3.0]
 - Branch comparison: use changes relative to latest common ancestor
 - Improve prompt
