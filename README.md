@@ -9,7 +9,7 @@ Use GitHub Copilot Chat to review your code.
 
 
 To start, open Copilot Chat and send one of the following messages:
-- `@lgtm /branch` to review changes on a branch (compared to a reference branch)
+- `@lgtm /branch` to review changes between two branches or tags
 - `@lgtm /commit` to review changes in a commit
 
 You'll receive review comments grouped by file after selecting the desired commit or branches in the quick select.

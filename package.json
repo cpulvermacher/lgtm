@@ -36,7 +36,7 @@
         "commands": [
           {
             "name": "branch",
-            "description": "Review changes on a branch"
+            "description": "Review changes between two branches or tags"
           },
           {
             "name": "commit",
