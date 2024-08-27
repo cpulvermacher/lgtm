@@ -3,7 +3,7 @@
   "displayName": "LGTM",
   "description": "Use GitHub Copilot Chat to review your code",
   "publisher": "cpulvermacher",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/cpulvermacher/lgtm.git"
