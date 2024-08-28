@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.4.0]
+- Allow selecting tags with /branch
+
 ## [0.3.1]
 - Build fixes
 
