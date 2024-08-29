@@ -89,12 +89,16 @@ function showReviewComments(
             return;
         }
 
-        stream.anchor(toUri(config, file.target), file.target);
-        for (const comment of file.comments) {
-            if (comment.severity < options.minSeverity) {
-                continue;
-            }
+        const filteredFileComments = file.comments.filter(
+            (comment) => comment.severity >= options.minSeverity
+        );
 
+        if (filteredFileComments.length === 0 && !options.enableDebugOutput) {
+            continue;
+        }
+
+        stream.anchor(toUri(config, file.target), file.target);
+        for (const comment of filteredFileComments) {
             stream.markdown(
                 '\n - ' + comment.comment + ' ' + comment.severity + '/5'
             );
