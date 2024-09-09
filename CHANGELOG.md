@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.4.1]
+- Hide files without review comments
+
 ## [0.4.0]
 - Allow selecting tags with /branch
 
