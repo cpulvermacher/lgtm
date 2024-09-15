@@ -5,52 +5,51 @@ import {
     parseResponse,
     sortFileCommentsBySeverity,
 } from '../../../review/comment';
+import { responseExample } from '../../../review/review';
 
 describe('parseComment', () => {
     it('normal', () => {
-        const result = parseComment('Some review comment\n4/5');
+        const result = parseComment({
+            comment: 'Some review comment',
+            line: 123,
+            severity: 4,
+        });
 
         expect(result).toEqual({
             comment: 'Some review comment',
+            line: 123,
             severity: 4,
         });
     });
 
-    it('with no severity', () => {
-        const result = parseComment('Some review comment');
+    it('adds default for line/severity', () => {
+        const result = parseComment({ comment: 'Some review comment' });
 
         expect(result).toEqual({
             comment: 'Some review comment',
+            line: 1,
             severity: 3,
         });
+    });
+
+    it('throws on missing comment', () => {
+        expect(() => parseComment({ line: 123, severity: 4 })).toThrow();
     });
 });
 
 describe('parseResponse', () => {
     it('normal', () => {
-        const response =
-            ' - Some comment\n - Another comment\n  continued\n- Without leading space';
+        const response = JSON.stringify(responseExample, undefined, 2);
         const result = parseResponse(response);
 
-        expect(result).toEqual([
-            'Some comment',
-            'Another comment\n  continued',
-            'Without leading space',
-        ]);
+        expect(result).toEqual(responseExample);
     });
 
     it('with no comments', () => {
-        const response = '';
+        const response = '[]';
         const result = parseResponse(response);
 
         expect(result).toEqual([]);
-    });
-
-    it('skips lines that do not match comment format', () => {
-        const response = 'Here is the review you asked for\n- Comment';
-        const result = parseResponse(response);
-
-        expect(result).toEqual(['Comment']);
     });
 });
 
@@ -62,10 +61,12 @@ describe('sortFileCommentsBySeverity', () => {
                 comments: [
                     {
                         comment: 'Yet another review comment',
+                        line: 1,
                         severity: 3,
                     },
                     {
                         comment: 'Another review comment',
+                        line: 2,
                         severity: 5,
                     },
                 ],
@@ -75,10 +76,12 @@ describe('sortFileCommentsBySeverity', () => {
                 comments: [
                     {
                         comment: 'Another review comment',
+                        line: 3,
                         severity: 2,
                     },
                     {
                         comment: 'Some review comment',
+                        line: 4,
                         severity: 4,
                     },
                 ],
@@ -93,10 +96,12 @@ describe('sortFileCommentsBySeverity', () => {
                 comments: [
                     {
                         comment: 'Another review comment',
+                        line: 2,
                         severity: 5,
                     },
                     {
                         comment: 'Yet another review comment',
+                        line: 1,
                         severity: 3,
                     },
                 ],
@@ -107,10 +112,12 @@ describe('sortFileCommentsBySeverity', () => {
                 comments: [
                     {
                         comment: 'Some review comment',
+                        line: 4,
                         severity: 4,
                     },
                     {
                         comment: 'Another review comment',
+                        line: 3,
                         severity: 2,
                     },
                 ],

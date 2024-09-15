@@ -5,11 +5,7 @@ import { FileComments } from '../types/FileComments';
 import { Model } from '../types/Model';
 import { ReviewRequest } from '../types/ReviewRequest';
 import { getChangedFiles, getFileDiff, getReviewScope } from '../utils/git';
-import {
-    parseComment,
-    parseResponse,
-    sortFileCommentsBySeverity,
-} from './comment';
+import { parseResponse, sortFileCommentsBySeverity } from './comment';
 
 export async function reviewDiff(
     config: Config,
@@ -48,11 +44,11 @@ export async function reviewDiff(
                 diff,
                 cancellationToken
             );
-        console.debug('Response:', response);
+        console.debug(`Response for ${file}:`, response);
 
         fileComments.push({
             target: file,
-            comments: parseResponse(response).map(parseComment),
+            comments: parseResponse(response),
             debug: {
                 promptTokens,
                 responseTokens,
@@ -87,20 +83,43 @@ export async function getReviewResponse(
 
 function createReviewPrompt(changeDescription: string, diff: string): string {
     return `
-You are a senior software engineer reviewing a change with the following description:
+You are a senior software engineer reviewing a pull request.
+Analyze the following git diff for one of the changed files. Lines beginning with \`-\` are deletions, and lines beginning with \`+\` are additions. Lines beginning with \` \` are unchanged lines provided for context.
+Provide comments on bugs, security vulnerabilities, code smells, and typos.
+Respond with a JSON list of comments objects, which contain the fields \`comment\`, \`line\`, and \`severity\`.
+\`comment\` is a string describing the issue.
+\`line\` is the first affected line number of the issue in the "to" file. Use the line numbers provided in the diff plus the offset inside the diff section to reference the location of the issue.
+\`severity\` is the severity of the issue as an integer from 1 (likely irrelevant) to 5 (critical).
+Respond with only JSON, do NOT include other text or markdown.
+
+Example response:
+\`\`\`json
+${JSON.stringify(responseExample, undefined, 2)}
+\`\`\`
+
+The change has the following description:
 \`\`\`
 ${changeDescription}
 \`\`\`
-Analyze the following git diff for one of the changed files. Lines beginning with \`-\` are deletions, and lines beginning with \`+\` are additions. Lines beginning with \` \` are unchanged lines provided for context.
-Provide insightful comments on how the code could be improved, bugs, and potential issues.
-For each comment, respond with a new line starting with \` - \` and ending in \` 1/5\` to \` 5/5\` to indicate the severity of the issue.
-For example:
- - Using \`eval()\` with a possibly user-supplied string is likely to result in code injection. 5/5
- - This code is not formatted correctly. 2/5
- - The <script> tag is missspelled as <scirpt>. 4/5
 
+And the diff for one of the changed files is:
 \`\`\`diff
 ${diff}
 \`\`\`
 `;
 }
+
+export const responseExample = [
+    {
+        comment: 'The <script> tag is missspelled as <scirpt>.',
+        line: 23,
+        severity: 4,
+    },
+    {
+        comment:
+            'Using `eval()` with a possibly user-supplied string may result in code injection.',
+        line: 55,
+        severity: 5,
+    },
+    { comment: 'This code is not formatted correctly.', line: 93, severity: 2 },
+];

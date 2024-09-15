@@ -1,40 +1,56 @@
 import { FileComments } from '../types/FileComments';
+import { ReviewComment } from '../types/ReviewComment';
 
-export function parseComment(comment: string) {
-    comment = comment.trim();
-    const severityRegex = /(\d)\/5$/;
-    const severityMatch = comment.match(severityRegex);
+export function parseComment(comment: object): ReviewComment {
+    if (!('comment' in comment) || typeof comment['comment'] !== 'string') {
+        throw new Error('Expected comment');
+    }
+
+    let line = 1;
+    if ('line' in comment && typeof comment['line'] === 'number') {
+        line = comment['line'];
+    }
+
+    let severity = 3;
+    if ('severity' in comment && typeof comment['severity'] === 'number') {
+        severity = comment['severity'];
+    }
 
     return {
-        comment: comment.replace(severityRegex, '').trim(),
-        severity: severityMatch ? parseInt(severityMatch[1]) : 3,
+        comment: comment['comment'].trim(),
+        line,
+        severity,
     };
 }
 
 /** Parse model response into individual comments  */
-export function parseResponse(response: string): string[] {
-    const rawComments: string[] = [];
-    const lines = response.split('\n');
-    const commentStartRegex = /^\s*- /;
+export function parseResponse(response: string): ReviewComment[] {
+    let rawComments = [];
+    try {
+        rawComments = JSON.parse(response);
+    } catch {
+        // try removing additional text before parsing
+        const start = response.indexOf('[');
+        const end = response.lastIndexOf(']');
+        if (start === -1 || end === -1) {
+            console.error('Failed to find comments:', response, start, end);
+            return [];
+        }
 
-    let comment = '';
-    for (const line of lines) {
-        if (line.match(commentStartRegex)) {
-            if (comment) {
-                rawComments.push(comment);
-            }
-            comment = line.replace(commentStartRegex, '');
-        } else if (comment === '') {
-            console.warn('Line does not match comment format, skipping:', line);
-        } else {
-            comment += '\n' + line;
+        try {
+            rawComments = JSON.parse(response.slice(start, end + 1));
+        } catch (error) {
+            console.error('Failed to parse response:', error);
+            return [];
         }
     }
-    if (comment.trim() !== '') {
-        rawComments.push(comment);
+
+    if (!Array.isArray(rawComments)) {
+        console.error('response is not a list:', response);
+        return [];
     }
 
-    return rawComments;
+    return rawComments.map(parseComment);
 }
 
 /** Returns comments in descending order of severity */
