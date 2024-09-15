@@ -12,7 +12,7 @@ export function parseComment(comment: string) {
 }
 
 /** Parse model response into individual comments  */
-export function splitResponseIntoComments(response: string): string[] {
+export function parseResponse(response: string): string[] {
     const rawComments: string[] = [];
     const lines = response.split('\n');
     const commentStartRegex = /^\s*- /;

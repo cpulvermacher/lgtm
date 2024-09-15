@@ -7,8 +7,8 @@ import { ReviewRequest } from '../types/ReviewRequest';
 import { getChangedFiles, getFileDiff, getReviewScope } from '../utils/git';
 import {
     parseComment,
+    parseResponse,
     sortFileCommentsBySeverity,
-    splitResponseIntoComments,
 } from './comment';
 
 export async function reviewDiff(
@@ -52,7 +52,7 @@ export async function reviewDiff(
 
         fileComments.push({
             target: file,
-            comments: splitResponseIntoComments(response).map(parseComment),
+            comments: parseResponse(response).map(parseComment),
             debug: {
                 promptTokens,
                 responseTokens,

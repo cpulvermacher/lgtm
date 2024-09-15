@@ -1,6 +1,7 @@
-import type { CancellationToken } from 'vscode';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { CancellationToken, LanguageModelChat } from 'vscode';
 
-/** chat model wrapper */
+/** wrapper for @type LanguageModelChat*/
 export interface Model {
     countTokens: (text: string) => Promise<number>;
     limitTokens: (text: string) => Promise<string>;
