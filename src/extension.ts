@@ -1,3 +1,5 @@
+// allowed only in extension.ts and config.ts, since it cannot be imported in unit tests.
+// eslint-disable-next-line no-restricted-imports
 import * as vscode from 'vscode';
 
 import { reviewDiff } from './review/review';
