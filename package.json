@@ -76,12 +76,12 @@
     "unit": "vitest run ./src/test/unit/**/*.test.ts"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.7",
+    "@types/mocha": "^10.0.8",
     "@types/node": "20.x",
     "@types/prismjs": "^1.26.4",
     "@types/vscode": "^1.93.0",
-    "@typescript-eslint/eslint-plugin": "^8.5.0",
-    "@typescript-eslint/parser": "^8.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.6.0",
+    "@typescript-eslint/parser": "^8.6.0",
     "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^3.1.0",
     "esbuild": "^0.23.1",
@@ -90,10 +90,10 @@
     "mocha": "^10.7.3",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4",
-    "vitest": "^2.0.5"
+    "vitest": "^2.1.1"
   },
   "dependencies": {
-    "simple-git": "^3.26.0"
+    "simple-git": "^3.27.0"
   },
   "extensionDependencies": [
     "github.copilot-chat"
