@@ -17,7 +17,33 @@ export async function getFileDiff(
     diffRevisionRange: string,
     file: string
 ) {
-    return await git.diff(['--no-prefix', diffRevisionRange, '--', file]);
+    const diff = await git.diff(['--no-prefix', diffRevisionRange, '--', file]);
+    return addLineNumbers(diff);
+}
+
+/** prefix the following diff with the line numbers of the to-side (from hunk headers) */
+export function addLineNumbers(diff: string) {
+    let lineNo = 0;
+    return diff
+        .split('\n')
+        .map((line) => {
+            if (line.startsWith('@@')) {
+                const match = line.match(/^@@ -\d+,\d+ \+(\d+),\d+ @@/);
+                if (!match) {
+                    throw new Error(`Failed to parse hunk header: ${line}`);
+                }
+
+                const toFileStartLine = match[1];
+                lineNo = parseInt(toFileStartLine, 10);
+                return `0\t${line}`;
+            } else if (line.startsWith('-')) {
+                return `0\t${line}`;
+            } else if (lineNo > 0) {
+                return `${lineNo++}\t${line}`;
+            }
+            return `${lineNo}\t${line}`;
+        })
+        .join('\n');
 }
 
 export async function getReviewScope(

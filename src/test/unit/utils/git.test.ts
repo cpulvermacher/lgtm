@@ -2,6 +2,7 @@ import { LogResult, SimpleGit } from 'simple-git';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+    addLineNumbers,
     getChangedFiles,
     getFileDiff,
     getReviewScope,
@@ -34,7 +35,7 @@ describe('git', () => {
             '--',
             'file',
         ]);
-        expect(result).toBe('diff');
+        expect(result).toBe('0\tdiff');
     });
 
     describe('getReviewScope', () => {
@@ -67,6 +68,55 @@ describe('git', () => {
                 revisionRangeLog: 'base..target',
                 changeDescription: 'message\nmessage2',
             });
+        });
+    });
+
+    describe('addLineNumbers', () => {
+        it('adds line numbers', () => {
+            const diff = '@@ -1,2 +1,2 @@\nline1\nline2';
+            const result = addLineNumbers(diff);
+
+            expect(result).toBe('0\t@@ -1,2 +1,2 @@\n1\tline1\n2\tline2');
+        });
+
+        it('prints 0 until first hunk header', () => {
+            const diff = 'line1\nline2\n@@ -1,2 +1,2 @@\nline3';
+            const result = addLineNumbers(diff);
+
+            expect(result).toBe(
+                '0\tline1\n0\tline2\n0\t@@ -1,2 +1,2 @@\n1\tline3'
+            );
+        });
+
+        it('prints 0 for removed lines', () => {
+            const diff = '@@ -1,2 +1,2 @@\nline1\n-removed\n+added';
+            const result = addLineNumbers(diff);
+
+            expect(result).toBe(
+                '0\t@@ -1,2 +1,2 @@\n1\tline1\n0\t-removed\n2\t+added'
+            );
+        });
+
+        it('adjusts line numbers after each hunk header', () => {
+            const diff = `@@ -1,2 +1,2 @@
+line1
+line2
+@@ -1,2 +1,2 @@
+line3`;
+            const result = addLineNumbers(diff);
+
+            expect(result).toBe(
+                `0	@@ -1,2 +1,2 @@
+1	line1
+2	line2
+0	@@ -1,2 +1,2 @@
+1	line3`
+            );
+        });
+
+        it('throws on invalid hunk header', () => {
+            const diff = '@@ -1,2 +,2 @@\nline1\nline2';
+            expect(() => addLineNumbers(diff)).toThrow();
         });
     });
 });
