@@ -84,11 +84,12 @@ export async function getReviewResponse(
 function createReviewPrompt(changeDescription: string, diff: string): string {
     return `
 You are a senior software engineer reviewing a pull request.
-Analyze the following git diff for one of the changed files. Lines beginning with \`-\` are deletions, and lines beginning with \`+\` are additions. Lines beginning with \` \` are unchanged lines provided for context.
+Analyze the following git diff for one of the changed files. Each line consists of the line number of the target file, a tab character, and the actual diff line.
+Lines beginning with \`-\` are deletions, and lines beginning with \`+\` are additions. Lines beginning with \` \` are unchanged lines provided for context.
 Provide comments on bugs, security vulnerabilities, code smells, and typos.
 Respond with a JSON list of comments objects, which contain the fields \`comment\`, \`line\`, and \`severity\`.
 \`comment\` is a string describing the issue.
-\`line\` is the first affected line number of the issue in the "to" file. Use the line numbers provided in the diff plus the offset inside the diff section to reference the location of the issue.
+\`line\` is the first affected line number.
 \`severity\` is the severity of the issue as an integer from 1 (likely irrelevant) to 5 (critical).
 Respond with only JSON, do NOT include other text or markdown.
 

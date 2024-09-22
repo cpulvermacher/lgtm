@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.5.0] (pre-release)
+- Add line numbers for found issues
+
 ## [0.4.1]
 - Hide files without review comments
 
