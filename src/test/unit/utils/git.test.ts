@@ -24,18 +24,30 @@ describe('git', () => {
         expect(result).toEqual(['file1', 'file2']);
     });
 
-    it('getFileDiff', async () => {
-        vi.mocked(mockGit.diff).mockResolvedValue('diff');
+    describe('getFileDiff', () => {
+        it('returns diff with line numbers', async () => {
+            vi.mocked(mockGit.diff).mockResolvedValue('diff');
 
-        const result = await getFileDiff(mockGit, 'rev...rev', 'file');
+            const result = await getFileDiff(mockGit, 'rev...rev', 'file');
 
-        expect(mockGit.diff).toHaveBeenCalledWith([
-            '--no-prefix',
-            'rev...rev',
-            '--',
-            'file',
-        ]);
-        expect(result).toBe('0\tdiff');
+            expect(mockGit.diff).toHaveBeenCalledWith([
+                '--no-prefix',
+                'rev...rev',
+                '--',
+                'file',
+            ]);
+            expect(result).toBe('0\tdiff');
+        });
+
+        it('filters "no newline at end of file" message', async () => {
+            vi.mocked(mockGit.diff).mockResolvedValue(
+                'diff\n\\ No newline at end of file'
+            );
+
+            const result = await getFileDiff(mockGit, 'rev...rev', 'file');
+
+            expect(result).toBe('0\tdiff');
+        });
     });
 
     describe('getReviewScope', () => {

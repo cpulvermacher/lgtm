@@ -17,7 +17,13 @@ export async function getFileDiff(
     diffRevisionRange: string,
     file: string
 ) {
-    const diff = await git.diff(['--no-prefix', diffRevisionRange, '--', file]);
+    let diff = await git.diff(['--no-prefix', diffRevisionRange, '--', file]);
+
+    diff = diff
+        .split('\n')
+        .filter((line) => line !== '\\ No newline at end of file')
+        .join('\n');
+
     return addLineNumbers(diff);
 }
 
