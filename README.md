@@ -17,7 +17,7 @@ You'll receive review comments grouped by file after selecting the desired revis
 ![Demo](./images/demo.gif)
 
 ## Features
-- Uses the GPT-4o version of Copilot Chat, no separate subscription or API key required.
+- Uses the GPT-4o version of Copilot Chat, so only a GitHub Copilot subscription is required. Source code data is sent only to Copilot, which you presumably trust already.
 - Review content remains in chat history, so you can ask follow-up questions to Copilot (without `@lgtm`).
 
 ## Limitations
@@ -26,6 +26,7 @@ You'll receive review comments grouped by file after selecting the desired revis
 - For now, only Copilot's language model can be used via the `vscode.lm` API.
 
 ## Data Usage
-Source code checked into Git and selected for review will be sent to GitHub Copilot. Avoid using it on repositories where you would not use Copilot.
+Source code checked into Git and selected for review and commit messages will be sent to GitHub Copilot.
+Avoid using it on repositories where you would not use Copilot.
 
 
