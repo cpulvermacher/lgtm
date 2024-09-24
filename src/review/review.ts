@@ -85,8 +85,9 @@ function createReviewPrompt(changeDescription: string, diff: string): string {
     return `
 You are a senior software engineer reviewing a pull request.
 Analyze the following git diff for one of the changed files. Each line consists of the line number of the target file, a tab character, and the actual diff line.
-Lines beginning with \`-\` are deletions, and lines beginning with \`+\` are additions. Lines beginning with \` \` are unchanged lines provided for context.
-Provide comments on bugs, security vulnerabilities, code smells, and typos.
+Lines starting with \`-\` after the line number are removed, lines starting with \`+\` are added and lines starting with \` \` are unchanged lines provided for context.
+Provide comments on bugs, security vulnerabilities, code smells, and typos. There is no need to provide comments for removed lines.
+
 Respond with a JSON list of comments objects, which contain the fields \`comment\`, \`line\`, and \`severity\`.
 \`comment\` is a string describing the issue.
 \`line\` is the first affected line number.
@@ -104,7 +105,7 @@ ${changeDescription}
 \`\`\`
 
 And the diff for one of the changed files is:
-\`\`\`diff
+\`\`\`
 ${diff}
 \`\`\`
 `;
