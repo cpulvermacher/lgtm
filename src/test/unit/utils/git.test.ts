@@ -8,6 +8,30 @@ import {
     getReviewScope,
 } from '../../../utils/git';
 
+const completeDiff = `diff --git a/index.html b/index.html
+index 44cbb3f..887431b 100644
+--- a/index.html
++++ b/index.html
+@@ -1,6 +1,7 @@
+ <html>
+ <head>
+     <title>Home</title>
++    <scirpt src="index.js"></scirpt>
+ </head>
+ <body>
+ 
+@@ -26,7 +27,7 @@
+ 
+ 
+     <script>
+-        window['settings'] = {}
++        window['settings'] = eval("(" + new URLSearchParams(window.location.search).get('settings') + ")");
+     </script>
+ </body>
+ </html>
+\\ No newline at end of file
+`;
+
 describe('git', () => {
     const mockGit = {
         revparse: vi.fn(),
@@ -47,6 +71,37 @@ describe('git', () => {
             const result = await getFileDiff(mockGit, 'rev...rev', 'file');
 
             expect(result).toBe('0\tdiff');
+        });
+
+        it('adds line numbers for a complete diff', async () => {
+            vi.mocked(mockGit.diff).mockResolvedValue(completeDiff);
+
+            const result = await getFileDiff(mockGit, 'rev...rev', 'file');
+
+            expect(result).toMatchInlineSnapshot(`
+              "0	diff --git a/index.html b/index.html
+              0	index 44cbb3f..887431b 100644
+              0	--- a/index.html
+              0	+++ b/index.html
+              0	@@ -1,6 +1,7 @@
+              1	 <html>
+              2	 <head>
+              3	     <title>Home</title>
+              4	+    <scirpt src="index.js"></scirpt>
+              5	 </head>
+              6	 <body>
+              7	 
+              0	@@ -26,7 +27,7 @@
+              27	 
+              28	 
+              29	     <script>
+              0	-        window['settings'] = {}
+              30	+        window['settings'] = eval("(" + new URLSearchParams(window.location.search).get('settings') + ")");
+              31	     </script>
+              32	 </body>
+              33	 </html>
+              34	"
+            `);
         });
     });
 
