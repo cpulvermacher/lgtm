@@ -41,6 +41,12 @@ export async function getConfig(): Promise<Config> {
         model,
         getOptions,
     };
+
+    vscode.lm.onDidChangeChatModels(async () => {
+        console.log('Chat models were updated, rechecking...');
+        _config.model = await selectChatModel();
+    });
+
     return _config;
 }
 

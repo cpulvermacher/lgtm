@@ -2,6 +2,7 @@
 
 ## [0.5.1]
 - Avoid comments about "no newline at end of file"
+- Handle runtime changes to chat models more gracefully
 
 ## [0.5.0] (pre-release)
 - Add line numbers for found issues
