@@ -31,7 +31,7 @@
         "id": "lgtm",
         "name": "lgtm",
         "fullName": "LGTM",
-        "description": "What do you want to review?",
+        "description": "Review source code changes",
         "isSticky": true,
         "commands": [
           {
