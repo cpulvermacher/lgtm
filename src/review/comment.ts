@@ -7,12 +7,21 @@ export function parseComment(comment: object): ReviewComment {
     }
 
     let line = 1;
-    if ('line' in comment && typeof comment['line'] === 'number') {
+    if (
+        'line' in comment &&
+        typeof comment['line'] === 'number' &&
+        comment['line'] >= 0 // keep 0 to know if we got invalid values
+    ) {
         line = comment['line'];
     }
 
     let severity = 3;
-    if ('severity' in comment && typeof comment['severity'] === 'number') {
+    if (
+        'severity' in comment &&
+        typeof comment['severity'] === 'number' &&
+        comment['severity'] >= 1 &&
+        comment['severity'] <= 5
+    ) {
         severity = comment['severity'];
     }
 

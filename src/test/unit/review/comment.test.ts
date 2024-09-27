@@ -22,12 +22,40 @@ describe('parseComment', () => {
         });
     });
 
-    it('adds default for line/severity', () => {
+    it('uses default for line/severity', () => {
         const result = parseComment({ comment: 'Some review comment' });
 
         expect(result).toEqual({
             comment: 'Some review comment',
             line: 1,
+            severity: 3,
+        });
+    });
+
+    it('uses default for out-of-range line', () => {
+        const result = parseComment({
+            comment: 'Some review comment',
+            line: -1,
+            severity: 4,
+        });
+
+        expect(result).toEqual({
+            comment: 'Some review comment',
+            line: 1,
+            severity: 4,
+        });
+    });
+
+    it('uses default for out-of-range severity', () => {
+        const result = parseComment({
+            comment: 'Some review comment',
+            line: 123,
+            severity: 6,
+        });
+
+        expect(result).toEqual({
+            comment: 'Some review comment',
+            line: 123,
             severity: 3,
         });
     });

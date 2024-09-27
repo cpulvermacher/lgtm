@@ -101,13 +101,20 @@ function showReviewComments(
 
         stream.anchor(toUri(config, file.target), file.target);
         for (const comment of filteredFileComments) {
-            const location = new vscode.Location(
-                toUri(config, file.target),
-                new vscode.Position(comment.line - 1, 0)
-            );
+            const isValidLineNumber = comment.line > 0;
+            const location = isValidLineNumber
+                ? new vscode.Location(
+                      toUri(config, file.target),
+                      new vscode.Position(comment.line - 1, 0)
+                  )
+                : null;
 
             stream.markdown(`\n - `);
-            stream.anchor(location, `Line ${comment.line}: `);
+            if (location) {
+                stream.anchor(location, `Line ${comment.line}: `);
+            } else {
+                stream.markdown(`Line ${comment.line}: `);
+            }
             stream.markdown(
                 `${comment.comment} (Severity: ${comment.severity}/5)`
             );
