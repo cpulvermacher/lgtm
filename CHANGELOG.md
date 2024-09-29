@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.5.2]
+- Fix checking identity of git tags
+
 ## [0.5.1] (pre-release)
 - Handle runtime changes to chat models more gracefully
 - Avoid comments about "no newline at end of file"
