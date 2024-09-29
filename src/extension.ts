@@ -54,7 +54,7 @@ async function handler(
         }
 
         stream.markdown(
-            `Reviewing changes on branch/tag \`${refs.target}\` compared to \`${refs.base}\`.`
+            `Reviewing changes on \`${refs.target}\` compared to \`${refs.base}\`.`
         );
         if (await isSameRef(config.git, refs.base, refs.target)) {
             stream.markdown(' No changes found.');
