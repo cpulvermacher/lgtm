@@ -4,7 +4,7 @@ export type ReviewRequest =
           isTargetCheckedOut: boolean;
       }
     | {
-          targetBranch: string;
-          baseBranch: string;
+          target: string;
+          base: string;
           isTargetCheckedOut: boolean;
       };

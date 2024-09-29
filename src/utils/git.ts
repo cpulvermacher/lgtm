@@ -62,8 +62,8 @@ export async function getReviewScope(
         newRev = request.commit;
         oldRev = `${newRev}^`;
     } else {
-        newRev = request.targetBranch;
-        oldRev = request.baseBranch;
+        newRev = request.target;
+        oldRev = request.base;
     }
 
     const { revisionRangeDiff, revisionRangeLog } = await getCommitRange(

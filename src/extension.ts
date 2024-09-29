@@ -48,25 +48,19 @@ async function handler(
     //TODO handle any arguments in chatRequest.prompt
     let reviewRequest: ReviewRequest;
     if (chatRequest.command === 'branch') {
-        const branches = await pickBranchesOrTags(config);
-        if (!branches) {
+        const refs = await pickBranchesOrTags(config);
+        if (!refs) {
             return;
         }
 
         stream.markdown(
-            `Reviewing changes on branch/tag \`${branches.targetBranch}\` compared to \`${branches.baseBranch}\`.`
+            `Reviewing changes on branch/tag \`${refs.target}\` compared to \`${refs.base}\`.`
         );
-        if (
-            await isSameRef(
-                config.git,
-                branches.baseBranch,
-                branches.targetBranch
-            )
-        ) {
+        if (await isSameRef(config.git, refs.base, refs.target)) {
             stream.markdown(' No changes found.');
             return;
         }
-        reviewRequest = branches;
+        reviewRequest = refs;
     } else if (chatRequest.command === 'commit') {
         const commit = await pickCommit(config);
         if (!commit) {
@@ -250,8 +244,8 @@ async function pickBranchesOrTags(config: Config) {
         target.label
     );
     return {
-        baseBranch: base.label,
-        targetBranch: target.label,
+        base: base.label,
+        target: target.label,
         isTargetCheckedOut,
     };
 }
