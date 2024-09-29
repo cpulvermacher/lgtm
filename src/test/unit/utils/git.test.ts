@@ -114,11 +114,12 @@ describe('git', () => {
         });
 
         it('for commit', async () => {
-            const request = { commit: 'rev' };
-            const result = await getReviewScope(mockGit, request);
+            const result = await getReviewScope(mockGit, 'rev');
 
             expect(result).toEqual({
-                request,
+                target: 'rev',
+                base: 'rev^',
+                isTargetCheckedOut: true,
                 revisionRangeDiff: 'rev^...rev',
                 revisionRangeLog: 'rev^..rev',
                 changeDescription: 'message\nmessage2',
@@ -126,11 +127,12 @@ describe('git', () => {
         });
 
         it('for branch', async () => {
-            const request = { baseBranch: 'base', targetBranch: 'target' };
-            const result = await getReviewScope(mockGit, request);
+            const result = await getReviewScope(mockGit, 'target', 'base');
 
             expect(result).toEqual({
-                request,
+                target: 'target',
+                base: 'base',
+                isTargetCheckedOut: true,
                 revisionRangeDiff: 'base...target',
                 revisionRangeLog: 'base..target',
                 changeDescription: 'message\nmessage2',

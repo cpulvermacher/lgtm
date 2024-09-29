@@ -4,10 +4,10 @@ import * as vscode from 'vscode';
 
 import { reviewDiff } from './review/review';
 import { Config } from './types/Config';
-import { ReviewRequest } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
+import { ReviewScope } from './types/ReviewScope';
 import { getConfig, toUri } from './utils/config';
-import { isSameRef } from './utils/git';
+import { getReviewScope, isSameRef } from './utils/git';
 
 let chatParticipant: vscode.ChatParticipant;
 
@@ -46,7 +46,7 @@ async function handler(
     const config = await getConfig();
 
     //TODO handle any arguments in chatRequest.prompt
-    let reviewRequest: ReviewRequest;
+    let reviewScope: ReviewScope;
     if (chatRequest.command === 'branch') {
         const refs = await pickBranchesOrTags(config);
         if (!refs) {
@@ -60,15 +60,15 @@ async function handler(
             stream.markdown(' No changes found.');
             return;
         }
-        reviewRequest = refs;
+        reviewScope = await getReviewScope(config.git, refs.target, refs.base);
     } else if (chatRequest.command === 'commit') {
         const commit = await pickCommit(config);
         if (!commit) {
             return;
         }
 
-        stream.markdown(`Reviewing changes in commit \`${commit.commit}\`.`);
-        reviewRequest = commit;
+        stream.markdown(`Reviewing changes in commit \`${commit}\`.`);
+        reviewScope = await getReviewScope(config.git, commit);
     } else {
         throw new Error('Unhandled command', chatRequest.command);
     }
@@ -76,7 +76,7 @@ async function handler(
     const reviewResult = await reviewDiff(
         config,
         stream,
-        reviewRequest,
+        reviewScope,
         cancellationToken
     );
 
@@ -90,7 +90,7 @@ function showReviewResults(
     cancellationToken: vscode.CancellationToken
 ) {
     const options = config.getOptions();
-    const isTargetCheckedOut = result.request.isTargetCheckedOut;
+    const isTargetCheckedOut = result.scope.isTargetCheckedOut;
     let noProblemsFound = true;
     for (const file of result.fileComments) {
         if (cancellationToken.isCancellationRequested) {
@@ -189,11 +189,7 @@ async function pickCommit(config: Config) {
         return undefined;
     }
 
-    const isTargetCheckedOut = await isSameRef(config.git, 'HEAD', commit);
-    return {
-        commit,
-        isTargetCheckedOut,
-    };
+    return commit;
 }
 
 /** Asks user to select base and target. Returns undefined if aborted. */
@@ -238,14 +234,8 @@ async function pickBranchesOrTags(config: Config) {
         return;
     }
 
-    const isTargetCheckedOut = await isSameRef(
-        config.git,
-        'HEAD',
-        target.label
-    );
     return {
         base: base.label,
         target: target.label,
-        isTargetCheckedOut,
     };
 }

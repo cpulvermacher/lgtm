@@ -1,7 +1,7 @@
 import { FileComments } from './FileComments';
-import { ReviewRequest } from './ReviewRequest';
+import { ReviewScope } from './ReviewScope';
 
 export type ReviewResult = {
-    request: ReviewRequest;
+    scope: ReviewScope;
     fileComments: FileComments[];
 };

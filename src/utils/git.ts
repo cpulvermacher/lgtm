@@ -1,6 +1,5 @@
 import { SimpleGit } from 'simple-git';
 
-import { ReviewRequest } from '../types/ReviewRequest';
 import { ReviewScope } from '../types/ReviewScope';
 
 /** Get list of files in the commit */
@@ -54,26 +53,29 @@ export function addLineNumbers(diff: string) {
 
 export async function getReviewScope(
     git: SimpleGit,
-    request: ReviewRequest
+    targetRef: string,
+    baseRef?: string
 ): Promise<ReviewScope> {
-    let oldRev: string;
-    let newRev: string;
-    if ('commit' in request) {
-        newRev = request.commit;
-        oldRev = `${newRev}^`;
-    } else {
-        newRev = request.target;
-        oldRev = request.base;
+    if (!baseRef) {
+        baseRef = `${targetRef}^`;
     }
 
     const { revisionRangeDiff, revisionRangeLog } = await getCommitRange(
         git,
-        oldRev,
-        newRev
+        baseRef,
+        targetRef
     );
     const changeDescription = await getCommitMessages(git, revisionRangeLog);
 
-    return { request, revisionRangeDiff, revisionRangeLog, changeDescription };
+    const isTargetCheckedOut = await isSameRef(git, 'HEAD', targetRef);
+    return {
+        target: targetRef,
+        base: baseRef,
+        revisionRangeDiff,
+        revisionRangeLog,
+        changeDescription,
+        isTargetCheckedOut,
+    };
 }
 
 /** Validates the given revisions and returns diff ranges to get changes between the latest common ancestor and the new revision */

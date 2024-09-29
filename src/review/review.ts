@@ -2,18 +2,17 @@ import type { CancellationToken, ChatResponseStream } from 'vscode';
 
 import { Config } from '../types/Config';
 import { Model } from '../types/Model';
-import { ReviewRequest } from '../types/ReviewRequest';
 import { ReviewResult } from '../types/ReviewResult';
-import { getChangedFiles, getFileDiff, getReviewScope } from '../utils/git';
+import { ReviewScope } from '../types/ReviewScope';
+import { getChangedFiles, getFileDiff } from '../utils/git';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 
 export async function reviewDiff(
     config: Config,
     stream: ChatResponseStream,
-    request: ReviewRequest,
+    scope: ReviewScope,
     cancellationToken: CancellationToken
 ): Promise<ReviewResult> {
-    const scope = await getReviewScope(config.git, request);
     const files = await getChangedFiles(config.git, scope.revisionRangeDiff);
 
     stream.markdown(` Found ${files.length} files.\n\n`);
@@ -23,7 +22,7 @@ export async function reviewDiff(
         const file = files[i];
         if (cancellationToken.isCancellationRequested) {
             return {
-                request,
+                scope,
                 fileComments: [],
             };
         }
@@ -60,7 +59,7 @@ export async function reviewDiff(
     }
 
     return {
-        request,
+        scope,
         fileComments: sortFileCommentsBySeverity(fileComments),
     };
 }
