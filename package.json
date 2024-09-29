@@ -1,7 +1,7 @@
 {
   "name": "lgtm",
   "displayName": "LGTM",
-  "description": "Use GitHub Copilot Chat to review your code",
+  "description": "Review source code changes using GitHub Copilot Chat",
   "publisher": "cpulvermacher",
   "version": "0.5.1",
   "repository": {

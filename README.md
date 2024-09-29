@@ -5,7 +5,7 @@
 [![Status](https://flat.badgen.net/github/checks/cpulvermacher/lgtm)](https://github.com/cpulvermacher/lgtm/actions/workflows/node.js.yml)
 [![License](https://flat.badgen.net/github/license/cpulvermacher/lgtm)](./LICENSE)
 
-Use GitHub Copilot Chat to review your code.
+Review source code changes using GitHub Copilot Chat.
 
 
 To start, open Copilot Chat and send one of the following messages:
