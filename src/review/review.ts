@@ -16,7 +16,7 @@ export async function reviewDiff(
     const scope = await getReviewScope(config.git, request);
     const files = await getChangedFiles(config.git, scope.revisionRangeDiff);
 
-    stream.markdown(`Found ${files.length} files.\n\n`);
+    stream.markdown(` Found ${files.length} files.\n\n`);
 
     const fileComments = [];
     for (let i = 0; i < files.length; i++) {

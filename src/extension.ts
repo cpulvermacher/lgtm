@@ -54,7 +54,7 @@ async function handler(
         }
 
         stream.markdown(
-            `Reviewing changes on branch \`${branches.targetBranch}\` compared to \`${branches.baseBranch}\`\n`
+            `Reviewing changes on branch/tag \`${branches.targetBranch}\` compared to \`${branches.baseBranch}\`.`
         );
         reviewRequest = branches;
     } else if (chatRequest.command === 'commit') {
@@ -63,7 +63,7 @@ async function handler(
             return;
         }
 
-        stream.markdown(`Reviewing changes in commit \`${commit.commit}\`\n`);
+        stream.markdown(`Reviewing changes in commit \`${commit.commit}\`.`);
         reviewRequest = commit;
     } else {
         throw new Error('Unhandled command', chatRequest.command);
