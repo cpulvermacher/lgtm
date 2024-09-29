@@ -97,9 +97,9 @@ async function getCommitMessages(
     return logs.all.map((log) => log.message).join('\n');
 }
 
-/** return true iff if the given ref is currently checked out */
-export async function isRefCurrentlyCheckedOut(git: SimpleGit, ref: string) {
-    return (await getCommitRef(git, 'HEAD')) === (await getCommitRef(git, ref));
+/** return true iff if the given refs refer to the same commit */
+export async function isSameRef(git: SimpleGit, refA: string, refB: string) {
+    return (await getCommitRef(git, refA)) === (await getCommitRef(git, refB));
 }
 
 /**

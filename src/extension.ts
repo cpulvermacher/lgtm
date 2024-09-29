@@ -7,7 +7,7 @@ import { Config } from './types/Config';
 import { ReviewRequest } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
 import { getConfig, toUri } from './utils/config';
-import { isRefCurrentlyCheckedOut } from './utils/git';
+import { isSameRef } from './utils/git';
 
 let chatParticipant: vscode.ChatParticipant;
 
@@ -56,6 +56,16 @@ async function handler(
         stream.markdown(
             `Reviewing changes on branch/tag \`${branches.targetBranch}\` compared to \`${branches.baseBranch}\`.`
         );
+        if (
+            await isSameRef(
+                config.git,
+                branches.baseBranch,
+                branches.targetBranch
+            )
+        ) {
+            stream.markdown(' No changes found.');
+            return;
+        }
         reviewRequest = branches;
     } else if (chatRequest.command === 'commit') {
         const commit = await pickCommit(config);
@@ -185,10 +195,7 @@ async function pickCommit(config: Config) {
         return undefined;
     }
 
-    const isTargetCheckedOut = await isRefCurrentlyCheckedOut(
-        config.git,
-        commit
-    );
+    const isTargetCheckedOut = await isSameRef(config.git, 'HEAD', commit);
     return {
         commit,
         isTargetCheckedOut,
@@ -237,8 +244,9 @@ async function pickBranchesOrTags(config: Config) {
         return;
     }
 
-    const isTargetCheckedOut = await isRefCurrentlyCheckedOut(
+    const isTargetCheckedOut = await isSameRef(
         config.git,
+        'HEAD',
         target.label
     );
     return {
