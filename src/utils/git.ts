@@ -51,6 +51,7 @@ export function addLineNumbers(diff: string) {
         .join('\n');
 }
 
+/** get review scope for the given refs (commits, branches, tags, ...). If baseRef is undefined will use the parent commit. */
 export async function getReviewScope(
     git: SimpleGit,
     targetRef: string,
