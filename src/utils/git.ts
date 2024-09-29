@@ -78,8 +78,9 @@ export async function getReviewScope(
 
 /** Validates the given revisions and returns diff ranges to get changes between the latest common ancestor and the new revision */
 async function getCommitRange(git: SimpleGit, oldRev: string, newRev: string) {
-    await git.revparse(['--verify', '--end-of-options', oldRev]);
-    await git.revparse(['--verify', '--end-of-options', newRev]);
+    //verify that the given refs are valid
+    await getCommitRef(git, oldRev);
+    await getCommitRef(git, newRev);
 
     return {
         revisionRangeDiff: `${oldRev}...${newRev}`,
@@ -98,11 +99,19 @@ async function getCommitMessages(
 
 /** return true iff if the given ref is currently checked out */
 export async function isRefCurrentlyCheckedOut(git: SimpleGit, ref: string) {
-    const currentRef = await git.revparse([
-        '--verify',
-        '--end-of-options',
-        'HEAD',
-    ]);
-    const otherRef = await git.revparse(['--verify', '--end-of-options', ref]);
-    return currentRef === otherRef;
+    return (await getCommitRef(git, 'HEAD')) === (await getCommitRef(git, ref));
+}
+
+/**
+ * return the commit hash for the given commit, branch, tag, or HEAD.
+ *
+ * Tags are referenced to their commit hash.
+ * Throws an error if the ref is not valid.
+ */
+export async function getCommitRef(
+    git: SimpleGit,
+    ref: string
+): Promise<string> {
+    //^{} is needed to dereference tags (no effect on other types of refs)
+    return git.revparse(['--verify', '--end-of-options', ref + '^{}']);
 }
