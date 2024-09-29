@@ -70,7 +70,7 @@ async function handler(
         stream.markdown(`Reviewing changes in commit \`${commit}\`.`);
         reviewScope = await getReviewScope(config.git, commit);
     } else {
-        throw new Error('Unhandled command', chatRequest.command);
+        throw new Error(`Unhandled command "${chatRequest.command}"`);
     }
 
     const reviewResult = await reviewDiff(
