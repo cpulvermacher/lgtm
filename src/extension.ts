@@ -4,8 +4,10 @@ import * as vscode from 'vscode';
 
 import { reviewDiff } from './review/review';
 import { Config } from './types/Config';
-import { FileComments } from './types/FileComments';
+import { ReviewRequest } from './types/ReviewRequest';
+import { ReviewResult } from './types/ReviewResult';
 import { getConfig, toUri } from './utils/config';
+import { isRefCurrentlyCheckedOut } from './utils/git';
 
 let chatParticipant: vscode.ChatParticipant;
 
@@ -25,68 +27,68 @@ export function deactivate() {
 }
 
 async function handler(
-    request: vscode.ChatRequest,
+    chatRequest: vscode.ChatRequest,
     context: vscode.ChatContext,
     stream: vscode.ChatResponseStream,
     cancellationToken: vscode.CancellationToken
 ): Promise<void> {
-    console.debug('Received request:', request, 'with context:', context);
+    console.debug('Received request:', chatRequest, 'with context:', context);
 
-    const config = await getConfig();
-
-    if (request.command === 'branch') {
-        const scope = await pickBranchesOrTags(config);
-        if (!scope) {
-            return;
-        }
-
-        stream.markdown(
-            `Reviewing changes on branch \`${scope.targetBranch}\` compared to \`${scope.baseBranch}\`\n`
-        );
-
-        const reviewComments = await reviewDiff(
-            config,
-            stream,
-            scope,
-            cancellationToken
-        );
-
-        showReviewComments(reviewComments, stream, config, cancellationToken);
-    } else if (request.command === 'commit') {
-        //TODO handle any arguments in request.prompt
-
-        const commit = await pickCommit(config);
-        if (!commit) {
-            return;
-        }
-
-        stream.markdown(`Reviewing changes in commit \`${commit}\`\n`);
-        const reviewComments = await reviewDiff(
-            config,
-            stream,
-            { commit },
-            cancellationToken
-        );
-
-        showReviewComments(reviewComments, stream, config, cancellationToken);
-    } else {
+    if (chatRequest.command !== 'branch' && chatRequest.command !== 'commit') {
         stream.markdown(
             'Please use one of the following commands:\n' +
                 ' - `@lgtm /branch` to review changes between two branches or tags\n' +
                 ' - `@lgtm /commit` to review changes in a commit'
         );
+        return;
     }
+
+    const config = await getConfig();
+
+    //TODO handle any arguments in chatRequest.prompt
+    let reviewRequest: ReviewRequest;
+    if (chatRequest.command === 'branch') {
+        const branches = await pickBranchesOrTags(config);
+        if (!branches) {
+            return;
+        }
+
+        stream.markdown(
+            `Reviewing changes on branch \`${branches.targetBranch}\` compared to \`${branches.baseBranch}\`\n`
+        );
+        reviewRequest = branches;
+    } else if (chatRequest.command === 'commit') {
+        const commit = await pickCommit(config);
+        if (!commit) {
+            return;
+        }
+
+        stream.markdown(`Reviewing changes in commit \`${commit.commit}\`\n`);
+        reviewRequest = commit;
+    } else {
+        throw new Error('Unhandled command', chatRequest.command);
+    }
+
+    const reviewResult = await reviewDiff(
+        config,
+        stream,
+        reviewRequest,
+        cancellationToken
+    );
+
+    showReviewResults(reviewResult, stream, config, cancellationToken);
 }
 
-function showReviewComments(
-    fileComments: FileComments[],
+function showReviewResults(
+    result: ReviewResult,
     stream: vscode.ChatResponseStream,
     config: Config,
     cancellationToken: vscode.CancellationToken
 ) {
     const options = config.getOptions();
+    const isTargetCheckedOut = result.request.isTargetCheckedOut;
     let noProblemsFound = true;
-    for (const file of fileComments) {
+    for (const file of result.fileComments) {
         if (cancellationToken.isCancellationRequested) {
             return;
         }
@@ -101,7 +103,7 @@ function showReviewComments(
 
         stream.anchor(toUri(config, file.target), file.target);
         for (const comment of filteredFileComments) {
-            const isValidLineNumber = comment.line > 0;
+            const isValidLineNumber = isTargetCheckedOut && comment.line > 0;
             const location = isValidLineNumber
                 ? new vscode.Location(
                       toUri(config, file.target),
@@ -139,12 +141,15 @@ function showReviewComments(
 
     if (noProblemsFound) {
         stream.markdown('No problems found.');
-        return;
+    } else if (!isTargetCheckedOut) {
+        stream.markdown(
+            'Note: The target branch or commit is not checked out, so line numbers may not match the current state.'
+        );
     }
 }
 
 /** Asks user to select a commit. Returns short commit hash, or undefined when aborted. */
-async function pickCommit(config: Config): Promise<string | undefined> {
+async function pickCommit(config: Config) {
     const commits = await config.git.log({ maxCount: 30 });
     const quickPickOptions: vscode.QuickPickItem[] = commits.all.map(
         (commit) => ({
@@ -166,15 +171,28 @@ async function pickCommit(config: Config): Promise<string | undefined> {
         matchOnDescription: true,
     });
 
+    let commit;
     if (selected === manualInputOption) {
-        return await vscode.window.showInputBox({
+        commit = await vscode.window.showInputBox({
             title: 'Enter a commit hash',
             value: 'HEAD',
             ignoreFocusOut: true,
         });
+    } else {
+        commit = selected?.label;
+    }
+    if (!commit) {
+        return undefined;
     }
 
-    return selected?.label;
+    const isTargetCheckedOut = await isRefCurrentlyCheckedOut(
+        config.git,
+        commit
+    );
+    return {
+        commit,
+        isTargetCheckedOut,
+    };
 }
 
 /** Asks user to select base and target. Returns undefined if aborted. */
@@ -219,5 +237,13 @@ async function pickBranchesOrTags(config: Config) {
         return;
     }
 
-    return { baseBranch: base.label, targetBranch: target.label };
+    const isTargetCheckedOut = await isRefCurrentlyCheckedOut(
+        config.git,
+        target.label
+    );
+    return {
+        baseBranch: base.label,
+        targetBranch: target.label,
+        isTargetCheckedOut,
+    };
 }

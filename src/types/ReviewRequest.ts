@@ -1,3 +1,10 @@
 export type ReviewRequest =
-    | { commit: string }
-    | { targetBranch: string; baseBranch: string };
+    | {
+          commit: string;
+          isTargetCheckedOut: boolean;
+      }
+    | {
+          targetBranch: string;
+          baseBranch: string;
+          isTargetCheckedOut: boolean;
+      };

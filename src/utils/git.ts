@@ -95,3 +95,14 @@ async function getCommitMessages(
     const logs = await git.log([revisionRangeLog]);
     return logs.all.map((log) => log.message).join('\n');
 }
+
+/** return true iff if the given ref is currently checked out */
+export async function isRefCurrentlyCheckedOut(git: SimpleGit, ref: string) {
+    const currentRef = await git.revparse([
+        '--verify',
+        '--end-of-options',
+        'HEAD',
+    ]);
+    const otherRef = await git.revparse(['--verify', '--end-of-options', ref]);
+    return currentRef === otherRef;
+}

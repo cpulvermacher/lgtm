@@ -1,9 +1,9 @@
 import type { CancellationToken, ChatResponseStream } from 'vscode';
 
 import { Config } from '../types/Config';
-import { FileComments } from '../types/FileComments';
 import { Model } from '../types/Model';
 import { ReviewRequest } from '../types/ReviewRequest';
+import { ReviewResult } from '../types/ReviewResult';
 import { getChangedFiles, getFileDiff, getReviewScope } from '../utils/git';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 
@@ -12,7 +12,7 @@ export async function reviewDiff(
     stream: ChatResponseStream,
     request: ReviewRequest,
     cancellationToken: CancellationToken
-): Promise<FileComments[]> {
+): Promise<ReviewResult> {
     const scope = await getReviewScope(config.git, request);
     const files = await getChangedFiles(config.git, scope.revisionRangeDiff);
 
@@ -22,7 +22,10 @@ export async function reviewDiff(
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (cancellationToken.isCancellationRequested) {
-            return [];
+            return {
+                request,
+                fileComments: [],
+            };
         }
 
         stream.progress(`Reviewing file ${file} (${i + 1}/${files.length})`);
@@ -56,7 +59,10 @@ export async function reviewDiff(
         });
     }
 
-    return sortFileCommentsBySeverity(fileComments);
+    return {
+        request,
+        fileComments: sortFileCommentsBySeverity(fileComments),
+    };
 }
 
 export async function getReviewResponse(
