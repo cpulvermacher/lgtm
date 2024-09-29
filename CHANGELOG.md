@@ -1,8 +1,9 @@
 # Change Log
 
-## [0.5.1]
-- Avoid comments about "no newline at end of file"
+## [0.5.1] (pre-release)
 - Handle runtime changes to chat models more gracefully
+- Avoid comments about "no newline at end of file"
+- Only link line numbers if target revision is checked out
 
 ## [0.5.0] (pre-release)
 - Add line numbers for found issues
