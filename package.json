@@ -32,7 +32,7 @@
         "name": "lgtm",
         "fullName": "LGTM",
         "description": "Review source code changes",
-        "isSticky": true,
+        "isSticky": false,
         "commands": [
           {
             "name": "branch",
