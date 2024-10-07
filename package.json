@@ -1,6 +1,6 @@
 {
   "name": "lgtm",
-  "displayName": "LGTM",
+  "displayName": "LGTM - AI Code Review",
   "description": "Review source code changes using GitHub Copilot Chat",
   "publisher": "cpulvermacher",
   "version": "0.5.2",
@@ -13,13 +13,16 @@
   },
   "categories": [
     "AI",
-    "Chat"
+    "Chat",
+    "Machine Learning",
+    "Programming Languages"
   ],
   "keywords": [
     "ai",
-    "review",
+    "chat",
     "copilot",
-    "chat"
+    "git",
+    "review"
   ],
   "icon": "images/icon.png",
   "license": "SEE LICENSE IN LICENSE",
