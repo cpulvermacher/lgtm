@@ -1,4 +1,4 @@
-# LGTM
+# LGTM - AI Code Review
 
 [![Latest Release](https://flat.badgen.net/github/release/cpulvermacher/lgtm)](https://github.com/cpulvermacher/lgtm/releases)
 ![Installs](https://vsmarketplacebadges.dev/installs-short/cpulvermacher.lgtm.svg)

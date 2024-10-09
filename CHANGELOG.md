@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.5.3]
+- Remove '@lgtm' from chat input after each command
+
 ## [0.5.2]
 - Fix checking identity of git tags
 
