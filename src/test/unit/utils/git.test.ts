@@ -141,11 +141,18 @@ describe('git', () => {
     });
 
     describe('addLineNumbers', () => {
-        it('adds line numbers', () => {
-            const diff = '@@ -1,2 +1,2 @@\nline1\nline2';
+        it('adds line numbers from hunk header', () => {
+            const diff = '@@ -1,2 +3,2 @@\nline1\nline2';
             const result = addLineNumbers(diff);
 
-            expect(result).toBe('0\t@@ -1,2 +1,2 @@\n1\tline1\n2\tline2');
+            expect(result).toBe('0\t@@ -1,2 +3,2 @@\n3\tline1\n4\tline2');
+        });
+
+        it('adds line numbers for single-line hunks', () => {
+            const diff = '@@ -0,0 +1 @@\n+test';
+            const result = addLineNumbers(diff);
+
+            expect(result).toBe('0\t@@ -0,0 +1 @@\n1\t+test');
         });
 
         it('prints 0 until first hunk header', () => {

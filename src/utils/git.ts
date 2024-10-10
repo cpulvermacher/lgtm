@@ -33,7 +33,8 @@ export function addLineNumbers(diff: string) {
         .split('\n')
         .map((line) => {
             if (line.startsWith('@@')) {
-                const match = line.match(/^@@ -\d+,\d+ \+(\d+),\d+ @@/);
+                // format: `@@ -fromLine,fromCount +toLine,toCount @@ function name`, with count=1 being optional
+                const match = line.match(/^@@ -\d+,\d+ \+(\d+)(,\d+)? @@/);
                 if (!match) {
                     throw new Error(`Failed to parse hunk header: ${line}`);
                 }
