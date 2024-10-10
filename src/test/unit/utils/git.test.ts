@@ -142,10 +142,10 @@ describe('git', () => {
 
     describe('addLineNumbers', () => {
         it('adds line numbers from hunk header', () => {
-            const diff = '@@ -1,2 +3,2 @@\nline1\nline2';
+            const diff = '@@ -1,2 +42,2 @@\nline1\nline2';
             const result = addLineNumbers(diff);
 
-            expect(result).toBe('0\t@@ -1,2 +3,2 @@\n3\tline1\n4\tline2');
+            expect(result).toBe('0\t@@ -1,2 +42,2 @@\n42\tline1\n43\tline2');
         });
 
         it('adds line numbers for single-line hunks (to file)', () => {
