@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.5.4]
+- Fix handling of single-line files
+
 ## [0.5.3]
 - Remove '@lgtm' from chat input after each command
 
