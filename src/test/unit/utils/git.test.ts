@@ -161,6 +161,13 @@ describe('git', () => {
             expect(result).toBe('0\t@@ -1 +1,1 @@\n1\t+test');
         });
 
+        it('handles hunk headers with context', () => {
+            const diff = '@@ -1,2 +3,2 @@ func main() {\nline1';
+            const result = addLineNumbers(diff);
+
+            expect(result).toBe('0\t@@ -1,2 +3,2 @@ func main() {\n3\tline1');
+        });
+
         it('prints 0 until first hunk header', () => {
             const diff = 'line1\nline2\n@@ -1,2 +1,2 @@\nline3';
             const result = addLineNumbers(diff);
