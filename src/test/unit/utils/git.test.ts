@@ -207,5 +207,16 @@ line3`;
             const diff = '@@ -1,2 +,2 @@\nline1\nline2';
             expect(() => addLineNumbers(diff)).toThrow();
         });
+
+        it('handles hunk-header not on start of line as normal text', () => {
+            const hunkHeader1 = '@@ -1,2 +2,30 @@';
+            const hunkHeader2 = '@@ -100,2 +410,20 @@';
+            const diff = `${hunkHeader1}\nline1\n ${hunkHeader2}`;
+            const result = addLineNumbers(diff);
+
+            expect(result).toBe(
+                `0\t${hunkHeader1}\n2\tline1\n3\t ${hunkHeader2}`
+            );
+        });
     });
 });
