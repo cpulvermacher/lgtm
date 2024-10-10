@@ -148,11 +148,17 @@ describe('git', () => {
             expect(result).toBe('0\t@@ -1,2 +3,2 @@\n3\tline1\n4\tline2');
         });
 
-        it('adds line numbers for single-line hunks', () => {
+        it('adds line numbers for single-line hunks (to file)', () => {
             const diff = '@@ -0,0 +1 @@\n+test';
             const result = addLineNumbers(diff);
 
             expect(result).toBe('0\t@@ -0,0 +1 @@\n1\t+test');
+        });
+        it('adds line numbers for single-line hunks (from file)', () => {
+            const diff = '@@ -1 +1,1 @@\n+test';
+            const result = addLineNumbers(diff);
+
+            expect(result).toBe('0\t@@ -1 +1,1 @@\n1\t+test');
         });
 
         it('prints 0 until first hunk header', () => {

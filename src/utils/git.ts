@@ -34,12 +34,12 @@ export function addLineNumbers(diff: string) {
         .map((line) => {
             if (line.startsWith('@@')) {
                 // format: `@@ -fromLine,fromCount +toLine,toCount @@ function name`, with count=1 being optional
-                const match = line.match(/^@@ -\d+,\d+ \+(\d+)(,\d+)? @@/);
+                const match = line.match(/^@@ -\d+(,\d+)? \+(\d+)(,\d+)? @@/);
                 if (!match) {
                     throw new Error(`Failed to parse hunk header: ${line}`);
                 }
 
-                const toFileStartLine = match[1];
+                const toFileStartLine = match[2];
                 lineNo = parseInt(toFileStartLine, 10);
                 return `0\t${line}`;
             } else if (line.startsWith('-')) {
