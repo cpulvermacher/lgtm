@@ -150,6 +150,15 @@ function showReviewResults(
             'Note: The target branch or commit is not checked out, so line numbers may not match the current state.'
         );
     }
+
+    const errorString = result.errors
+        .map((error) => ` - ${error.file}: ${error.error.message}`)
+        .join('\n');
+    if (errorString.length > 0) {
+        throw new Error(
+            `${result.errors.length} error(s) occurred during review:\n${errorString}`
+        );
+    }
 }
 
 /** Asks user to select a commit. Returns short commit hash, or undefined when aborted. */

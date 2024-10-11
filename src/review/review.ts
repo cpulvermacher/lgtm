@@ -2,6 +2,7 @@ import type { CancellationToken, ChatResponseStream } from 'vscode';
 
 import { Config } from '../types/Config';
 import { Model } from '../types/Model';
+import { ModelError } from '../types/ModelError';
 import { ReviewResult } from '../types/ReviewResult';
 import { ReviewScope } from '../types/ReviewScope';
 import { getChangedFiles, getFileDiff } from '../utils/git';
@@ -18,12 +19,14 @@ export async function reviewDiff(
     stream.markdown(` Found ${files.length} files.\n\n`);
 
     const fileComments = [];
+    const errors = [];
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (cancellationToken.isCancellationRequested) {
             return {
                 scope,
                 fileComments: [],
+                errors,
             };
         }
 
@@ -39,28 +42,41 @@ export async function reviewDiff(
             continue;
         }
 
-        const { response, promptTokens, responseTokens } =
-            await getReviewResponse(
-                config.model,
-                scope.changeDescription,
-                diff,
-                cancellationToken
-            );
-        console.debug(`Response for ${file}:`, response);
+        try {
+            const { response, promptTokens, responseTokens } =
+                await getReviewResponse(
+                    config.model,
+                    scope.changeDescription,
+                    diff,
+                    cancellationToken
+                );
+            console.debug(`Response for ${file}:`, response);
 
-        fileComments.push({
-            target: file,
-            comments: parseResponse(response),
-            debug: {
-                promptTokens,
-                responseTokens,
-            },
-        });
+            fileComments.push({
+                target: file,
+                comments: parseResponse(response),
+                debug: {
+                    promptTokens,
+                    responseTokens,
+                },
+            });
+        } catch (error) {
+            // it's entirely possible that something bad happened for a request, let's store the error and continue if possible
+            if (error instanceof ModelError) {
+                errors.push({ file, error });
+                break; // would also fail for the remaining files
+            } else if (error instanceof Error) {
+                errors.push({ file, error });
+                continue;
+            }
+            continue;
+        }
     }
 
     return {
         scope,
         fileComments: sortFileCommentsBySeverity(fileComments),
+        errors,
     };
 }
 

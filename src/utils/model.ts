@@ -1,11 +1,13 @@
 import {
     LanguageModelChatMessage,
+    LanguageModelError,
     lm,
     type CancellationToken,
     type LanguageModelChat,
     type LanguageModelChatResponse,
 } from 'vscode';
 import { Model } from '../types/Model';
+import { ModelError } from '../types/ModelError';
 
 /** Select chat model (asks for permissions the first time) */
 export async function selectChatModel(): Promise<Model> {
@@ -61,13 +63,29 @@ async function sendRequest(
     prompt: string,
     cancellationToken: CancellationToken
 ): Promise<string> {
-    const response = await model.sendRequest(
-        [LanguageModelChatMessage.User(prompt)],
-        {},
-        cancellationToken
-    );
+    try {
+        const response = await model.sendRequest(
+            [LanguageModelChatMessage.User(prompt)],
+            {},
+            cancellationToken
+        );
+        return await readStream(response);
+    } catch (error) {
+        throw mapError(error);
+    }
+}
 
-    return await readStream(response);
+/** Maps vscode.LanguageModelError to ModelError */
+function mapError(error: unknown) {
+    if (
+        error instanceof LanguageModelError &&
+        (error.code === 'NoPermissions' ||
+            error.code === 'Blocked' ||
+            error.code === 'NotFound')
+    ) {
+        return new ModelError(error.code, error.message);
+    }
+    return error;
 }
 
 /** Read response stream into a string */
