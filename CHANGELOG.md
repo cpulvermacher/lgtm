@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.5.5]
+- Show partial results after encountering errors
+
 ## [0.5.4]
 - Fix handling of single-line files
 
