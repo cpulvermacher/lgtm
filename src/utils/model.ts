@@ -93,12 +93,8 @@ async function readStream(
     responseStream: LanguageModelChatResponse
 ): Promise<string> {
     let text = '';
-    try {
-        for await (const fragment of responseStream.text) {
-            text += fragment;
-        }
-    } catch (e) {
-        throw new Error(`Stream error: ${e}`);
+    for await (const fragment of responseStream.text) {
+        text += fragment;
     }
 
     return text;
