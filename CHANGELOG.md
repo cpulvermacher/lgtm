@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.5.6]
+- Handle stream errors consistently
+
 ## [0.5.5]
 - Show partial results after encountering errors
 
