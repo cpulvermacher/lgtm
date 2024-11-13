@@ -18,6 +18,15 @@ describe('review', () => {
         countTokens: vi.fn(async () => 4),
     } as Model;
 
+    const config = {
+        model,
+        getOptions: () => ({
+            customPrompt: '',
+            minSeverity: 3,
+            enableDebugOutput: false,
+        }),
+    } as Config;
+
     const diff = 'Some diff content';
     const cancellationToken = {
         isCancellationRequested: false,
@@ -30,7 +39,7 @@ describe('review', () => {
     describe('getReviewResponse', () => {
         it('should return a comment and severity', async () => {
             const result = await getReviewResponse(
-                model,
+                config,
                 'chore: dummy change',
                 diff,
                 cancellationToken
@@ -53,7 +62,7 @@ describe('review', () => {
 
             await expect(async () => {
                 await getReviewResponse(
-                    model,
+                    config,
                     'chore: dummy change',
                     diff,
                     cancellationToken
@@ -71,10 +80,6 @@ describe('review', () => {
             parseResponse: vi.fn(),
             sortFileCommentsBySeverity: vi.fn((comments) => comments),
         }));
-        const config = {
-            model,
-            getOptions: () => ({ minSeverity: 3, enableDebugOutput: false }),
-        } as Config;
 
         const stream = {
             markdown: vi.fn(),

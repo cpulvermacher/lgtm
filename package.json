@@ -58,6 +58,11 @@
           "minimum": 1,
           "maximum": 5
         },
+        "lgtm.customPrompt": {
+          "type": "string",
+          "default": "",
+          "description": "Custom text to add to the review prompt. For example, \"All review comments must be in Spanish.\""
+        },
         "lgtm.enableDebugOutput": {
           "type": "boolean",
           "default": false,

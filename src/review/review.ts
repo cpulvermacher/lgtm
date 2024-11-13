@@ -1,7 +1,6 @@
 import type { CancellationToken, ChatResponseStream } from 'vscode';
 
 import { Config } from '../types/Config';
-import { Model } from '../types/Model';
 import { ModelError } from '../types/ModelError';
 import { ReviewResult } from '../types/ReviewResult';
 import { ReviewScope } from '../types/ReviewScope';
@@ -45,7 +44,7 @@ export async function reviewDiff(
         try {
             const { response, promptTokens, responseTokens } =
                 await getReviewResponse(
-                    config.model,
+                    config,
                     scope.changeDescription,
                     diff,
                     cancellationToken
@@ -81,18 +80,24 @@ export async function reviewDiff(
 }
 
 export async function getReviewResponse(
-    model: Model,
+    config: Config,
     changeDescription: string,
     diff: string,
     cancellationToken: CancellationToken
 ) {
+    const model = config.model;
+    const options = config.getOptions();
     const originalSize = diff.length;
     diff = await model.limitTokens(diff);
     if (diff.length < originalSize) {
         console.debug(`Diff truncated from ${originalSize} to ${diff.length}`);
     }
 
-    const prompt = createReviewPrompt(changeDescription, diff);
+    const prompt = createReviewPrompt(
+        changeDescription,
+        diff,
+        options.customPrompt
+    );
     const response = await model.sendRequest(prompt, cancellationToken);
 
     return {
@@ -102,12 +107,17 @@ export async function getReviewResponse(
     };
 }
 
-function createReviewPrompt(changeDescription: string, diff: string): string {
+function createReviewPrompt(
+    changeDescription: string,
+    diff: string,
+    customPrompt: string
+): string {
     return `
 You are a senior software engineer reviewing a pull request.
 Analyze the following git diff for one of the changed files. Each line consists of the line number of the target file, a tab character, and the actual diff line.
 Lines starting with \`-\` after the line number are removed, lines starting with \`+\` are added and lines starting with \` \` are unchanged lines provided for context.
 Provide comments on bugs, security vulnerabilities, code smells, and typos. There is no need to provide comments for removed lines.
+${customPrompt}
 
 Respond with a JSON list of comments objects, which contain the fields \`comment\`, \`line\`, and \`severity\`.
 \`comment\` is a string describing the issue.
