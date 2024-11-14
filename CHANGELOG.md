@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.6.1]
+- same as 0.6.0
+
 ## [0.6.0] (pre-release)
 - Add "Custom Prompt" setting to allow e.g. changing output language, or preventing particularly silly comments
 
