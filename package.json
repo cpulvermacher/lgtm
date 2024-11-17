@@ -61,7 +61,8 @@
         "lgtm.customPrompt": {
           "type": "string",
           "default": "",
-          "description": "Custom text to add to the review prompt. For example, \"All review comments must be in Spanish.\""
+          "description": "Custom text to add to the review prompt. For example, \"All review comments must be in Spanish.\"",
+          "editPresentation": "multilineText"
         },
         "lgtm.enableDebugOutput": {
           "type": "boolean",
