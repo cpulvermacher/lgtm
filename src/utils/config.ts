@@ -60,11 +60,13 @@ function getOptions(): Options {
 
     const minSeverity = config.get<number>('minSeverity');
     const customPrompt = config.get<string>('customPrompt');
+    const exclude = config.get<string[]>('exclude');
     const enableDebugOutput = config.get<boolean>('enableDebugOutput');
 
     return {
         minSeverity: minSeverity ?? 1,
         customPrompt: customPrompt ?? '',
+        excludeGlobs: exclude ?? [],
         enableDebugOutput: enableDebugOutput ?? false,
     };
 }

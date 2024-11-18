@@ -1,3 +1,4 @@
+import { minimatch } from 'minimatch';
 import type { CancellationToken, ChatResponseStream } from 'vscode';
 
 import { Config } from '../types/Config';
@@ -13,7 +14,14 @@ export async function reviewDiff(
     scope: ReviewScope,
     cancellationToken: CancellationToken
 ): Promise<ReviewResult> {
-    const files = await getChangedFiles(config.git, scope.revisionRangeDiff);
+    const diffFiles = await getChangedFiles(
+        config.git,
+        scope.revisionRangeDiff
+    );
+    const files = removeExcludedFiles(
+        diffFiles,
+        config.getOptions().excludeGlobs
+    );
 
     stream.markdown(` Found ${files.length} files.\n\n`);
 
@@ -77,6 +85,18 @@ export async function reviewDiff(
         fileComments: sortFileCommentsBySeverity(fileComments),
         errors,
     };
+}
+
+export function removeExcludedFiles(
+    files: string[],
+    excludeGlobs: string[]
+): string[] {
+    const matchOptions = { matchBase: true };
+    return files.filter((path) => {
+        return !excludeGlobs.some((exclude) => {
+            return minimatch(path, exclude, matchOptions);
+        });
+    });
 }
 
 export async function getReviewResponse(

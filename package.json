@@ -64,6 +64,19 @@
           "description": "Custom text to add to the review prompt. For example, \"All review comments must be in Spanish.\"",
           "editPresentation": "multilineText"
         },
+        "lgtm.exclude": {
+          "type": "array",
+          "default": [
+            "package-lock.json",
+            "yarn.lock",
+            "*.min.js",
+            "*.jar"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Paths or glob patterns to exclude from review"
+        },
         "lgtm.enableDebugOutput": {
           "type": "boolean",
           "default": false,
@@ -101,6 +114,7 @@
     "vitest": "^2.1.5"
   },
   "dependencies": {
+    "minimatch": "^10.0.1",
     "simple-git": "^3.27.0"
   },
   "extensionDependencies": [
