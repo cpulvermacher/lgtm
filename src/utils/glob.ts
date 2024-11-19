@@ -1,7 +1,7 @@
 import { minimatch } from 'minimatch';
 
 /** Return all file paths that do NOT match any of the exclude globs */
-export function removeExcludedFiles(
+export function filterExcludedFiles(
     files: string[],
     excludeGlobs: string[]
 ): string[] {

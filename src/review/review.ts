@@ -5,7 +5,7 @@ import { ModelError } from '../types/ModelError';
 import { ReviewResult } from '../types/ReviewResult';
 import { ReviewScope } from '../types/ReviewScope';
 import { getChangedFiles, getFileDiff } from '../utils/git';
-import { removeExcludedFiles } from '../utils/glob';
+import { filterExcludedFiles } from '../utils/glob';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 
 export async function reviewDiff(
@@ -18,7 +18,7 @@ export async function reviewDiff(
         config.git,
         scope.revisionRangeDiff
     );
-    const files = removeExcludedFiles(
+    const files = filterExcludedFiles(
         diffFiles,
         config.getOptions().excludeGlobs
     );

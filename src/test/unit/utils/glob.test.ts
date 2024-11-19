@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { removeExcludedFiles } from '../../../utils/glob';
+import { filterExcludedFiles } from '../../../utils/glob';
 
-describe('removeExcludedFiles', () => {
+describe('filterExcludedFiles', () => {
     it('does not filter for empty exclude list', () => {
         const files = ['file1', 'file2', 'file3'];
 
-        const result = removeExcludedFiles(files, []);
+        const result = filterExcludedFiles(files, []);
 
         expect(result).toEqual(files);
     });
@@ -14,7 +14,7 @@ describe('removeExcludedFiles', () => {
     it('filters by basename for non-globs', () => {
         const files = ['path/file1', 'path/file2', 'path'];
 
-        const result = removeExcludedFiles(files, ['file1', '2', 'path']);
+        const result = filterExcludedFiles(files, ['file1', '2', 'path']);
 
         expect(result).toEqual(['path/file2']);
     });
@@ -22,7 +22,7 @@ describe('removeExcludedFiles', () => {
     it('filters path by wildcard', () => {
         const files = ['path/file1', 'path/file2', 'path'];
 
-        const result = removeExcludedFiles(files, ['*2', 'path*']);
+        const result = filterExcludedFiles(files, ['*2', 'path*']);
 
         expect(result).toEqual(['path/file1']);
     });
@@ -30,7 +30,7 @@ describe('removeExcludedFiles', () => {
     it('filters path by globstar', () => {
         const files = ['path/file1', 'path/file2', 'path'];
 
-        const result = removeExcludedFiles(files, ['path/**']);
+        const result = filterExcludedFiles(files, ['path/**']);
 
         expect(result).toEqual(['path']);
     });
@@ -38,8 +38,8 @@ describe('removeExcludedFiles', () => {
     it('filters filenames by globstar', () => {
         const files = ['path/file.txt', 'file.txt', 'otherfile.txt'];
 
-        expect(removeExcludedFiles(files, ['**file.txt'])).toEqual([]);
-        expect(removeExcludedFiles(files, ['**/file.txt'])).toEqual([
+        expect(filterExcludedFiles(files, ['**file.txt'])).toEqual([]);
+        expect(filterExcludedFiles(files, ['**/file.txt'])).toEqual([
             'otherfile.txt',
         ]);
     });
@@ -47,7 +47,7 @@ describe('removeExcludedFiles', () => {
     it('filters filenames by ?', () => {
         const files = ['file1.txt', 'file2.txt', 'file99.txt'];
 
-        const result = removeExcludedFiles(files, ['file?.txt']);
+        const result = filterExcludedFiles(files, ['file?.txt']);
 
         expect(result).toEqual(['file99.txt']);
     });
@@ -63,7 +63,7 @@ describe('removeExcludedFiles', () => {
             'dir.ts/foo',
         ];
 
-        const result = removeExcludedFiles(files, ['**/*.{ts,js}']);
+        const result = filterExcludedFiles(files, ['**/*.{ts,js}']);
 
         expect(result).toEqual(['some.json', 'dir.ts/foo']);
     });
@@ -71,7 +71,7 @@ describe('removeExcludedFiles', () => {
     it('filters with character range', () => {
         const files = ['file1.txt', 'file2.txt', 'file99.txt'];
 
-        const result = removeExcludedFiles(files, ['file[2-9].txt']);
+        const result = filterExcludedFiles(files, ['file[2-9].txt']);
 
         expect(result).toEqual(['file1.txt', 'file99.txt']);
     });
@@ -79,7 +79,7 @@ describe('removeExcludedFiles', () => {
     it('filters with negated character range', () => {
         const files = ['file1.txt', 'file2.txt', 'file9.txt'];
 
-        const result = removeExcludedFiles(files, ['file[^2].txt']);
+        const result = filterExcludedFiles(files, ['file[^2].txt']);
 
         expect(result).toEqual(['file2.txt']);
     });
