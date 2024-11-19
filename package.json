@@ -54,14 +54,14 @@
         "lgtm.minSeverity": {
           "type": "number",
           "default": 2,
-          "description": "Minimal severity of issues to report (1 to show all issues)",
+          "description": "Suppress comments with severity lower than the configured value. (1 to show all issues)",
           "minimum": 1,
           "maximum": 5
         },
         "lgtm.customPrompt": {
           "type": "string",
           "default": "",
-          "description": "Custom text to add to the review prompt. For example, \"All review comments must be in Spanish.\"",
+          "description": "Add custom text to the review prompt. For example, \"All review comments must be in Spanish.\"",
           "editPresentation": "multilineText"
         },
         "lgtm.exclude": {
@@ -75,12 +75,12 @@
           "items": {
             "type": "string"
           },
-          "description": "Paths or glob patterns to exclude from review"
+          "description": "Exclude paths from review using glob patterns."
         },
         "lgtm.enableDebugOutput": {
           "type": "boolean",
           "default": false,
-          "description": "Include additional debug information (token count, etc.) in the output"
+          "description": "Include additional debug information (token count, etc.) in the output."
         }
       }
     }
