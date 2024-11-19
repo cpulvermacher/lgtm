@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.7.0] (pre-release)
+- Add "Exclude" setting to define a list of files that should not be included in the review
+
 ## [0.6.1]
 - same as 0.6.0
 
