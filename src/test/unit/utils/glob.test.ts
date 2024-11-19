@@ -11,6 +11,14 @@ describe('filterExcludedFiles', () => {
         expect(result).toEqual(files);
     });
 
+    it('does not filter for empty string excludes', () => {
+        const files = ['file', 'some/other.file'];
+
+        const result = filterExcludedFiles(files, ['']);
+
+        expect(result).toEqual(files);
+    });
+
     it('filters by basename for non-globs', () => {
         const files = ['path/file1', 'path/file2', 'path'];
 
