@@ -224,5 +224,37 @@ describe('review', () => {
 
             expect(result).toEqual(['file99.txt']);
         });
+
+        it('filters with group conditions', () => {
+            const files = [
+                'abc.ts',
+                'path/def.ts',
+                'path/ghi.js',
+                'jkl.js',
+                'nested/path/mno.ts',
+                'some.json',
+                'dir.ts/foo',
+            ];
+
+            const result = removeExcludedFiles(files, ['**/*.{ts,js}']);
+
+            expect(result).toEqual(['some.json', 'dir.ts/foo']);
+        });
+
+        it('filters with character range', () => {
+            const files = ['file1.txt', 'file2.txt', 'file99.txt'];
+
+            const result = removeExcludedFiles(files, ['file[2-9].txt']);
+
+            expect(result).toEqual(['file1.txt', 'file99.txt']);
+        });
+
+        it('filters with negated character range', () => {
+            const files = ['file1.txt', 'file2.txt', 'file9.txt'];
+
+            const result = removeExcludedFiles(files, ['file[^2].txt']);
+
+            expect(result).toEqual(['file2.txt']);
+        });
     });
 });
