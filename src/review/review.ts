@@ -1,4 +1,3 @@
-import { minimatch } from 'minimatch';
 import type { CancellationToken, ChatResponseStream } from 'vscode';
 
 import { Config } from '../types/Config';
@@ -6,6 +5,7 @@ import { ModelError } from '../types/ModelError';
 import { ReviewResult } from '../types/ReviewResult';
 import { ReviewScope } from '../types/ReviewScope';
 import { getChangedFiles, getFileDiff } from '../utils/git';
+import { removeExcludedFiles } from '../utils/glob';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 
 export async function reviewDiff(
@@ -85,18 +85,6 @@ export async function reviewDiff(
         fileComments: sortFileCommentsBySeverity(fileComments),
         errors,
     };
-}
-
-export function removeExcludedFiles(
-    files: string[],
-    excludeGlobs: string[]
-): string[] {
-    const matchOptions = { matchBase: true };
-    return files.filter((path) => {
-        return !excludeGlobs.some((exclude) => {
-            return minimatch(path, exclude, matchOptions);
-        });
-    });
 }
 
 export async function getReviewResponse(
