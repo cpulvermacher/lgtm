@@ -124,8 +124,10 @@ function createReviewPrompt(
 You are a senior software engineer reviewing a pull request. Analyze the following git diff for one of the changed files.
 
 Diff format:
-Each line consists of the line number of the target file, a tab character, and the actual diff line.
-Lines starting with \`-\` after the line number are removed, lines starting with \`+\` are added and lines starting with \` \` are unchanged lines provided for context.
+- Each line has the format \`<line number><tab><diff type><line>\`.
+- Lines with diff type \`+\` are added.
+- Lines with diff type \`-\` are removed. (line number will be 0)
+- Lines with diff type \` \` are unchanged provided for context.
 
 Review rules:
 - Provide comments on bugs, security vulnerabilities, code smells, and typos.
