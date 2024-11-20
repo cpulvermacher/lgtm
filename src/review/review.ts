@@ -121,29 +121,35 @@ function createReviewPrompt(
     customPrompt: string
 ): string {
     return `
-You are a senior software engineer reviewing a pull request.
-Analyze the following git diff for one of the changed files. Each line consists of the line number of the target file, a tab character, and the actual diff line.
+You are a senior software engineer reviewing a pull request. Analyze the following git diff for one of the changed files.
+
+Diff format:
+Each line consists of the line number of the target file, a tab character, and the actual diff line.
 Lines starting with \`-\` after the line number are removed, lines starting with \`+\` are added and lines starting with \` \` are unchanged lines provided for context.
-Provide comments on bugs, security vulnerabilities, code smells, and typos. There is no need to provide comments for removed lines.
+
+Review rules:
+- Provide comments on bugs, security vulnerabilities, code smells, and typos.
+- Do not provide comments for removed lines.
 ${customPrompt}
 
-Respond with a JSON list of comments objects, which contain the fields \`comment\`, \`line\`, and \`severity\`.
+Output rules:
+- Respond with a JSON list of comments objects, which contain the fields \`comment\`, \`line\`, and \`severity\`.
 \`comment\` is a string describing the issue.
 \`line\` is the first affected line number.
 \`severity\` is the severity of the issue as an integer from 1 (likely irrelevant) to 5 (critical).
-Respond with only JSON, do NOT include other text or markdown.
+- Respond with only JSON, do NOT include other text or markdown.
 
 Example response:
 \`\`\`json
 ${JSON.stringify(responseExample, undefined, 2)}
 \`\`\`
 
-The change has the following description:
+Change description:
 \`\`\`
 ${changeDescription}
 \`\`\`
 
-And the diff for one of the changed files is:
+Diff to review:
 \`\`\`
 ${diff}
 \`\`\`
