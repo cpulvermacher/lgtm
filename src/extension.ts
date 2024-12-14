@@ -9,6 +9,8 @@ import { ReviewScope } from './types/ReviewScope';
 import { getConfig, toUri } from './utils/config';
 import { getReviewScope, isSameRef } from './utils/git';
 
+declare const __GIT_VERSION__: string;
+
 let chatParticipant: vscode.ChatParticipant;
 
 // called the first time a command is executed
@@ -33,6 +35,9 @@ async function handler(
     cancellationToken: vscode.CancellationToken
 ): Promise<void> {
     console.debug('Received request:', chatRequest, 'with context:', context);
+    if (__GIT_VERSION__) {
+        stream.markdown(`**LGTM extension version: ${__GIT_VERSION__}**\n`);
+    }
 
     if (chatRequest.command !== 'branch' && chatRequest.command !== 'commit') {
         stream.markdown(
