@@ -9,7 +9,8 @@ import { ReviewScope } from './types/ReviewScope';
 import { getConfig, toUri } from './utils/config';
 import { getReviewScope, isSameRef } from './utils/git';
 
-declare const __GIT_VERSION__: string;
+// defined when built via `npm run dev`
+declare const __GIT_VERSION__: string | undefined;
 
 let chatParticipant: vscode.ChatParticipant;
 
