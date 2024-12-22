@@ -128,7 +128,7 @@ Diff format:
 - Diff lines have the format \`<LINE NUMBER><TAB><DIFF TYPE><LINE>\`.
 - Lines with DIFF TYPE \`+\` are added.
 - Lines with DIFF TYPE \`-\` are removed. (LINE NUMBER will be 0)
-- Lines with DIFF TYPE \` \` are unchanged and provided for context only.
+- Lines with DIFF TYPE \` \` are unchanged and provided for context.
 
 Review rules:
 - Provide comments on bugs, security vulnerabilities, code smells, and typos.
