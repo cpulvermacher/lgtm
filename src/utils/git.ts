@@ -6,7 +6,7 @@ import { ReviewScope } from '../types/ReviewScope';
 export async function getChangedFiles(
     git: SimpleGit,
     diffRevisionRange: string
-) {
+): Promise<string[]> {
     const fileString = await git.diff(['--name-only', diffRevisionRange]);
     return fileString.split('\n').filter((f) => f.length > 0);
 }
