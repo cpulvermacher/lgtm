@@ -214,13 +214,16 @@ async function pickCommit(
             iconPath: new vscode.ThemeIcon('git-commit'),
         })
     );
-    const manualInputOption = {
-        label: 'Input commit hash manually...',
-    };
-    quickPickOptions.unshift(manualInputOption, {
+    quickPickOptions.unshift({
         label: 'Recent Commits',
         kind: vscode.QuickPickItemKind.Separator,
     });
+
+    const manualInputOption = {
+        label: 'Input commit hash manually...',
+        alwaysShow: true,
+    };
+    quickPickOptions.push(manualInputOption);
 
     const selected = await vscode.window.showQuickPick(quickPickOptions, {
         title: pickerTitle,
