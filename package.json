@@ -43,7 +43,11 @@
           },
           {
             "name": "commit",
-            "description": "Review changes in a commit"
+            "description": "Review changes in a single commit"
+          },
+          {
+            "name": "commitRange",
+            "description": "Review changes between two commits"
           }
         ]
       }

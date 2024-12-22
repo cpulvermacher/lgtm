@@ -40,11 +40,15 @@ async function handler(
         stream.markdown(`**LGTM dev build: ${__GIT_VERSION__}**\n\n`);
     }
 
-    if (chatRequest.command !== 'branch' && chatRequest.command !== 'commit') {
+    if (
+        !chatRequest.command ||
+        !['branch', 'commit', 'commitRange'].includes(chatRequest.command)
+    ) {
         stream.markdown(
             'Please use one of the following commands:\n' +
                 ' - `@lgtm /branch` to review changes between two branches or tags\n' +
-                ' - `@lgtm /commit` to review changes in a commit'
+                ' - `@lgtm /commit` to review changes in a single commit\n' +
+                ' - `@lgtm /commitRange` to review changes in between two commits'
         );
         return;
     }
@@ -53,21 +57,7 @@ async function handler(
 
     //TODO handle any arguments in chatRequest.prompt
     let reviewScope: ReviewScope;
-    if (chatRequest.command === 'branch') {
-        const refs = await pickBranchesOrTags(config);
-        if (!refs) {
-            return;
-        }
-
-        stream.markdown(
-            `Reviewing changes on \`${refs.target}\` compared to \`${refs.base}\`.`
-        );
-        if (await isSameRef(config.git, refs.base, refs.target)) {
-            stream.markdown(' No changes found.');
-            return;
-        }
-        reviewScope = await getReviewScope(config.git, refs.target, refs.base);
-    } else if (chatRequest.command === 'commit') {
+    if (chatRequest.command === 'commit') {
         const commit = await pickCommit(config);
         if (!commit) {
             return;
@@ -76,7 +66,35 @@ async function handler(
         stream.markdown(`Reviewing changes in commit \`${commit}\`.`);
         reviewScope = await getReviewScope(config.git, commit);
     } else {
-        throw new Error(`Unhandled command "${chatRequest.command}"`);
+        let refs;
+        let preposition = 'at';
+        if (chatRequest.command === 'branch') {
+            refs = await pickBranchesOrTags(config);
+            preposition = 'on';
+        } else if (chatRequest.command === 'commitRange') {
+            const target = await pickCommit(config);
+            if (!target) {
+                return;
+            }
+            //TODO only commits older than commit1 for commit2
+            const base = await pickCommit(config);
+            if (!base) {
+                return;
+            }
+            refs = { base, target };
+        }
+        if (!refs) {
+            return;
+        }
+
+        stream.markdown(
+            `Reviewing changes ${preposition} \`${refs.target}\` compared to \`${refs.base}\`.`
+        );
+        if (await isSameRef(config.git, refs.base, refs.target)) {
+            stream.markdown(' No changes found.');
+            return;
+        }
+        reviewScope = await getReviewScope(config.git, refs.target, refs.base);
     }
 
     const reviewResult = await reviewDiff(
