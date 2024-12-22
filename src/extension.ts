@@ -72,11 +72,19 @@ async function handler(
             refs = await pickBranchesOrTags(config);
             preposition = 'on';
         } else if (chatRequest.command === 'commitRange') {
-            const target = await pickCommit(config);
+            const target = await pickCommit(
+                config,
+                undefined,
+                'Select the target commit'
+            );
             if (!target) {
                 return;
             }
-            const base = await pickCommit(config, target);
+            const base = await pickCommit(
+                config,
+                target,
+                'Select the commit to compare with'
+            );
             if (!base) {
                 return;
             }
@@ -186,7 +194,11 @@ function showReviewResults(
 
 /** Asks user to select a commit. Returns short commit hash, or undefined when aborted.
  * If `beforeRef` is provided, only commits before that ref are shown. */
-async function pickCommit(config: Config, beforeRef?: string) {
+async function pickCommit(
+    config: Config,
+    beforeRef?: string,
+    pickerTitle: string = 'Select a commit to review'
+) {
     const fromRef = beforeRef ? await config.git.firstCommit() : undefined;
     const toRef = beforeRef ? `${beforeRef}^` : undefined;
     const commits = await config.git.log({
@@ -211,7 +223,7 @@ async function pickCommit(config: Config, beforeRef?: string) {
     });
 
     const selected = await vscode.window.showQuickPick(quickPickOptions, {
-        title: 'Select a commit to review',
+        title: pickerTitle,
         matchOnDescription: true,
     });
 
