@@ -99,20 +99,20 @@
     "unit": "vitest run ./src/test/unit/**/*.test.ts"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.9",
+    "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.95.0",
-    "@typescript-eslint/eslint-plugin": "^8.15.0",
-    "@typescript-eslint/parser": "^8.15.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "@typescript-eslint/parser": "^8.18.1",
     "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^3.2.1",
-    "esbuild": "^0.24.0",
-    "eslint": "^9.15.0",
+    "esbuild": "^0.24.2",
+    "eslint": "^9.17.0",
     "glob": "^11.0.0",
-    "mocha": "^10.8.2",
-    "prettier": "^3.3.3",
+    "mocha": "^11.0.1",
+    "prettier": "^3.4.2",
     "typescript": "^5.5.4",
-    "vitest": "^2.1.5"
+    "vitest": "^2.1.8"
   },
   "dependencies": {
     "minimatch": "^10.0.1",
