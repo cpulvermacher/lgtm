@@ -1,7 +1,10 @@
 # Change Log
 
+## [0.8.0] (pre-release)
+- Improve prompt to reduce false positives and increase comment quality
+
 ## [0.7.1]
-- same as 0.7.0
+- Same as 0.7.0
 
 ## [0.7.0] (pre-release)
 - Add "Exclude" setting to define a list of files that should not be included in the review
