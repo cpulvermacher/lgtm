@@ -127,11 +127,11 @@ Diff format:
 - Each line has the format \`<line number><tab><diff type><line>\`.
 - Lines with diff type \`+\` are added.
 - Lines with diff type \`-\` are removed. (line number will be 0)
-- Lines with diff type \` \` are unchanged provided for context.
+- Lines with diff type \` \` are unchanged and provided for context only.
 
 Review rules:
 - Provide comments on bugs, security vulnerabilities, code smells, and typos.
-- Do not provide comments for removed lines.
+- Only provide comments for added lines.
 - Do not make assumptions about code that is not included in the diff.
 ${customPrompt}
 
