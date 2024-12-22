@@ -249,17 +249,18 @@ async function pickCommit(
 
 /** Asks user to select base and target. Returns undefined if aborted. */
 async function pickBranchesOrTags(config: Config) {
-    const branchIcon = new vscode.ThemeIcon('git-branch');
-    const tagIcon = new vscode.ThemeIcon('tag');
-
-    const branches = await config.git.branch();
-    const tags = await config.git.tags();
+    const branches = await config.git.branch([
+        '--all',
+        '--sort=-committerdate',
+    ]);
+    const tags = await config.git.tags(['--sort=-creatordate']);
 
     const quickPickOptions: vscode.QuickPickItem[] = [];
     quickPickOptions.push({
         label: 'Branches',
         kind: vscode.QuickPickItemKind.Separator,
     });
+    const branchIcon = new vscode.ThemeIcon('git-branch');
     branches.all.forEach((branch) => {
         quickPickOptions.push({ label: branch, iconPath: branchIcon });
     });
@@ -268,6 +269,7 @@ async function pickBranchesOrTags(config: Config) {
         label: 'Tags',
         kind: vscode.QuickPickItemKind.Separator,
     });
+    const tagIcon = new vscode.ThemeIcon('tag');
     tags.all.forEach((tag) => {
         quickPickOptions.push({ label: tag, iconPath: tagIcon });
     });
