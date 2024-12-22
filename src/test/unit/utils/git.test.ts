@@ -56,11 +56,26 @@ describe('git', () => {
 
             expect(mockGit.diff).toHaveBeenCalledWith([
                 '--no-prefix',
+                '-U3',
                 'rev...rev',
                 '--',
                 'file',
             ]);
             expect(result).toBe('0\tdiff');
+        });
+
+        it('passes contextLines to diff call', async () => {
+            vi.mocked(mockGit.diff).mockResolvedValue('diff');
+
+            await getFileDiff(mockGit, 'rev...rev', 'file', 99);
+
+            expect(mockGit.diff).toHaveBeenCalledWith([
+                '--no-prefix',
+                '-U99',
+                'rev...rev',
+                '--',
+                'file',
+            ]);
         });
 
         it('filters "no newline at end of file" message', async () => {
