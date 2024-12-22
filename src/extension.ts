@@ -37,7 +37,7 @@ async function handler(
 ): Promise<void> {
     console.debug('Received request:', chatRequest, 'with context:', context);
     if (__GIT_VERSION__) {
-        stream.markdown(`**LGTM extension version: ${__GIT_VERSION__}**\n`);
+        stream.markdown(`**LGTM dev build: ${__GIT_VERSION__}**\n\n`);
     }
 
     if (chatRequest.command !== 'branch' && chatRequest.command !== 'commit') {
