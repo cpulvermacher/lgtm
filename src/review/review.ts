@@ -124,10 +124,10 @@ function createReviewPrompt(
 You are a senior software engineer reviewing a pull request. Analyze the following git diff for one of the changed files.
 
 Diff format:
-- Each line has the format \`<line number><tab><diff type><line>\`.
-- Lines with diff type \`+\` are added.
-- Lines with diff type \`-\` are removed. (line number will be 0)
-- Lines with diff type \` \` are unchanged and provided for context only.
+- Each line has the format \`<LINE NUMBER><TAB><DIFF TYPE><LINE>\`.
+- Lines with DIFF TYPE \`+\` are added.
+- Lines with DIFF TYPE \`-\` are removed. (LINE NUMBER will be 0)
+- Lines with DIFF TYPE \` \` are unchanged and provided for context only.
 
 Review rules:
 - Provide comments on bugs, security vulnerabilities, code smells, and typos.
@@ -138,7 +138,7 @@ ${customPrompt}
 Output rules:
 - Respond with a JSON list of comments objects, which contain the fields \`comment\`, \`line\`, and \`severity\`.
 \`comment\` is a string describing the issue.
-\`line\` is the first affected line number.
+\`line\` is the first affected LINE NUMBER.
 \`severity\` is the severity of the issue as an integer from 1 (likely irrelevant) to 5 (critical).
 - Respond with only JSON, do NOT include other text or markdown.
 
