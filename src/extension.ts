@@ -76,8 +76,7 @@ async function handler(
             if (!target) {
                 return;
             }
-            //TODO only commits older than commit1 for commit2
-            const base = await pickCommit(config);
+            const base = await pickCommit(config, target);
             if (!base) {
                 return;
             }
@@ -185,9 +184,17 @@ function showReviewResults(
     }
 }
 
-/** Asks user to select a commit. Returns short commit hash, or undefined when aborted. */
-async function pickCommit(config: Config) {
-    const commits = await config.git.log({ maxCount: 30 });
+/** Asks user to select a commit. Returns short commit hash, or undefined when aborted.
+ * If `beforeRef` is provided, only commits before that ref are shown. */
+async function pickCommit(config: Config, beforeRef?: string) {
+    const fromRef = beforeRef ? await config.git.firstCommit() : undefined;
+    const toRef = beforeRef ? `${beforeRef}^` : undefined;
+    const commits = await config.git.log({
+        maxCount: 30,
+        from: fromRef,
+        to: toRef,
+    });
+
     const quickPickOptions: vscode.QuickPickItem[] = commits.all.map(
         (commit) => ({
             label: commit.hash.substring(0, 7),
