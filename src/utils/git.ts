@@ -89,14 +89,14 @@ export async function getReviewScope(
 }
 
 /** Validates the given revisions and returns diff ranges to get changes between the latest common ancestor and the new revision */
-async function getCommitRange(git: SimpleGit, oldRev: string, newRev: string) {
+async function getCommitRange(git: SimpleGit, oldRef: string, newRef: string) {
     //verify that the given refs are valid
-    await getCommitRef(git, oldRev);
-    await getCommitRef(git, newRev);
+    await getCommitRef(git, oldRef);
+    await getCommitRef(git, newRef);
 
     return {
-        revisionRangeDiff: `${oldRev}...${newRev}`,
-        revisionRangeLog: `${oldRev}..${newRev}`,
+        revisionRangeDiff: `${oldRef}...${newRef}`,
+        revisionRangeLog: `${oldRef}..${newRef}`,
     };
 }
 
