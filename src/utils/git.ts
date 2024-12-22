@@ -11,12 +11,20 @@ export async function getChangedFiles(
     return fileString.split('\n').filter((f) => f.length > 0);
 }
 
+/** get diff of the given file between the two revisions */
 export async function getFileDiff(
     git: SimpleGit,
     diffRevisionRange: string,
-    file: string
-) {
-    let diff = await git.diff(['--no-prefix', diffRevisionRange, '--', file]);
+    file: string,
+    contextLines: number = 3
+): Promise<string> {
+    let diff = await git.diff([
+        '--no-prefix',
+        `-U${contextLines}`,
+        diffRevisionRange,
+        '--',
+        file,
+    ]);
 
     diff = diff
         .split('\n')
