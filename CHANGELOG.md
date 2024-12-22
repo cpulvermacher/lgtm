@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.8.1] (pre-release)
+- add /commitRange command to compare two commits
+- sort branches and tags by date
+
 ## [0.8.0] (pre-release)
 - Improve prompt to reduce false positives and increase comment quality
 

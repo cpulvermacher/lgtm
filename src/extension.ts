@@ -48,7 +48,7 @@ async function handler(
             'Please use one of the following commands:\n' +
                 ' - `@lgtm /branch` to review changes between two branches or tags\n' +
                 ' - `@lgtm /commit` to review changes in a single commit\n' +
-                ' - `@lgtm /commitRange` to review changes in between two commits'
+                ' - `@lgtm /commitRange` to review changes between two commits'
         );
         return;
     }
