@@ -1,7 +1,9 @@
 # Change Log
 
+## [0.8.2] (pre-release)
+- add /review command to compare branches, commits, or tags
+
 ## [0.8.1] (pre-release)
-- add /commitRange command to compare two commits
 - sort branches and tags by date
 
 ## [0.8.0] (pre-release)

@@ -12,7 +12,6 @@ To start, open Copilot Chat and send one of the following messages:
 - `@lgtm /review` to review changes between two branches, commits, or tags
 - `@lgtm /branch` to review changes between two branches or tags
 - `@lgtm /commit` to review changes in a single commit
-- `@lgtm /commitRange` to review changes between two commits
 
 You'll receive review comments grouped by file after selecting the desired revisions in the quick select.
 

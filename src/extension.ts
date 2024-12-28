@@ -48,16 +48,13 @@ async function handler(
 
     if (
         !chatRequest.command ||
-        !['review', 'branch', 'commit', 'commitRange'].includes(
-            chatRequest.command
-        )
+        !['review', 'branch', 'commit'].includes(chatRequest.command)
     ) {
         stream.markdown(
             'Please use one of the following commands:\n' +
                 ' - `@lgtm /review` to review changes between two branches, commits, or tags\n' +
                 ' - `@lgtm /branch` to review changes between two branches or tags\n' +
-                ' - `@lgtm /commit` to review changes in a single commit\n' +
-                ' - `@lgtm /commitRange` to review changes between two commits'
+                ' - `@lgtm /commit` to review changes in a single commit'
         );
         // TODO remove other commands later
         return;
@@ -84,24 +81,6 @@ async function handler(
         } else if (chatRequest.command === 'branch') {
             refs = await pickBranchesOrTags(config);
             fromRefPreposition = 'on';
-        } else if (chatRequest.command === 'commitRange') {
-            const target = await pickCommit(
-                config,
-                undefined,
-                'Select the target commit'
-            );
-            if (!target) {
-                return;
-            }
-            const base = await pickCommit(
-                config,
-                target,
-                'Select the commit to compare with'
-            );
-            if (!base) {
-                return;
-            }
-            refs = { base, target };
         }
         if (!refs) {
             return;
