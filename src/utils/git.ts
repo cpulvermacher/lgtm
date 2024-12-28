@@ -142,12 +142,16 @@ export async function getBranchList(
     maxCount: number = 10
 ): Promise<RefList> {
     const branches = await git.branch(['--all', '--sort=-committerdate']);
-    const refs = branches.all.slice(0, maxCount).map((branch) => ({
-        ref: branch,
-        description:
-            (branches.current === branch ? '(current) ' : '') +
-            branches.branches[branch].commit.substring(0, 7),
-    }));
+    const refs = branches.all.slice(0, maxCount).map((branch) => {
+        const branchSummary = branches.branches[branch];
+        return {
+            ref: branch,
+            description:
+                (branchSummary.current ? '(current) ' : '') +
+                branchSummary.commit.substring(0, 7),
+        };
+    });
+
     return {
         refs,
         hasMore: branches.all.length > maxCount,
