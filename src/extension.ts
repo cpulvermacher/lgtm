@@ -285,8 +285,6 @@ async function pickRef(
     type?: 'branch' | 'tag' | 'commit', // all types by default
     totalCount: number = 15
 ): Promise<string | undefined> {
-    //TODO for target: put current branch/tag/commit first
-    //TODO for base: put remote for current branch and [develop, main, master, trunk] first
     const maxCount = type ? totalCount : totalCount / 3;
     let moreBranchesOption = undefined;
     let moreCommitsOption = undefined;
@@ -294,7 +292,7 @@ async function pickRef(
 
     const quickPickOptions: vscode.QuickPickItem[] = [];
     if (!type || type === 'branch') {
-        const branches = await getBranchList(config.git, maxCount);
+        const branches = await getBranchList(config.git, beforeRef, maxCount);
 
         quickPickOptions.push({
             label: 'Branches',

@@ -139,9 +139,14 @@ export type RefList = {
 /** returns up to `maxCount` branches. */
 export async function getBranchList(
     git: SimpleGit,
+    beforeRef?: string,
     maxCount: number = 10
 ): Promise<RefList> {
-    const branches = await git.branch(['--all', '--sort=-committerdate']);
+    const branchOptions = ['--all', '--sort=-committerdate'];
+    if (beforeRef) {
+        branchOptions.push(`--no-contains=${beforeRef}`);
+    }
+    const branches = await git.branch(branchOptions);
     const refs = branches.all.slice(0, maxCount).map((branch) => {
         const branchSummary = branches.branches[branch];
         return {
@@ -151,6 +156,7 @@ export async function getBranchList(
                 branchSummary.commit.substring(0, 7),
         };
     });
+    //TODO for base: put remote for current branch and [develop, main, master, trunk] first
 
     return {
         refs,
