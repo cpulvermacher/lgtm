@@ -38,6 +38,10 @@
         "isSticky": false,
         "commands": [
           {
+            "name": "review",
+            "description": "Review changes between two branches, commits, or tags"
+          },
+          {
             "name": "branch",
             "description": "Review changes between two branches or tags"
           },

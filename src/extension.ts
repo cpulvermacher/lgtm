@@ -48,20 +48,24 @@ async function handler(
 
     if (
         !chatRequest.command ||
-        !['branch', 'commit', 'commitRange'].includes(chatRequest.command)
+        !['review', 'branch', 'commit', 'commitRange'].includes(
+            chatRequest.command
+        )
     ) {
         stream.markdown(
             'Please use one of the following commands:\n' +
+                ' - `@lgtm /review` to review changes between two branches, commits, or tags\n' +
                 ' - `@lgtm /branch` to review changes between two branches or tags\n' +
                 ' - `@lgtm /commit` to review changes in a single commit\n' +
                 ' - `@lgtm /commitRange` to review changes between two commits'
         );
+        // TODO remove other commands later
         return;
     }
 
     const config = await getConfig();
 
-    //TODO handle any arguments in chatRequest.prompt
+    //TODO handle any arguments in chatRequest.prompt (e.g. /review BRANCH1 BRANCH2)
     let reviewScope: ReviewScope;
     if (chatRequest.command === 'commit') {
         const commit = await pickCommit(config);
@@ -73,10 +77,13 @@ async function handler(
         reviewScope = await getReviewScope(config.git, commit);
     } else {
         let refs;
-        let preposition = 'at';
-        if (chatRequest.command === 'branch') {
+        let fromRefPreposition = 'at';
+        if (chatRequest.command === 'review') {
+            refs = await pickRefs(config);
+            fromRefPreposition = 'on'; //TODO
+        } else if (chatRequest.command === 'branch') {
             refs = await pickBranchesOrTags(config);
-            preposition = 'on';
+            fromRefPreposition = 'on';
         } else if (chatRequest.command === 'commitRange') {
             const target = await pickCommit(
                 config,
@@ -101,7 +108,7 @@ async function handler(
         }
 
         stream.markdown(
-            `Reviewing changes ${preposition} \`${refs.target}\` compared to \`${refs.base}\`.`
+            `Reviewing changes ${fromRefPreposition} \`${refs.target}\` compared to \`${refs.base}\`.`
         );
         if (await isSameRef(config.git, refs.base, refs.target)) {
             stream.markdown(' No changes found.');
@@ -268,7 +275,6 @@ async function pickBranchesOrTags(config: Config) {
             iconPath: branchIcon,
         });
     });
-    //TODO add 'more branches...' option
 
     if (tags.refs.length > 0) {
         quickPickOptions.push({
@@ -283,7 +289,6 @@ async function pickBranchesOrTags(config: Config) {
                 iconPath: tagIcon,
             });
         });
-        //TODO add 'more tags...' option
     }
 
     const target = await vscode.window.showQuickPick(quickPickOptions, {
@@ -307,4 +312,132 @@ async function pickBranchesOrTags(config: Config) {
         base: base.label,
         target: target.label,
     };
+}
+
+/** Asks user to select base and target. Returns undefined if aborted. */
+async function pickRefs(config: Config) {
+    const target = await pickRef(
+        config,
+        'Select a branch/tag/commit to review (1/2)'
+    );
+    if (!target) {
+        return;
+    }
+    const base = await pickRef(
+        config,
+        'Select a branch/tag/commit to compare with (2/2)'
+    );
+    if (!base) {
+        return;
+    }
+
+    return { base, target };
+}
+
+/** Ask user to select a single ref. Returns undefined if aborted */
+async function pickRef(
+    config: Config,
+    title: string,
+    type?: 'branch' | 'tag' | 'commit', // all types by default
+    totalCount: number = 15
+): Promise<string | undefined> {
+    //TODO for target: put current branch/tag/commit first
+    //TODO for base: put remote for current branch and [develop, main, master, trunk] first
+    const maxCount = type ? totalCount : totalCount / 3;
+    let moreBranchesOption = undefined;
+    let moreCommitsOption = undefined;
+    let moreTagsOption = undefined;
+
+    const quickPickOptions: vscode.QuickPickItem[] = [];
+    if (!type || type === 'branch') {
+        const branches = await getBranchList(config.git, maxCount);
+
+        quickPickOptions.push({
+            label: 'Branches',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+        const branchIcon = new vscode.ThemeIcon('git-branch');
+        branches.refs.forEach((branch) => {
+            quickPickOptions.push({
+                label: branch.ref,
+                description: branch.description,
+                iconPath: branchIcon,
+            });
+        });
+        if (branches.hasMore) {
+            moreBranchesOption = {
+                label: 'More branches...',
+                alwaysShow: true,
+            };
+            quickPickOptions.push(moreBranchesOption);
+        }
+    }
+
+    if (!type || type === 'commit') {
+        const commits = await getCommitList(config.git, undefined, maxCount);
+        if (commits.refs.length > 0) {
+            quickPickOptions.push({
+                label: 'Commits',
+                kind: vscode.QuickPickItemKind.Separator,
+            });
+            const commitIcon = new vscode.ThemeIcon('git-commit');
+            commits.refs.forEach((ref) => {
+                quickPickOptions.push({
+                    label: ref.ref.substring(0, 7), //short hash
+                    description: ref.description,
+                    iconPath: commitIcon,
+                });
+            });
+            if (commits.hasMore) {
+                moreCommitsOption = {
+                    label: 'More commits...',
+                    alwaysShow: true,
+                };
+                quickPickOptions.push(moreCommitsOption);
+            }
+        }
+    }
+
+    if (!type || type === 'tag') {
+        const tags = await getTagList(config.git, maxCount);
+        if (tags.refs.length > 0) {
+            quickPickOptions.push({
+                label: 'Tags',
+                kind: vscode.QuickPickItemKind.Separator,
+            });
+            const tagIcon = new vscode.ThemeIcon('tag');
+            tags.refs.forEach((tag) => {
+                quickPickOptions.push({
+                    label: tag.ref,
+                    description: tag.description,
+                    iconPath: tagIcon,
+                });
+            });
+            if (tags.hasMore) {
+                moreTagsOption = {
+                    label: 'More tags...',
+                    alwaysShow: true,
+                };
+                quickPickOptions.push(moreTagsOption);
+            }
+        }
+    }
+
+    const target = await vscode.window.showQuickPick(quickPickOptions, {
+        title,
+        matchOnDescription: true, //match by commit message as well
+    });
+    if (!target) {
+        return;
+    }
+    if (moreBranchesOption && target === moreBranchesOption) {
+        return pickRef(config, title, 'branch', totalCount * 2);
+    }
+    if (moreCommitsOption && target === moreCommitsOption) {
+        return pickRef(config, title, 'commit', totalCount * 2);
+    }
+    if (moreTagsOption && target === moreTagsOption) {
+        return pickRef(config, title, 'tag', totalCount * 2);
+    }
+    return target.label;
 }
