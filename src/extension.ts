@@ -283,7 +283,7 @@ async function pickRef(
     title: string,
     beforeRef?: string,
     type?: 'branch' | 'tag' | 'commit', // all types by default
-    totalCount: number = 15
+    totalCount: number = 20
 ): Promise<string | undefined> {
     const maxCount = type ? totalCount : totalCount / 3;
     let moreBranchesOption = undefined;
