@@ -191,44 +191,9 @@ async function pickCommit(
     beforeRef?: string,
     pickerTitle: string = 'Select a commit to review'
 ) {
-    const commits = await getCommitList(config.git, beforeRef, 30);
-
-    const commitIcon = new vscode.ThemeIcon('git-commit');
-    const quickPickOptions: vscode.QuickPickItem[] = commits.refs.map(
-        (commit) => ({
-            label: commit.ref,
-            description: commit.description,
-            iconPath: commitIcon,
-        })
-    );
-    quickPickOptions.unshift({
-        label: 'Recent Commits',
-        kind: vscode.QuickPickItemKind.Separator,
-    });
-
-    const manualInputOption = {
-        label: 'Input commit hash manually...',
-        alwaysShow: true,
-    };
-    quickPickOptions.push(manualInputOption);
-
-    const selected = await vscode.window.showQuickPick(quickPickOptions, {
-        title: pickerTitle,
-        matchOnDescription: true,
-    });
-
-    let commit;
-    if (selected === manualInputOption) {
-        commit = await vscode.window.showInputBox({
-            title: 'Enter a commit hash',
-            value: 'HEAD',
-            ignoreFocusOut: true,
-        });
-    } else {
-        commit = selected?.label;
-    }
+    const commit = await pickRef(config, pickerTitle, beforeRef, 'commit');
     if (!commit) {
-        return undefined;
+        return;
     }
 
     return commit;
@@ -304,7 +269,8 @@ async function pickRefs(config: Config) {
     }
     const base = await pickRef(
         config,
-        'Select a branch/tag/commit to compare with (2/2)'
+        'Select a branch/tag/commit to compare with (2/2)',
+        target
     );
     if (!base) {
         return;
@@ -317,6 +283,7 @@ async function pickRefs(config: Config) {
 async function pickRef(
     config: Config,
     title: string,
+    beforeRef?: string,
     type?: 'branch' | 'tag' | 'commit', // all types by default
     totalCount: number = 15
 ): Promise<string | undefined> {
@@ -353,7 +320,7 @@ async function pickRef(
     }
 
     if (!type || type === 'commit') {
-        const commits = await getCommitList(config.git, undefined, maxCount);
+        const commits = await getCommitList(config.git, beforeRef, maxCount);
         if (commits.refs.length > 0) {
             quickPickOptions.push({
                 label: 'Commits',
@@ -410,13 +377,13 @@ async function pickRef(
         return;
     }
     if (moreBranchesOption && target === moreBranchesOption) {
-        return pickRef(config, title, 'branch', totalCount * 2);
+        return pickRef(config, title, beforeRef, 'branch', totalCount * 2);
     }
     if (moreCommitsOption && target === moreCommitsOption) {
-        return pickRef(config, title, 'commit', totalCount * 2);
+        return pickRef(config, title, beforeRef, 'commit', totalCount * 2);
     }
     if (moreTagsOption && target === moreTagsOption) {
-        return pickRef(config, title, 'tag', totalCount * 2);
+        return pickRef(config, title, beforeRef, 'tag', totalCount * 2);
     }
     return target.label;
 }
