@@ -144,6 +144,9 @@ export async function getBranchList(
     const branches = await git.branch(['--all', '--sort=-committerdate']);
     const refs = branches.all.slice(0, maxCount).map((branch) => ({
         ref: branch,
+        description:
+            (branches.current === branch ? '(current) ' : '') +
+            branches.branches[branch].commit.substring(0, 7),
     }));
     return {
         refs,
