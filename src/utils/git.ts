@@ -127,3 +127,69 @@ export async function getCommitRef(
     //^{} is needed to dereference tags (no effect on other types of refs)
     return git.revparse(['--verify', '--end-of-options', ref + '^{}']);
 }
+
+export type RefList = {
+    refs: {
+        ref: string;
+        description?: string; // e.g. commit message for a commit ref
+    }[];
+    hasMore: boolean; // true if there are more refs available than maxCount
+};
+
+/** returns up to `maxCount` branches. */
+export async function getBranchList(
+    git: SimpleGit,
+    maxCount: number = 10
+): Promise<RefList> {
+    const branches = await git.branch(['--all', '--sort=-committerdate']);
+    const refs = branches.all.slice(0, maxCount).map((branch) => ({
+        ref: branch,
+    }));
+    return {
+        refs,
+        hasMore: branches.all.length > maxCount,
+    };
+}
+
+/** returns up to `maxCount` tags. */
+export async function getTagList(
+    git: SimpleGit,
+    maxCount: number = 10
+): Promise<RefList> {
+    const tags = await git.tags(['--sort=-creatordate']);
+    const refs = tags.all.slice(0, maxCount).map((tag) => ({
+        ref: tag,
+    }));
+    return {
+        refs,
+        hasMore: tags.all.length > maxCount,
+    };
+}
+
+/** returns up to `maxCount` commit refs.
+ *
+ * If `beforeRef` is provided, only commits before that ref are shown.
+ */
+export async function getCommitList(
+    git: SimpleGit,
+    beforeRef?: string,
+    maxCount: number = 10
+): Promise<RefList> {
+    const fromRef = beforeRef ? await git.firstCommit() : undefined;
+    const toRef = beforeRef ? `${beforeRef}^` : undefined;
+    const commits = await git.log({
+        maxCount: maxCount + 1,
+        from: fromRef,
+        to: toRef,
+    });
+
+    const refs = commits.all.slice(0, maxCount).map((commit) => ({
+        ref: commit.hash,
+        description: commit.message,
+    }));
+
+    return {
+        refs,
+        hasMore: commits.all.length > maxCount,
+    };
+}

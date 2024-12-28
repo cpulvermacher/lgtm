@@ -7,7 +7,13 @@ import { Config } from './types/Config';
 import { ReviewResult } from './types/ReviewResult';
 import { ReviewScope } from './types/ReviewScope';
 import { getConfig, toUri } from './utils/config';
-import { getReviewScope, isSameRef } from './utils/git';
+import {
+    getBranchList,
+    getCommitList,
+    getReviewScope,
+    getTagList,
+    isSameRef,
+} from './utils/git';
 
 // defined when built via `npm run dev`
 declare const __GIT_VERSION__: string | undefined;
@@ -199,19 +205,14 @@ async function pickCommit(
     beforeRef?: string,
     pickerTitle: string = 'Select a commit to review'
 ) {
-    const fromRef = beforeRef ? await config.git.firstCommit() : undefined;
-    const toRef = beforeRef ? `${beforeRef}^` : undefined;
-    const commits = await config.git.log({
-        maxCount: 30,
-        from: fromRef,
-        to: toRef,
-    });
+    const commits = await getCommitList(config.git, beforeRef, 30);
 
-    const quickPickOptions: vscode.QuickPickItem[] = commits.all.map(
+    const commitIcon = new vscode.ThemeIcon('git-commit');
+    const quickPickOptions: vscode.QuickPickItem[] = commits.refs.map(
         (commit) => ({
-            label: commit.hash.substring(0, 7),
-            description: commit.message,
-            iconPath: new vscode.ThemeIcon('git-commit'),
+            label: commit.ref,
+            description: commit.description,
+            iconPath: commitIcon,
         })
     );
     quickPickOptions.unshift({
@@ -249,11 +250,10 @@ async function pickCommit(
 
 /** Asks user to select base and target. Returns undefined if aborted. */
 async function pickBranchesOrTags(config: Config) {
-    const branches = await config.git.branch([
-        '--all',
-        '--sort=-committerdate',
-    ]);
-    const tags = await config.git.tags(['--sort=-creatordate']);
+    //TODO for target: put current branch/tag/commit first
+    //TODO for base: put remote for current branch and [develop, main, master, trunk] first
+    const branches = await getBranchList(config.git);
+    const tags = await getTagList(config.git);
 
     const quickPickOptions: vscode.QuickPickItem[] = [];
     quickPickOptions.push({
@@ -261,18 +261,30 @@ async function pickBranchesOrTags(config: Config) {
         kind: vscode.QuickPickItemKind.Separator,
     });
     const branchIcon = new vscode.ThemeIcon('git-branch');
-    branches.all.forEach((branch) => {
-        quickPickOptions.push({ label: branch, iconPath: branchIcon });
+    branches.refs.forEach((branch) => {
+        quickPickOptions.push({
+            label: branch.ref,
+            description: branch.description,
+            iconPath: branchIcon,
+        });
     });
+    //TODO add 'more branches...' option
 
-    quickPickOptions.push({
-        label: 'Tags',
-        kind: vscode.QuickPickItemKind.Separator,
-    });
-    const tagIcon = new vscode.ThemeIcon('tag');
-    tags.all.forEach((tag) => {
-        quickPickOptions.push({ label: tag, iconPath: tagIcon });
-    });
+    if (tags.refs.length > 0) {
+        quickPickOptions.push({
+            label: 'Tags',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+        const tagIcon = new vscode.ThemeIcon('tag');
+        tags.refs.forEach((tag) => {
+            quickPickOptions.push({
+                label: tag.ref,
+                description: tag.description,
+                iconPath: tagIcon,
+            });
+        });
+        //TODO add 'more tags...' option
+    }
 
     const target = await vscode.window.showQuickPick(quickPickOptions, {
         title: 'Select a branch or tag to review (1/2)',
