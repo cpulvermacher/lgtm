@@ -53,7 +53,7 @@ async function handler(
         stream.markdown(
             'Please use one of the following commands:\n' +
                 ' - `@lgtm /review` to review changes between two branches, commits, or tags\n' +
-                ' - `@lgtm /branch` to review changes between two branches or tags\n' +
+                ' - `@lgtm /branch` to review changes between two branches\n' +
                 ' - `@lgtm /commit` to review changes in a single commit'
         );
         // TODO remove other commands later
@@ -79,7 +79,7 @@ async function handler(
             refs = await pickRefs(config);
             fromRefPreposition = 'on'; //TODO
         } else if (chatRequest.command === 'branch') {
-            refs = await pickBranchesOrTags(config);
+            refs = await pickBranches(config);
             fromRefPreposition = 'on';
         }
         if (!refs) {
@@ -200,60 +200,27 @@ async function pickCommit(
 }
 
 /** Asks user to select base and target. Returns undefined if aborted. */
-async function pickBranchesOrTags(config: Config) {
-    const branches = await getBranchList(config.git);
-    const tags = await getTagList(config.git);
-
-    const quickPickOptions: vscode.QuickPickItem[] = [];
-    quickPickOptions.push({
-        label: 'Branches',
-        kind: vscode.QuickPickItemKind.Separator,
-    });
-    const branchIcon = new vscode.ThemeIcon('git-branch');
-    branches.refs.forEach((branch) => {
-        quickPickOptions.push({
-            label: branch.ref,
-            description: branch.description,
-            iconPath: branchIcon,
-        });
-    });
-
-    if (tags.refs.length > 0) {
-        quickPickOptions.push({
-            label: 'Tags',
-            kind: vscode.QuickPickItemKind.Separator,
-        });
-        const tagIcon = new vscode.ThemeIcon('tag');
-        tags.refs.forEach((tag) => {
-            quickPickOptions.push({
-                label: tag.ref,
-                description: tag.description,
-                iconPath: tagIcon,
-            });
-        });
-    }
-
-    const target = await vscode.window.showQuickPick(quickPickOptions, {
-        title: 'Select a branch or tag to review (1/2)',
-    });
+async function pickBranches(config: Config) {
+    const target = await pickRef(
+        config,
+        'Select a branch to review (1/2)',
+        undefined,
+        'branch'
+    );
     if (!target) {
         return;
     }
-
-    const base = await vscode.window.showQuickPick(
-        quickPickOptions.filter((name) => name !== target),
-        {
-            title: 'Select a base branch or tag (2/2)',
-        }
+    const base = await pickRef(
+        config,
+        'Select a base branch to compare with (2/2)',
+        target,
+        'branch'
     );
     if (!base) {
         return;
     }
 
-    return {
-        base: base.label,
-        target: target.label,
-    };
+    return { base, target };
 }
 
 /** Asks user to select base and target. Returns undefined if aborted. */

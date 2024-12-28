@@ -43,7 +43,7 @@
           },
           {
             "name": "branch",
-            "description": "Review changes between two branches or tags"
+            "description": "Review changes between two branches"
           },
           {
             "name": "commit",
