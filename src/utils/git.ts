@@ -157,9 +157,14 @@ export async function getBranchList(
 /** returns up to `maxCount` tags. */
 export async function getTagList(
     git: SimpleGit,
+    beforeRef?: string,
     maxCount: number = 10
 ): Promise<RefList> {
-    const tags = await git.tags(['--sort=-creatordate']);
+    const tagOptions = ['--sort=-creatordate'];
+    if (beforeRef) {
+        tagOptions.push(`--no-contains=${beforeRef}`);
+    }
+    const tags = await git.tags(tagOptions);
     const refs = tags.all.slice(0, maxCount).map((tag) => ({
         ref: tag,
     }));

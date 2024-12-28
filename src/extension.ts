@@ -201,8 +201,6 @@ async function pickCommit(
 
 /** Asks user to select base and target. Returns undefined if aborted. */
 async function pickBranchesOrTags(config: Config) {
-    //TODO for target: put current branch/tag/commit first
-    //TODO for base: put remote for current branch and [develop, main, master, trunk] first
     const branches = await getBranchList(config.git);
     const tags = await getTagList(config.git);
 
@@ -345,7 +343,7 @@ async function pickRef(
     }
 
     if (!type || type === 'tag') {
-        const tags = await getTagList(config.git, maxCount);
+        const tags = await getTagList(config.git, beforeRef, maxCount);
         if (tags.refs.length > 0) {
             quickPickOptions.push({
                 label: 'Tags',
