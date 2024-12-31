@@ -10,6 +10,7 @@ import { getConfig, toUri } from './utils/config';
 import {
     getBranchList,
     getCommitList,
+    getCommitRef,
     getReviewScope,
     getTagList,
     isSameRef,
@@ -52,9 +53,9 @@ async function handler(
     ) {
         stream.markdown(
             'Please use one of the following commands:\n' +
-                ' - `@lgtm /review` to review changes between two branches, commits, or tags\n' +
-                ' - `@lgtm /branch` to review changes between two branches\n' +
-                ' - `@lgtm /commit` to review changes in a single commit'
+                ' - `@lgtm /review [TARGET] [BASE]` to review changes between two branches, commits, or tags\n' +
+                ' - `@lgtm /branch [TARGET] [BASE]` to review changes between two branches\n' +
+                ' - `@lgtm /commit [TARGET]` to review changes in a single commit'
         );
         // TODO remove other commands later
         return;
@@ -62,10 +63,27 @@ async function handler(
 
     const config = await getConfig();
 
-    //TODO handle any arguments in chatRequest.prompt (e.g. /review BRANCH1 BRANCH2)
+    let parsedPrompt;
+    try {
+        parsedPrompt = await parseArguments(config, chatRequest.prompt);
+    } catch {
+        throw new Error(
+            `Could not parse ${chatRequest.prompt} into valid commit refs. Try branch names, commit hashes, tags, or 'HEAD'.`
+        );
+    }
     let reviewScope: ReviewScope;
     if (chatRequest.command === 'commit') {
-        const commit = await pickCommit(config);
+        let commit;
+        if (parsedPrompt.target) {
+            if (parsedPrompt.base) {
+                throw new Error(
+                    '/commit expects at most a single ref as argument'
+                );
+            }
+            commit = parsedPrompt.target;
+        } else {
+            commit = await pickCommit(config);
+        }
         if (!commit) {
             return;
         }
@@ -74,18 +92,30 @@ async function handler(
         reviewScope = await getReviewScope(config.git, commit);
     } else {
         let refs;
-        let fromRefPreposition = 'at';
-        if (chatRequest.command === 'review') {
+        if (parsedPrompt.target && parsedPrompt.base) {
+            // both refs are provided
+            refs = parsedPrompt;
+        } else if (parsedPrompt.target && !parsedPrompt.base) {
+            // only target ref is provided
+            const base = await pickRef(
+                config,
+                'Select a branch/tag/commit to compare with (2/2)',
+                parsedPrompt.target
+            );
+            if (!base) {
+                return;
+            }
+            refs = { target: parsedPrompt.target, base };
+        } else if (chatRequest.command === 'review') {
             refs = await pickRefs(config);
-            fromRefPreposition = 'on'; //TODO
         } else if (chatRequest.command === 'branch') {
             refs = await pickBranches(config);
-            fromRefPreposition = 'on';
         }
         if (!refs) {
             return;
         }
 
+        const fromRefPreposition = 'on'; //TODO change to 'at' for commits/tagse
         stream.markdown(
             `Reviewing changes ${fromRefPreposition} \`${refs.target}\` compared to \`${refs.base}\`.`
         );
@@ -349,4 +379,21 @@ async function pickRef(
         return pickRef(config, title, beforeRef, 'tag', totalCount * 2);
     }
     return target.label;
+}
+
+/** parse given arguments to a /command into target/base refs.
+ * If not arguments a, returns undefined instead of refs.
+ * If arguments cannot be parsed into at least one ref, throws.
+ */
+async function parseArguments(config: Config, args: string) {
+    if (!args || args.trim().length === 0) {
+        return { target: undefined, base: undefined };
+    }
+
+    const [target, base] = args.split(' ', 2);
+    await getCommitRef(config.git, target);
+    if (base) {
+        await getCommitRef(config.git, base);
+    }
+    return { target, base };
 }
