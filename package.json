@@ -99,7 +99,7 @@
             "gemini-1.5-pro"
           ],
           "default": "gpt-4o",
-          "markdownDescription": "Chat model family to use for generating review comments. Note that non-default models may not be available, or may require changes to the [Copilot settings](https://github.com/settings/copilot). (EXPERIMENTAL. Requires extension host restart to take effect.)"
+          "markdownDescription": "Chat model family to use for generating review comments. Note that non-default models may not be available, or may require changes to the [Copilot settings](https://github.com/settings/copilot). (EXPERIMENTAL)"
         }
       }
     }

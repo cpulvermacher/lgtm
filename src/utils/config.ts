@@ -44,8 +44,14 @@ export async function getConfig(): Promise<Config> {
 
     vscode.lm.onDidChangeChatModels(async () => {
         console.log('Chat models were updated, rechecking...');
-        const config = await getOptions();
-        _config.model = await selectChatModel(config.chatModel);
+        _config.model = await selectChatModel((await getOptions()).chatModel);
+    });
+    vscode.workspace.onDidChangeConfiguration(async (ev) => {
+        if (!ev.affectsConfiguration('lgtm')) {
+            return;
+        }
+        console.log('Config updated, updating model...');
+        _config.model = await selectChatModel((await getOptions()).chatModel);
     });
 
     return _config;
