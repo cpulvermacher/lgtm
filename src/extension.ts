@@ -54,11 +54,10 @@ async function handler(
     ) {
         stream.markdown(
             'Please use one of the following commands:\n' +
-                ' - `@lgtm /review` or `@lgtm /review TARGET [BASE]` to review changes between two branches, commits, or tags\n' +
+                ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively.\n' +
                 ' - `@lgtm /branch` to review changes between two branches\n' +
                 ' - `@lgtm /commit` to review changes in a single commit'
         );
-        // TODO remove other commands later
         return;
     }
 

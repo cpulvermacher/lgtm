@@ -1,7 +1,7 @@
 {
   "name": "lgtm",
   "displayName": "LGTM - AI Code Review",
-  "description": "Review source code changes using GitHub Copilot Chat",
+  "description": "Review source code changes in Git using GitHub Copilot Chat",
   "publisher": "cpulvermacher",
   "version": "0.8.1",
   "repository": {
@@ -39,15 +39,15 @@
         "commands": [
           {
             "name": "review",
-            "description": "Review changes between two branches, commits, or tags"
+            "description": "Review changes between two branches, commits, or tags.  You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively."
           },
           {
             "name": "branch",
-            "description": "Review changes between two branches"
+            "description": "Review changes between two branches."
           },
           {
             "name": "commit",
-            "description": "Review changes in a single commit"
+            "description": "Review changes in a single commit."
           }
         ]
       }
