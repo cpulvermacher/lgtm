@@ -89,9 +89,11 @@
         "lgtm.chatModel": {
           "type": "string",
           "enum": [
+            "gpt-4",
+            "gpt-3.5-turbo",
             "gpt-4o",
             "gpt-4o-mini",
-            "o1-preview",
+            "o1-ga",
             "o1-mini",
             "claude-3.5-sonnet",
             "gemini-1.5-pro"

@@ -11,7 +11,6 @@ import { ModelError } from '../types/ModelError';
 
 /** Select chat model (asks for permissions the first time) */
 export async function selectChatModel(modelFamily: string): Promise<Model> {
-    // 3.5 not enough to produce useful comments
     const models = await lm.selectChatModels({
         vendor: 'copilot',
         family: modelFamily,
