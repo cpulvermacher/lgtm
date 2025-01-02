@@ -89,17 +89,17 @@
         "lgtm.chatModel": {
           "type": "string",
           "enum": [
-            "gpt-4",
-            "gpt-3.5-turbo",
             "gpt-4o",
             "gpt-4o-mini",
             "o1-ga",
             "o1-mini",
             "claude-3.5-sonnet",
-            "gemini-1.5-pro"
+            "gemini-1.5-pro",
+            "gpt-4",
+            "gpt-3.5-turbo"
           ],
           "default": "gpt-4o",
-          "markdownDescription": "Chat model family to use for generating review comments. Note that non-default models may not be available, or may require changes to the [Copilot settings](https://github.com/settings/copilot). (EXPERIMENTAL)"
+          "markdownDescription": "Chat model family to use for generating review comments. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits. (EXPERIMENTAL)"
         }
       }
     }
