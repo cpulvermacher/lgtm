@@ -235,7 +235,7 @@ async function pickCommit(
     return commit;
 }
 
-/** Asks user to select base and target. If `type` is set, only shows this type of ref. Otherwise, all types are allowed.Returns undefined if aborted. */
+/** Asks user to select base and target. If `type` is set, only shows this type of ref. Otherwise, all types are allowed. Returns undefined if aborted. */
 async function pickRefs(config: Config, type?: 'branch') {
     const typeDescription = type ? type : 'branch/commit/tag';
     const target = await pickRef(
