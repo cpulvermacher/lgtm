@@ -17,7 +17,9 @@ You'll receive review comments grouped by file after selecting the desired revis
 ![Demo](./images/demo.gif)
 
 ## Features
-- Uses the GPT-4o version of Copilot Chat, so only a GitHub Copilot subscription is required. Source code data is sent only to Copilot, which you presumably trust already.
+- Uses Copilot Chat for reviewing changes, so only a GitHub Copilot subscription is required. Source code data is sent only to Copilot, which you presumably trust already.
+- Allows adding custom instructions via the Lgtm: Custom Prompt setting to e.g. change the language of review comments.
+- Allows choosing other language models (default: GPT-4o) via Lgtm: Chat model setting.
 - Review content remains in chat history, so you can ask follow-up questions to Copilot (without `@lgtm`).
 
 ## Limitations
