@@ -84,7 +84,7 @@
         "lgtm.enableDebugOutput": {
           "type": "boolean",
           "default": false,
-          "description": "Include additional debug information (token count, etc.) in the output."
+          "description": "Print debug information (model info, token count, etc.) in the chat."
         }
       }
     }
