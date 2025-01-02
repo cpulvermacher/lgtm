@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.8.3] (pre-release)
+- Add experimental Chat Model setting for changing used language model.
+
 ## [0.8.2] (pre-release)
 - add combined /review command to compare branches, commits, or tags
 - /branch command no longer shows tags (use /review instead)
