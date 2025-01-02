@@ -13,6 +13,7 @@ import {
     getCommitRef,
     getReviewScope,
     getTagList,
+    isBranch,
     isSameRef,
 } from './utils/git';
 
@@ -121,9 +122,9 @@ async function handler(
             return;
         }
 
-        const fromRefPreposition = 'on'; //TODO change to 'at' for commits/tagse
+        const targetIsBranch = await isBranch(config.git, refs.target);
         stream.markdown(
-            `Reviewing changes ${fromRefPreposition} \`${refs.target}\` compared to \`${refs.base}\`.`
+            `Reviewing changes ${targetIsBranch ? 'on' : 'at'} \`${refs.target}\` compared to \`${refs.base}\`.`
         );
         if (await isSameRef(config.git, refs.base, refs.target)) {
             stream.markdown(' No changes found.');

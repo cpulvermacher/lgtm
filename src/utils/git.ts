@@ -128,6 +128,11 @@ export async function getCommitRef(
     return git.revparse(['--verify', '--end-of-options', ref + '^{}']);
 }
 
+/** returns true iff given ref refers to a branch */
+export async function isBranch(git: SimpleGit, ref: string): Promise<boolean> {
+    return (await git.branch(['--all'])).all.includes(ref);
+}
+
 export type RefList = {
     refs: {
         ref: string;
