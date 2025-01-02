@@ -3,7 +3,7 @@
   "displayName": "LGTM - AI Code Review",
   "description": "Review source code changes in Git using GitHub Copilot Chat",
   "publisher": "cpulvermacher",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/cpulvermacher/lgtm.git"
