@@ -17,6 +17,8 @@ export async function selectChatModel(modelFamily: string): Promise<Model> {
         family: modelFamily,
     });
     console.debug('Found models:', models);
+    const allModels = await lm.selectChatModels();
+    console.debug('All models:', allModels);
 
     if (models.length === 0) {
         throw new Error(
