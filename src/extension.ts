@@ -114,9 +114,9 @@ async function handler(
             }
             refs = { target: parsedPrompt.target, base };
         } else if (chatRequest.command === 'review') {
-            refs = await pickRefs(config);
+            refs = await pickRefs(config, undefined);
         } else if (chatRequest.command === 'branch') {
-            refs = await pickBranches(config);
+            refs = await pickRefs(config, 'branch');
         }
         if (!refs) {
             return;
@@ -236,43 +236,23 @@ async function pickCommit(
     return commit;
 }
 
-/** Asks user to select base and target. Returns undefined if aborted. */
-async function pickBranches(config: Config) {
+/** Asks user to select base and target. If `type` is set, only shows this type of ref. Otherwise, all types are allowed.Returns undefined if aborted. */
+async function pickRefs(config: Config, type?: 'branch') {
+    const typeDescription = type ? type : 'branch/commit/tag';
     const target = await pickRef(
         config,
-        'Select a branch to review (1/2)',
+        `Select a ${typeDescription} to review (1/2)`,
         undefined,
-        'branch'
+        type
     );
     if (!target) {
         return;
     }
     const base = await pickRef(
         config,
-        'Select a base branch to compare with (2/2)',
+        `Select a ${typeDescription} to compare with (2/2)`,
         target,
-        'branch'
-    );
-    if (!base) {
-        return;
-    }
-
-    return { base, target };
-}
-
-/** Asks user to select base and target. Returns undefined if aborted. */
-async function pickRefs(config: Config) {
-    const target = await pickRef(
-        config,
-        'Select a branch/tag/commit to review (1/2)'
-    );
-    if (!target) {
-        return;
-    }
-    const base = await pickRef(
-        config,
-        'Select a branch/tag/commit to compare with (2/2)',
-        target
+        type
     );
     if (!base) {
         return;
