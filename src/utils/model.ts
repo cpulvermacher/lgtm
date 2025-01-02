@@ -19,7 +19,9 @@ export async function selectChatModel(modelFamily: string): Promise<Model> {
     console.debug('Found models:', models);
 
     if (models.length === 0) {
-        throw new Error('No models found');
+        throw new Error(
+            `No model found for family "${modelFamily}". Please ensure the lgtm.chatModel setting is set to an available model.`
+        );
     }
 
     const model = models[0];
