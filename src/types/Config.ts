@@ -15,4 +15,5 @@ export type Options = {
     customPrompt: string;
     excludeGlobs: string[];
     enableDebugOutput: boolean;
+    chatModel: string;
 };

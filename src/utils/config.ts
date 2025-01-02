@@ -32,7 +32,7 @@ export async function getConfig(): Promise<Config> {
     git.cwd(gitRoot); // make gitRoot the base for all git commands
     console.debug('working directory:', workspaceRoot, ' git repo:', gitRoot);
 
-    const model = await selectChatModel();
+    const model = await selectChatModel((await getOptions()).chatModel);
 
     _config = {
         git,
@@ -44,7 +44,8 @@ export async function getConfig(): Promise<Config> {
 
     vscode.lm.onDidChangeChatModels(async () => {
         console.log('Chat models were updated, rechecking...');
-        _config.model = await selectChatModel();
+        const config = await getOptions();
+        _config.model = await selectChatModel(config.chatModel);
     });
 
     return _config;
@@ -62,11 +63,13 @@ function getOptions(): Options {
     const customPrompt = config.get<string>('customPrompt');
     const exclude = config.get<string[]>('exclude');
     const enableDebugOutput = config.get<boolean>('enableDebugOutput');
+    const chatModel = config.get<string>('chatModel');
 
     return {
         minSeverity: minSeverity ?? 1,
         customPrompt: customPrompt ?? '',
         excludeGlobs: exclude ?? [],
         enableDebugOutput: enableDebugOutput ?? false,
+        chatModel: chatModel ?? 'gpt-4o',
     };
 }
