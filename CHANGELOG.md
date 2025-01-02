@@ -1,7 +1,9 @@
 # Change Log
 
 ## [0.8.2] (pre-release)
-- add /review command to compare branches, commits, or tags
+- add combined /review command to compare branches, commits, or tags
+- /branch command no longer shows tags (use /review instead)
+- allow passing refs as arguments to commands, e.g. `/review develop master` or `/commit abc58`
 
 ## [0.8.1] (pre-release)
 - sort branches and tags by date
