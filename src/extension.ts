@@ -53,9 +53,9 @@ async function handler(
     ) {
         stream.markdown(
             'Please use one of the following commands:\n' +
-                ' - `@lgtm /review [TARGET] [BASE]` to review changes between two branches, commits, or tags\n' +
-                ' - `@lgtm /branch [TARGET] [BASE]` to review changes between two branches\n' +
-                ' - `@lgtm /commit [TARGET]` to review changes in a single commit'
+                ' - `@lgtm /review` or `@lgtm /review TARGET [BASE]` to review changes between two branches, commits, or tags\n' +
+                ' - `@lgtm /branch` to review changes between two branches\n' +
+                ' - `@lgtm /commit` to review changes in a single commit'
         );
         // TODO remove other commands later
         return;
@@ -68,7 +68,7 @@ async function handler(
         parsedPrompt = await parseArguments(config, chatRequest.prompt);
     } catch {
         throw new Error(
-            `Could not parse ${chatRequest.prompt} into valid commit refs. Try branch names, commit hashes, tags, or 'HEAD'.`
+            `Could not parse "${chatRequest.prompt}" into valid commit refs. Try branch names, commit hashes, tags, or "HEAD".`
         );
     }
     let reviewScope: ReviewScope;
@@ -382,7 +382,7 @@ async function pickRef(
 }
 
 /** parse given arguments to a /command into target/base refs.
- * If not arguments a, returns undefined instead of refs.
+ * If no arguments are provided, returns undefined instead of refs.
  * If arguments cannot be parsed into at least one ref, throws.
  */
 async function parseArguments(config: Config, args: string) {
