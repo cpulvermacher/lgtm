@@ -23,11 +23,10 @@ export async function selectChatModel(): Promise<Model> {
     }
 
     const model = models[0];
-    console.log(
-        `Selected model: ${model.name} with #tokens: ${model.maxInputTokens}`
-    );
-
     return {
+        name: model.name,
+        vendor: model.vendor,
+        maxInputTokens: model.maxInputTokens,
         countTokens: async (text: string) => model.countTokens(text),
         limitTokens: async (text: string) => limitTokens(model, text),
         sendRequest: async (

@@ -44,7 +44,7 @@ async function handler(
 ): Promise<void> {
     console.debug('Received request:', chatRequest, 'with context:', context);
     if (__GIT_VERSION__) {
-        stream.markdown(`**LGTM dev build: ${__GIT_VERSION__}**\n\n`);
+        stream.markdown(`**LGTM dev build**: ${__GIT_VERSION__}\n\n`);
     }
 
     if (
@@ -62,6 +62,12 @@ async function handler(
     }
 
     const config = await getConfig();
+    if (config.getOptions().enableDebugOutput) {
+        const model = config.model;
+        stream.markdown(
+            `**Model**: ${model.name} (${model.vendor}), input token limit: ${model.maxInputTokens} tokens\n\n`
+        );
+    }
 
     let parsedPrompt;
     try {
