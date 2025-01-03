@@ -1,8 +1,9 @@
-import { LogResult, SimpleGit } from 'simple-git';
+import { BranchSummary, LogResult, SimpleGit } from 'simple-git';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     addLineNumbers,
+    getBranchList,
     getChangedFiles,
     getFileDiff,
     getReviewScope,
@@ -227,5 +228,180 @@ line3`;
         const result = addLineNumbers(diff);
 
         expect(result).toBe(`0\t${hunkHeader1}\n2\tline1\n3\t ${hunkHeader2}`);
+    });
+});
+
+describe('getBranchList', () => {
+    const mockGit = {
+        branch: vi.fn(),
+    } as unknown as SimpleGit;
+
+    it('returns list of branches', async () => {
+        vi.mocked(mockGit.branch).mockResolvedValue({
+            all: ['branch1', 'branch2'],
+            branches: {
+                branch1: {
+                    current: false,
+                    commit: 'abc1',
+                },
+                branch2: {
+                    current: false,
+                    commit: 'abc2',
+                },
+            },
+        } as unknown as BranchSummary);
+
+        const result = await getBranchList(mockGit, undefined, 2);
+
+        expect(mockGit.branch).toHaveBeenCalledWith([
+            '--all',
+            '--sort=-committerdate',
+        ]);
+        expect(result.refs.map((ref) => ref.ref)).toEqual([
+            'branch1',
+            'branch2',
+        ]);
+        expect(result.refs.map((ref) => ref.description)).toEqual([
+            'abc1',
+            'abc2',
+        ]);
+        expect(result.hasMore).toBe(false);
+    });
+
+    it('handles empty list', async () => {
+        vi.mocked(mockGit.branch).mockResolvedValue({
+            all: [],
+            branches: {},
+        } as unknown as BranchSummary);
+
+        const result = await getBranchList(mockGit, undefined, 2);
+
+        expect(result.refs.length).toBe(0);
+        expect(result.hasMore).toBe(false);
+    });
+
+    it('limits results to maxCount', async () => {
+        vi.mocked(mockGit.branch).mockResolvedValue({
+            all: ['branch1', 'branch2'],
+            branches: {
+                branch1: {
+                    current: false,
+                    commit: 'abc1',
+                },
+                branch2: {
+                    current: false,
+                    commit: 'abc2',
+                },
+            },
+        } as unknown as BranchSummary);
+
+        const result = await getBranchList(mockGit, undefined, 1);
+
+        expect(result.refs.map((ref) => ref.ref)).toEqual(['branch1']);
+        expect(result.refs.map((ref) => ref.description)).toEqual(['abc1']);
+        expect(result.hasMore).toBe(true);
+    });
+
+    it('puts current branch first with beforeRef=undefined', async () => {
+        vi.mocked(mockGit.branch).mockResolvedValue({
+            all: ['branch1', 'branch2'],
+            branches: {
+                branch1: {
+                    current: false,
+                    commit: 'abc1',
+                },
+                branch2: {
+                    current: true,
+                    commit: 'abc2',
+                },
+            },
+        } as unknown as BranchSummary);
+
+        const result = await getBranchList(mockGit, undefined, 2);
+
+        expect(result.refs.map((ref) => ref.ref)).toEqual([
+            'branch2',
+            'branch1',
+        ]);
+        expect(result.refs.map((ref) => ref.description)).toEqual([
+            '(current) abc2',
+            'abc1',
+        ]);
+        expect(result.hasMore).toBe(false);
+    });
+
+    it('does not put current branch first with beforeRef set', async () => {
+        vi.mocked(mockGit.branch).mockResolvedValue({
+            all: ['branch1', 'branch2'],
+            branches: {
+                branch1: {
+                    current: false,
+                    commit: 'abc1',
+                },
+                branch2: {
+                    current: true,
+                    commit: 'abc2',
+                },
+            },
+        } as unknown as BranchSummary);
+
+        const result = await getBranchList(mockGit, 'some-other-ref', 2);
+
+        expect(mockGit.branch).toHaveBeenCalledWith([
+            '--all',
+            '--sort=-committerdate',
+            '--no-contains=some-other-ref',
+        ]);
+        expect(result.refs.map((ref) => ref.ref)).toEqual([
+            'branch1',
+            'branch2',
+        ]);
+        expect(result.refs.map((ref) => ref.description)).toEqual([
+            'abc1',
+            '(current) abc2',
+        ]);
+        expect(result.hasMore).toBe(false);
+    });
+
+    it('puts common base branches first when beforeRef set', async () => {
+        const branches = [
+            'trunk',
+            'master',
+            'main',
+            'develop',
+            'other',
+            'remotes/origin/myfeature',
+            'remotes/origin/other',
+            'remotes/mirror/myfeature',
+        ];
+        const branchSummaries = {};
+        branches.forEach((branch) => {
+            branchSummaries[branch] = {
+                current: false,
+                commit: branch,
+            };
+        });
+
+        vi.mocked(mockGit.branch).mockResolvedValue({
+            all: branches,
+            branches: branchSummaries,
+        } as unknown as BranchSummary);
+
+        const result = await getBranchList(mockGit, 'myfeature', 7);
+
+        const expectedBranches = [
+            'remotes/origin/myfeature',
+            'remotes/mirror/myfeature',
+            'develop',
+            'main',
+            'master',
+            'trunk',
+            'other',
+        ];
+        expect(result.refs.map((ref) => ref.ref)).toEqual(expectedBranches);
+        expect(result.refs.map((ref) => ref.description)).toEqual(
+            expectedBranches.map((branch) => branch.substring(0, 7))
+        );
+        expect(result.hasMore).toBe(true);
     });
 });
