@@ -141,11 +141,14 @@ export type RefList = {
     hasMore: boolean; // true if there are more refs available than maxCount
 };
 
-/** returns up to `maxCount` branches. */
+/** returns up to `maxCount` branches.
+ *
+ * If `beforeRef` is given, only tags that don't include that ref.
+ */
 export async function getBranchList(
     git: SimpleGit,
-    beforeRef?: string,
-    maxCount: number = 10
+    beforeRef: string | undefined,
+    maxCount: number
 ): Promise<RefList> {
     const branchOptions = ['--all', '--sort=-committerdate'];
     if (beforeRef) {
@@ -169,11 +172,14 @@ export async function getBranchList(
     };
 }
 
-/** returns up to `maxCount` tags. */
+/** returns up to `maxCount` tags.
+ *
+ * If `beforeRef` is given, only tags that don't include that ref.
+ */
 export async function getTagList(
     git: SimpleGit,
-    beforeRef?: string,
-    maxCount: number = 10
+    beforeRef: string | undefined,
+    maxCount: number
 ): Promise<RefList> {
     const tagOptions = ['--sort=-creatordate'];
     if (beforeRef) {
@@ -191,12 +197,12 @@ export async function getTagList(
 
 /** returns up to `maxCount` commit refs.
  *
- * If `beforeRef` is provided, only commits before that ref are shown.
+ * If `beforeRef` is given, only commits before that ref are shown.
  */
 export async function getCommitList(
     git: SimpleGit,
-    beforeRef?: string,
-    maxCount: number = 10
+    beforeRef: string | undefined,
+    maxCount: number
 ): Promise<RefList> {
     const fromRef = beforeRef ? await git.firstCommit() : undefined;
     const toRef = beforeRef ? `${beforeRef}^` : undefined;
