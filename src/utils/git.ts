@@ -155,7 +155,7 @@ export async function getBranchList(
         branchOptions.push(`--no-contains=${beforeRef}`);
     }
     const branches = await git.branch(branchOptions);
-    const refs = branches.all.slice(0, maxCount).map((branch) => {
+    const refs = branches.all.map((branch) => {
         const branchSummary = branches.branches[branch];
         return {
             ref: branch,
@@ -164,10 +164,24 @@ export async function getBranchList(
                 branchSummary.commit.substring(0, 7),
         };
     });
-    //TODO for base: put remote for current branch and [develop, main, master, trunk] first
+
+    if (!beforeRef) {
+        //for target: current branch is not necessarily the newest, let's put it first
+        refs.sort((a) => (branches.branches[a.ref].current ? -1 : 0));
+    } else {
+        //for base: put remote for `beforeRef` and common main branches first
+        const getPriority = (ref: string) => {
+            if (ref.startsWith('remotes/') && ref.endsWith('/' + beforeRef)) {
+                return -5;
+            }
+            const index = ['develop', 'main', 'master', 'trunk'].indexOf(ref);
+            return index >= 0 ? -4 + index : 0;
+        };
+        refs.sort((a, b) => getPriority(a.ref) - getPriority(b.ref));
+    }
 
     return {
-        refs,
+        refs: refs.slice(0, maxCount),
         hasMore: branches.all.length > maxCount,
     };
 }
