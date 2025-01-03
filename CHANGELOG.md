@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.9.0]
+- Highlight: Added /review to compare branches, commits, or tags with a single command.
+- Avoid review comments regarding formatting
+- Branch sorting: for target branch show current branch first; for base branch show most relevant branches first
+
 ## [0.8.3] (pre-release)
 - Add experimental Chat Model setting for changing used language model.
 
