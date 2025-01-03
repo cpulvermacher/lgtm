@@ -355,14 +355,16 @@ async function pickRef(
     if (!target) {
         return;
     }
+
+    const expandedCount = totalCount * 100;
     if (moreBranchesOption && target === moreBranchesOption) {
-        return pickRef(config, title, beforeRef, 'branch', totalCount * 2);
+        return pickRef(config, title, beforeRef, 'branch', expandedCount);
     }
     if (moreCommitsOption && target === moreCommitsOption) {
-        return pickRef(config, title, beforeRef, 'commit', totalCount * 2);
+        return pickRef(config, title, beforeRef, 'commit', expandedCount);
     }
     if (moreTagsOption && target === moreTagsOption) {
-        return pickRef(config, title, beforeRef, 'tag', totalCount * 2);
+        return pickRef(config, title, beforeRef, 'tag', expandedCount);
     }
     return target.label;
 }
