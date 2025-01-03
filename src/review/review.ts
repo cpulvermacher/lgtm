@@ -173,5 +173,4 @@ export const responseExample = [
         line: 55,
         severity: 5,
     },
-    { comment: 'This code is not formatted correctly.', line: 93, severity: 2 },
 ];
