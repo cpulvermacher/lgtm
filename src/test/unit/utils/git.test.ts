@@ -1,4 +1,4 @@
-import { BranchSummary, LogResult, SimpleGit } from 'simple-git';
+import { BranchSummary, LogResult, SimpleGit, TagResult } from 'simple-git';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -7,6 +7,7 @@ import {
     getChangedFiles,
     getFileDiff,
     getReviewScope,
+    getTagList,
 } from '../../../utils/git';
 
 const completeDiff = `diff --git a/index.html b/index.html
@@ -403,5 +404,50 @@ describe('getBranchList', () => {
             expectedBranches.map((branch) => branch.substring(0, 7))
         );
         expect(result.hasMore).toBe(true);
+    });
+});
+
+describe('getTagList', () => {
+    const mockGit = {
+        tags: vi.fn(),
+    } as unknown as SimpleGit;
+
+    it('returns list of tags', async () => {
+        vi.mocked(mockGit.tags).mockResolvedValue({
+            all: ['tag1', 'tag2'],
+        } as TagResult);
+
+        const result = await getTagList(mockGit, undefined, 2);
+
+        expect(mockGit.tags).toHaveBeenCalledWith(['--sort=-creatordate']);
+        expect(result.refs.map((ref) => ref.ref)).toEqual(['tag1', 'tag2']);
+        expect(result.refs.map((ref) => ref.description)).toEqual([
+            undefined,
+            undefined,
+        ]);
+        expect(result.hasMore).toBe(false);
+    });
+
+    it('limits results to maxCount', async () => {
+        vi.mocked(mockGit.tags).mockResolvedValue({
+            all: ['tag1', 'tag2'],
+        } as TagResult);
+
+        const result = await getTagList(mockGit, undefined, 1);
+
+        expect(result.refs.map((ref) => ref.ref)).toEqual(['tag1']);
+        expect(result.refs.map((ref) => ref.description)).toEqual([undefined]);
+        expect(result.hasMore).toBe(true);
+    });
+
+    it('handles empty list', async () => {
+        vi.mocked(mockGit.tags).mockResolvedValue({
+            all: [],
+        } as unknown as TagResult);
+
+        const result = await getTagList(mockGit, undefined, 2);
+
+        expect(result.refs.length).toBe(0);
+        expect(result.hasMore).toBe(false);
     });
 });
