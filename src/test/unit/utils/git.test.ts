@@ -5,6 +5,7 @@ import {
     addLineNumbers,
     getBranchList,
     getChangedFiles,
+    getCommitList,
     getFileDiff,
     getReviewScope,
     getTagList,
@@ -448,6 +449,68 @@ describe('getTagList', () => {
         const result = await getTagList(mockGit, undefined, 2);
 
         expect(result.refs.length).toBe(0);
+        expect(result.hasMore).toBe(false);
+    });
+});
+
+describe('getCommitList', () => {
+    const mockGit = {
+        log: vi.fn(),
+        firstCommit: vi.fn(),
+    } as unknown as SimpleGit;
+
+    it('returns list of commits', async () => {
+        vi.mocked(mockGit.log).mockResolvedValue({
+            all: [{ hash: 'hash1' }, { hash: 'hash2' }],
+        } as unknown as LogResult);
+
+        const result = await getCommitList(mockGit, undefined, 2);
+
+        expect(mockGit.log).toHaveBeenCalledWith({
+            maxCount: 3,
+        });
+        expect(mockGit.firstCommit).not.toHaveBeenCalled();
+        expect(result.refs.map((ref) => ref.ref)).toEqual(['hash1', 'hash2']);
+        expect(result.hasMore).toBe(false);
+    });
+
+    it('limits results to maxCount', async () => {
+        vi.mocked(mockGit.log).mockResolvedValue({
+            all: [{ hash: 'hash1' }, { hash: 'hash2' }],
+        } as unknown as LogResult);
+
+        const result = await getCommitList(mockGit, undefined, 1);
+
+        expect(result.refs.map((ref) => ref.ref)).toEqual(['hash1']);
+        expect(result.hasMore).toBe(true);
+    });
+
+    it('handles empty list', async () => {
+        vi.mocked(mockGit.log).mockResolvedValue({
+            all: [],
+        } as unknown as LogResult);
+
+        const result = await getCommitList(mockGit, undefined, 2);
+
+        expect(result.refs.length).toBe(0);
+        expect(result.hasMore).toBe(false);
+    });
+
+    it('returns commits before beforeRef', async () => {
+        vi.mocked(mockGit.log).mockResolvedValue({
+            all: [{ hash: 'hash1' }, { hash: 'hash2' }],
+        } as unknown as LogResult);
+        vi.mocked(mockGit.firstCommit).mockResolvedValue('firstCommit');
+
+        const result = await getCommitList(mockGit, 'beforeRef', 2);
+
+        expect(mockGit.log).toHaveBeenCalledWith({
+            maxCount: 3,
+            from: 'firstCommit',
+            to: 'beforeRef^',
+        });
+        expect(mockGit.firstCommit).toHaveBeenCalledOnce();
+        expect(result.refs.map((ref) => ref.ref)).toEqual(['hash1', 'hash2']);
         expect(result.hasMore).toBe(false);
     });
 });
