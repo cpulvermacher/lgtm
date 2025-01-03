@@ -133,6 +133,7 @@ Diff format:
 Review rules:
 - Provide comments on bugs, security vulnerabilities, code smells, and typos.
 - Only provide comments for added lines.
+- Do not provide comments on formatting.
 - Do not make assumptions about code that is not included in the diff.
 ${customPrompt}
 
