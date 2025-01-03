@@ -1,4 +1,3 @@
-
 You are a senior software engineer reviewing a pull request. Analyze the following git diff for one of the changed files.
 
 Diff format:
@@ -26,7 +25,7 @@ Example response:
 ```json
 [
   {
-    "comment": "The <script> tag is missspelled as <scirpt>.",
+    "comment": "The <script> tag is misspelled as <scirpt>.",
     "line": 23,
     "severity": 4
   },

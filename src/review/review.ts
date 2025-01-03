@@ -120,8 +120,7 @@ export function createReviewPrompt(
     diff: string,
     customPrompt: string
 ): string {
-    return `
-You are a senior software engineer reviewing a pull request. Analyze the following git diff for one of the changed files.
+    return `You are a senior software engineer reviewing a pull request. Analyze the following git diff for one of the changed files.
 
 Diff format:
 - The diff starts with a diff header, followed by diff lines.
@@ -163,7 +162,7 @@ ${diff}
 
 export const responseExample = [
     {
-        comment: 'The <script> tag is missspelled as <scirpt>.',
+        comment: 'The <script> tag is misspelled as <scirpt>.',
         line: 23,
         severity: 4,
     },

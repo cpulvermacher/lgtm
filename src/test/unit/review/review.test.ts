@@ -50,7 +50,7 @@ describe('getReviewResponse', () => {
         expect(result.responseTokens).toBe(4);
         expect(model.limitTokens).toHaveBeenCalledWith(diff);
         expect(model.sendRequest).toHaveBeenCalledWith(
-            expect.stringMatching(/^\nYou are a senior software engineer/),
+            expect.stringMatching(/^You are /),
             cancellationToken
         );
     });
