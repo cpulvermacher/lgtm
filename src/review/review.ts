@@ -115,7 +115,7 @@ export async function getReviewResponse(
     };
 }
 
-function createReviewPrompt(
+export function createReviewPrompt(
     changeDescription: string,
     diff: string,
     customPrompt: string

@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CancellationToken, ChatResponseStream } from 'vscode';
 
 import { parseResponse } from '../../../review/comment';
-import { getReviewResponse, reviewDiff } from '../../../review/review';
+import {
+    createReviewPrompt,
+    getReviewResponse,
+    reviewDiff,
+} from '../../../review/review';
 import { Config } from '../../../types/Config';
 import { Model } from '../../../types/Model';
 import { ModelError } from '../../../types/ModelError';
@@ -163,5 +167,17 @@ describe('reviewDiff', () => {
         expect(stream.markdown).toHaveBeenCalledWith(' Found 2 files.\n\n');
         expect(stream.progress).toHaveBeenCalledTimes(2);
         expect(model.sendRequest).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe('createReviewPrompt', () => {
+    it('creates prompt with custom prompt', () => {
+        const prompt = createReviewPrompt(
+            'Various refactorings',
+            'diff\nhere',
+            'A CUSTOM PROMPT'
+        );
+
+        expect(prompt).toMatchFileSnapshot('review-prompt.snap');
     });
 });
