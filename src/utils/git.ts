@@ -143,7 +143,7 @@ export type RefList = {
 
 /** returns up to `maxCount` branches.
  *
- * If `beforeRef` is given, only tags that don't include that ref.
+ * If `beforeRef` is given, only returns branches that don't include that ref.
  */
 export async function getBranchList(
     git: SimpleGit,
@@ -188,7 +188,7 @@ export async function getBranchList(
 
 /** returns up to `maxCount` tags.
  *
- * If `beforeRef` is given, only tags that don't include that ref.
+ * If `beforeRef` is given, only returns tags that don't include that ref.
  */
 export async function getTagList(
     git: SimpleGit,
@@ -211,7 +211,7 @@ export async function getTagList(
 
 /** returns up to `maxCount` commit refs.
  *
- * If `beforeRef` is given, only commits before that ref are shown.
+ * If `beforeRef` is given, only returns commits before that ref.
  */
 export async function getCommitList(
     git: SimpleGit,
