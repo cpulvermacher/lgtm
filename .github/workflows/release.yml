@@ -1,4 +1,6 @@
 name: Release
+permissions:
+  contents: write
 
 on:
   push:
@@ -8,8 +10,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
     - uses: actions/checkout@v4
       with:
