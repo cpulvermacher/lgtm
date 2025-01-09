@@ -10,6 +10,7 @@ import { pickCommit, pickRef, pickRefs } from './vscode/ui';
 
 let config: Config | undefined;
 let chatParticipant: vscode.ChatParticipant;
+let commentController: vscode.CommentController;
 
 // called the first time a command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -23,6 +24,9 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
     if (chatParticipant) {
         chatParticipant.dispose();
+    }
+    if (commentController) {
+        commentController.dispose();
     }
 }
 
@@ -175,6 +179,15 @@ function showReviewResults(
     stream: vscode.ChatResponseStream,
     cancellationToken: vscode.CancellationToken
 ) {
+    if (commentController) {
+        //remove previous comments
+        commentController.dispose();
+    }
+    commentController = vscode.comments.createCommentController(
+        'lgtm',
+        'LGTM Comments'
+    );
+
     const options = config.getOptions();
     const isTargetCheckedOut = result.request.scope.isTargetCheckedOut;
     let noProblemsFound = true;
@@ -187,28 +200,45 @@ function showReviewResults(
             (comment) => comment.severity >= options.minSeverity
         );
 
-        if (filteredFileComments.length > 0) {
-            stream.anchor(toUri(config, file.target));
-        }
+        // if (filteredFileComments.length > 0) {
+        //     stream.anchor(toUri(config, file.target));
+        // }
 
         for (const comment of filteredFileComments) {
             const isValidLineNumber = isTargetCheckedOut && comment.line > 0;
-            const location = isValidLineNumber
-                ? new vscode.Location(
-                      toUri(config, file.target),
-                      new vscode.Position(comment.line - 1, 0)
-                  )
-                : null;
+            const startPosition = new vscode.Position(comment.line - 1, 0);
+            // const location = isValidLineNumber
+            //     ? new vscode.Location(
+            //           toUri(config, file.target),
+            //           startPosition
+            //       )
+            //     : null;
+            const commentMarkdown = `${comment.comment} (Severity: ${comment.severity}/5)`;
 
-            stream.markdown(`\n - `);
-            if (location) {
-                stream.anchor(location);
-            } else {
-                stream.markdown(`Line ${comment.line}: `);
-            }
-            stream.markdown(
-                `${comment.comment} (Severity: ${comment.severity}/5)`
+            const thread = commentController.createCommentThread(
+                toUri(config, file.target),
+                new vscode.Range(startPosition, startPosition),
+                [
+                    {
+                        body: commentMarkdown,
+                        mode: vscode.CommentMode.Preview,
+                        author: { name: 'LGTM' },
+                    },
+                ]
             );
+            thread.canReply = false;
+            if (!isValidLineNumber) {
+                thread.label =
+                    '(line information inaccurate since the reviewed commit is not checked out)';
+            }
+
+            // stream.markdown(`\n - `);
+            // if (location) {
+            //     stream.anchor(location);
+            // } else {
+            //     stream.markdown(`Line ${comment.line}: `);
+            // }
+            // stream.markdown(commentMarkdown);
             noProblemsFound = false;
         }
         if (options.enableDebugOutput && file.debug) {
@@ -229,10 +259,15 @@ function showReviewResults(
 
     if (noProblemsFound) {
         stream.markdown('\nNo problems found.');
-    } else if (!isTargetCheckedOut) {
-        stream.markdown(
-            '\nNote: The target branch or commit is not checked out, so line numbers may not match the current state.'
-        );
+    } else {
+        if (!isTargetCheckedOut) {
+            vscode.commands.executeCommand(
+                'workbench.action.focusCommentsPanel'
+            );
+            stream.markdown(
+                '\nNote: The target branch or commit is not checked out, so line numbers may not match the current state.'
+            );
+        }
     }
 
     const errorString = result.errors
