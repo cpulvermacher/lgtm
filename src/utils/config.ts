@@ -29,10 +29,10 @@ export async function getConfig(): Promise<Config> {
     const git = simpleGit(workspaceRoot);
     const gitRoot = await git.revparse(['--show-toplevel']);
 
-    git.cwd(gitRoot); // make gitRoot the base for all git commands
+    await git.cwd(gitRoot); // make gitRoot the base for all git commands
     console.debug('working directory:', workspaceRoot, ' git repo:', gitRoot);
 
-    const model = await selectChatModel((await getOptions()).chatModel);
+    const model = await selectChatModel(getOptions().chatModel);
 
     _config = {
         git,
@@ -44,14 +44,14 @@ export async function getConfig(): Promise<Config> {
 
     vscode.lm.onDidChangeChatModels(async () => {
         console.log('Chat models were updated, rechecking...');
-        _config.model = await selectChatModel((await getOptions()).chatModel);
+        _config.model = await selectChatModel(getOptions().chatModel);
     });
     vscode.workspace.onDidChangeConfiguration(async (ev) => {
         if (!ev.affectsConfiguration('lgtm')) {
             return;
         }
         console.log('Config updated, updating model...');
-        _config.model = await selectChatModel((await getOptions()).chatModel);
+        _config.model = await selectChatModel(getOptions().chatModel);
     });
 
     return _config;

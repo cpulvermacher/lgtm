@@ -34,7 +34,7 @@ export function parseComment(comment: object): ReviewComment {
 
 /** Parse model response into individual comments  */
 export function parseResponse(response: string): ReviewComment[] {
-    let rawComments = [];
+    let rawComments: unknown = [];
     try {
         rawComments = JSON.parse(response);
     } catch {

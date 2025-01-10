@@ -8,6 +8,7 @@ import {
     reviewDiff,
 } from '../../../review/review';
 import { Config } from '../../../types/Config';
+import { FileComments } from '../../../types/FileComments';
 import { Model } from '../../../types/Model';
 import { ModelError } from '../../../types/ModelError';
 import { ReviewScope } from '../../../types/ReviewScope';
@@ -15,10 +16,10 @@ import { getChangedFiles } from '../../../utils/git';
 
 const model = {
     sendRequest: vi.fn(async () => {
-        return 'Some review comment\n3/5';
+        return Promise.resolve('Some review comment\n3/5');
     }),
-    limitTokens: vi.fn(async (text: string) => text),
-    countTokens: vi.fn(async () => 4),
+    limitTokens: vi.fn(async (text: string) => Promise.resolve(text)),
+    countTokens: vi.fn(async () => Promise.resolve(4)),
 } as unknown as Model;
 
 const config = {
@@ -78,7 +79,9 @@ describe('reviewDiff', () => {
     }));
     vi.mock('../../../review/comment', () => ({
         parseResponse: vi.fn(),
-        sortFileCommentsBySeverity: vi.fn((comments) => comments),
+        sortFileCommentsBySeverity: vi.fn(
+            (comments: Omit<FileComments, 'maxSeverity'>[]) => comments
+        ),
     }));
 
     const stream = {
@@ -171,13 +174,13 @@ describe('reviewDiff', () => {
 });
 
 describe('createReviewPrompt', () => {
-    it('creates prompt with custom prompt', () => {
+    it('creates prompt with custom prompt', async () => {
         const prompt = createReviewPrompt(
             'Various refactorings',
             'diff\nhere',
             'A CUSTOM PROMPT'
         );
 
-        expect(prompt).toMatchFileSnapshot('review-prompt.snap');
+        await expect(prompt).toMatchFileSnapshot('review-prompt.snap');
     });
 });
