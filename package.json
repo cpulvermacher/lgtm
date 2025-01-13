@@ -121,8 +121,6 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.96.0",
-    "@typescript-eslint/eslint-plugin": "^8.19.0",
-    "@typescript-eslint/parser": "^8.19.0",
     "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^3.2.1",
     "esbuild": "^0.24.2",
@@ -131,6 +129,7 @@
     "mocha": "^11.0.1",
     "prettier": "^3.4.2",
     "typescript": "^5.5.4",
+    "typescript-eslint": "^8.19.1",
     "vitest": "^2.1.8"
   },
   "dependencies": {

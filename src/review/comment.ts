@@ -2,31 +2,31 @@ import { FileComments } from '../types/FileComments';
 import { ReviewComment } from '../types/ReviewComment';
 
 export function parseComment(comment: object): ReviewComment {
-    if (!('comment' in comment) || typeof comment['comment'] !== 'string') {
+    if (!('comment' in comment) || typeof comment.comment !== 'string') {
         throw new Error('Expected comment');
     }
 
     let line = 1;
     if (
         'line' in comment &&
-        typeof comment['line'] === 'number' &&
-        comment['line'] >= 0 // keep 0 to know if we got invalid values
+        typeof comment.line === 'number' &&
+        comment.line >= 0 // keep 0 to know if we got invalid values
     ) {
-        line = comment['line'];
+        line = comment.line;
     }
 
     let severity = 3;
     if (
         'severity' in comment &&
-        typeof comment['severity'] === 'number' &&
-        comment['severity'] >= 1 &&
-        comment['severity'] <= 5
+        typeof comment.severity === 'number' &&
+        comment.severity >= 1 &&
+        comment.severity <= 5
     ) {
-        severity = comment['severity'];
+        severity = comment.severity;
     }
 
     return {
-        comment: comment['comment'].trim(),
+        comment: comment.comment.trim(),
         line,
         severity,
     };
@@ -34,7 +34,7 @@ export function parseComment(comment: object): ReviewComment {
 
 /** Parse model response into individual comments  */
 export function parseResponse(response: string): ReviewComment[] {
-    let rawComments = [];
+    let rawComments: unknown = [];
     try {
         rawComments = JSON.parse(response);
     } catch {

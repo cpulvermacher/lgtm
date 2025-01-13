@@ -36,13 +36,15 @@ export async function getFileDiff(
 
 /** prefix the following diff with the line numbers of the to-side (from hunk headers) */
 export function addLineNumbers(diff: string) {
+    // format: `@@ -fromLine,fromCount +toLine,toCount @@ function name`, with count=1 being optional
+    const lineRegExp = /^@@ -\d+(,\d+)? \+(\d+)(,\d+)? @@/;
+
     let lineNo = 0;
     return diff
         .split('\n')
         .map((line) => {
             if (line.startsWith('@@')) {
-                // format: `@@ -fromLine,fromCount +toLine,toCount @@ function name`, with count=1 being optional
-                const match = line.match(/^@@ -\d+(,\d+)? \+(\d+)(,\d+)? @@/);
+                const match = lineRegExp.exec(line);
                 if (!match) {
                     throw new Error(`Failed to parse hunk header: ${line}`);
                 }
