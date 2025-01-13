@@ -2,11 +2,10 @@
 // eslint-disable-next-line no-restricted-imports
 import * as vscode from 'vscode';
 
-import { reviewDiff } from './review/review';
-import { Config } from './types/Config';
-import { ReviewResult } from './types/ReviewResult';
-import { ReviewScope } from './types/ReviewScope';
-import { getConfig, toUri } from './utils/config';
+import { reviewDiff } from '../review/review';
+import { Config } from '../types/Config';
+import { ReviewResult } from '../types/ReviewResult';
+import { ReviewScope } from '../types/ReviewScope';
 import {
     getBranchList,
     getCommitList,
@@ -15,7 +14,8 @@ import {
     getTagList,
     isBranch,
     isSameRef,
-} from './utils/git';
+} from '../utils/git';
+import { getConfig, toUri } from './config';
 
 // defined when built via `npm run dev`
 declare const __GIT_VERSION__: string | undefined;
