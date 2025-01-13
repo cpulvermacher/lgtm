@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 
-import { reviewDiff } from '../review/review';
-import { Config } from '../types/Config';
-import { ReviewResult } from '../types/ReviewResult';
-import { ReviewScope } from '../types/ReviewScope';
-import { getConfig, toUri } from './config';
+import { reviewDiff } from './review/review';
+import { Config } from './types/Config';
+import { ReviewResult } from './types/ReviewResult';
+import { ReviewScope } from './types/ReviewScope';
+import { getConfig, toUri } from './vscode/config';
 
 // defined when built via `npm run dev`
 declare const __GIT_VERSION__: string | undefined;

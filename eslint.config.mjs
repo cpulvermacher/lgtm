@@ -33,7 +33,7 @@ export default tseslint.config(
                 paths: [{
                     name: 'vscode',
                     allowTypeImports: true,
-                    message: "Imports from 'vscode' allowed only in src/vscode, since we cannot import it in unit tests. Type imports are allowed.",
+                    message: "Imports from 'vscode' allowed only in extension.ts & src/vscode, since we cannot import it in unit tests. Type imports are allowed.",
                 }],
             }]
         },
@@ -45,7 +45,7 @@ export default tseslint.config(
         }
     },
     {
-        files: ["src/vscode/**/*.ts"],
+        files: ["src/extension.ts", "src/vscode/**/*.ts", "src/test/vscode/**/*.ts"],
         rules: {
             "@typescript-eslint/no-restricted-imports": "off"
         }
