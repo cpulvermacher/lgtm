@@ -12,7 +12,7 @@ import { FileComments } from '../../../types/FileComments';
 import { Model } from '../../../types/Model';
 import { ModelError } from '../../../types/ModelError';
 import { ReviewScope } from '../../../types/ReviewScope';
-import { getChangedFiles } from '../../../utils/git';
+import { Git } from '../../../utils/git';
 
 const model = {
     sendRequest: vi.fn(async () => {
@@ -22,7 +22,13 @@ const model = {
     countTokens: vi.fn(async () => Promise.resolve(4)),
 } as unknown as Model;
 
+const git = {
+    getChangedFiles: vi.fn(),
+    getFileDiff: vi.fn((_, __, path) => `diff for ${path}`),
+} as unknown as Git;
+
 const config = {
+    git,
     model,
     getOptions: () => ({
         customPrompt: '',
@@ -73,10 +79,6 @@ describe('getReviewResponse', () => {
 });
 
 describe('reviewDiff', () => {
-    vi.mock('../../../utils/git', () => ({
-        getChangedFiles: vi.fn(),
-        getFileDiff: vi.fn((_, __, path) => `diff for ${path}`),
-    }));
     vi.mock('../../../review/comment', () => ({
         parseResponse: vi.fn(),
         sortFileCommentsBySeverity: vi.fn(
@@ -96,7 +98,7 @@ describe('reviewDiff', () => {
     } as ReviewScope;
 
     it('should return a review result', async () => {
-        vi.mocked(getChangedFiles).mockResolvedValue(['file1', 'file2']);
+        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
         vi.mocked(model.sendRequest).mockResolvedValue('model response');
         vi.mocked(parseResponse).mockReturnValue([
             {
@@ -129,7 +131,7 @@ describe('reviewDiff', () => {
     });
 
     it('should abort and return errors if a ModelError occurs', async () => {
-        vi.mocked(getChangedFiles).mockResolvedValue(['file1', 'file2']);
+        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
         vi.mocked(model.sendRequest)
             .mockRejectedValueOnce(new ModelError('Blocked', 'Model error'))
             .mockResolvedValueOnce('model response');
@@ -151,7 +153,7 @@ describe('reviewDiff', () => {
     });
 
     it('should continue and return errors if a non-ModelError occurs', async () => {
-        vi.mocked(getChangedFiles).mockResolvedValue(['file1', 'file2']);
+        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
         vi.mocked(model.sendRequest)
             .mockRejectedValueOnce(new Error("Couldn't parse response"))
             .mockResolvedValueOnce('model response');

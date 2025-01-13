@@ -4,7 +4,6 @@ import { Config } from '../types/Config';
 import { ModelError } from '../types/ModelError';
 import { ReviewResult } from '../types/ReviewResult';
 import { ReviewScope } from '../types/ReviewScope';
-import { getChangedFiles, getFileDiff } from '../utils/git';
 import { filterExcludedFiles } from '../utils/glob';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 
@@ -14,10 +13,7 @@ export async function reviewDiff(
     scope: ReviewScope,
     cancellationToken: CancellationToken
 ): Promise<ReviewResult> {
-    const diffFiles = await getChangedFiles(
-        config.git,
-        scope.revisionRangeDiff
-    );
+    const diffFiles = await config.git.getChangedFiles(scope.revisionRangeDiff);
     const files = filterExcludedFiles(
         diffFiles,
         config.getOptions().excludeGlobs
@@ -39,8 +35,7 @@ export async function reviewDiff(
 
         stream.progress(`Reviewing file ${file} (${i + 1}/${files.length})`);
 
-        const diff = await getFileDiff(
-            config.git,
+        const diff = await config.git.getFileDiff(
             scope.revisionRangeDiff,
             file
         );

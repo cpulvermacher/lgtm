@@ -1,7 +1,7 @@
-import simpleGit from 'simple-git';
 import * as vscode from 'vscode';
 
 import { Config, Options } from '../types/Config';
+import { createGit } from '../utils/git';
 import { selectChatModel } from './model';
 
 let _config: Config;
@@ -24,18 +24,13 @@ export async function getConfig(): Promise<Config> {
     }
 
     const workspaceRoot = mainWorkspace.uri.fsPath;
-    const git = simpleGit(workspaceRoot);
-    const gitRoot = await git.revparse(['--show-toplevel']);
-
-    await git.cwd(gitRoot); // make gitRoot the base for all git commands
-    console.debug('working directory:', workspaceRoot, ' git repo:', gitRoot);
-
+    const git = await createGit(workspaceRoot);
     const model = await selectChatModel(getOptions().chatModel);
 
     _config = {
         git,
         workspaceRoot,
-        gitRoot,
+        gitRoot: git.getGitRoot(),
         model,
         getOptions,
     };

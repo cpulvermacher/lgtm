@@ -6,6 +6,7 @@ import {
     type LanguageModelChat,
     type LanguageModelChatResponse,
 } from 'vscode';
+
 import { Model } from '../types/Model';
 import { ModelError } from '../types/ModelError';
 

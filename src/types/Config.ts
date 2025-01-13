@@ -1,11 +1,10 @@
-import { SimpleGit } from 'simple-git';
-
-import { Model } from './Model';
+import type { Git } from '../utils/git';
+import type { Model } from './Model';
 
 export type Config = {
     workspaceRoot: string;
     gitRoot: string;
-    git: SimpleGit;
+    git: Git;
     model: Model;
     getOptions: () => Options;
 };

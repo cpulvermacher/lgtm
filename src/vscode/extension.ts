@@ -4,15 +4,6 @@ import { reviewDiff } from '../review/review';
 import { Config } from '../types/Config';
 import { ReviewResult } from '../types/ReviewResult';
 import { ReviewScope } from '../types/ReviewScope';
-import {
-    getBranchList,
-    getCommitList,
-    getCommitRef,
-    getReviewScope,
-    getTagList,
-    isBranch,
-    isSameRef,
-} from '../utils/git';
 import { getConfig, toUri } from './config';
 
 // defined when built via `npm run dev`
@@ -60,6 +51,7 @@ async function handler(
     }
 
     const config = await getConfig();
+    const git = config.git;
     if (config.getOptions().enableDebugOutput) {
         const model = config.model;
         stream.markdown(
@@ -93,7 +85,7 @@ async function handler(
         }
 
         stream.markdown(`Reviewing changes in commit \`${commit}\`.`);
-        reviewScope = await getReviewScope(config.git, commit);
+        reviewScope = await git.getReviewScope(commit);
     } else {
         let refs;
         if (parsedPrompt.target && parsedPrompt.base) {
@@ -119,15 +111,15 @@ async function handler(
             return;
         }
 
-        const targetIsBranch = await isBranch(config.git, refs.target);
+        const targetIsBranch = await git.isBranch(refs.target);
         stream.markdown(
             `Reviewing changes ${targetIsBranch ? 'on' : 'at'} \`${refs.target}\` compared to \`${refs.base}\`.`
         );
-        if (await isSameRef(config.git, refs.base, refs.target)) {
+        if (await git.isSameRef(refs.base, refs.target)) {
             stream.markdown(' No changes found.');
             return;
         }
-        reviewScope = await getReviewScope(config.git, refs.target, refs.base);
+        reviewScope = await git.getReviewScope(refs.target, refs.base);
     }
 
     const reviewResult = await reviewDiff(
@@ -273,7 +265,7 @@ async function pickRef(
 
     const quickPickOptions: vscode.QuickPickItem[] = [];
     if (!type || type === 'branch') {
-        const branches = await getBranchList(config.git, beforeRef, maxCount);
+        const branches = await config.git.getBranchList(beforeRef, maxCount);
 
         quickPickOptions.push({
             label: 'Branches',
@@ -297,7 +289,7 @@ async function pickRef(
     }
 
     if (!type || type === 'commit') {
-        const commits = await getCommitList(config.git, beforeRef, maxCount);
+        const commits = await config.git.getCommitList(beforeRef, maxCount);
         if (commits.refs.length > 0) {
             quickPickOptions.push({
                 label: 'Commits',
@@ -322,7 +314,7 @@ async function pickRef(
     }
 
     if (!type || type === 'tag') {
-        const tags = await getTagList(config.git, beforeRef, maxCount);
+        const tags = await config.git.getTagList(beforeRef, maxCount);
         if (tags.refs.length > 0) {
             quickPickOptions.push({
                 label: 'Tags',
@@ -377,9 +369,9 @@ async function parseArguments(config: Config, args: string) {
     }
 
     const [target, base] = args.split(' ', 2);
-    await getCommitRef(config.git, target);
+    await config.git.getCommitRef(target);
     if (base) {
-        await getCommitRef(config.git, base);
+        await config.git.getCommitRef(base);
     }
     return { target, base };
 }
