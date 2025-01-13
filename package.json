@@ -113,7 +113,7 @@
     "dev": "GIT_VERSION=$(git describe  --tags --long) npm run build",
     "build": "npx vsce package",
     "pretest": "tsc -p ./",
-    "lint": "eslint src && tsc --noEmit && prettier src --check",
+    "lint": "tsc --noEmit && eslint src && prettier src --check",
     "test": "node ./out/test/runTest.js",
     "unit": "vitest run ./src/test/unit/**/*.test.ts"
   },
