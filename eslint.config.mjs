@@ -28,12 +28,12 @@ export default tseslint.config(
             curly: "warn",
             eqeqeq: "warn",
             "no-throw-literal": "warn",
-            "no-restricted-imports": ["warn", {
+            "no-restricted-imports": "off",
+            "@typescript-eslint/no-restricted-imports": ["warn", {
                 paths: [{
-                    // imports from 'vscode' allowed only in src/vscode, since we cannot import it in unit tests
                     name: 'vscode',
-                    message: "Importing 'vscode' is restricted except for type imports.",
-                    importNames: ['default'],
+                    allowTypeImports: true,
+                    message: "Imports from 'vscode' allowed only in src/vscode, since we cannot import it in unit tests. Type imports are allowed.",
                 }],
             }]
         },
@@ -42,6 +42,12 @@ export default tseslint.config(
         files: ["src/test/unit/**/*.ts"],
         rules: {
             "@typescript-eslint/unbound-method": "off"
+        }
+    },
+    {
+        files: ["src/vscode/**/*.ts"],
+        rules: {
+            "@typescript-eslint/no-restricted-imports": "off"
         }
     }
 )
