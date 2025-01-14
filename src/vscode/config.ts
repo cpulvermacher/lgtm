@@ -5,12 +5,14 @@ import { createGit } from '../utils/git';
 import { LgtmLogger } from './logger';
 import { selectChatModel } from './model';
 
-let _config: Config;
+// defined when built via `npm run dev`
+declare const __GIT_VERSION__: string | undefined;
 
 /** Return config */
 export async function getConfig(): Promise<Config> {
-    if (_config) {
-        return _config;
+    const logger = new LgtmLogger(getOptions().enableDebugOutput);
+    if (__GIT_VERSION__) {
+        logger.info(`**LGTM dev build**: ${__GIT_VERSION__}`);
     }
 
     let mainWorkspace = vscode.workspace.workspaceFolders?.[0];
@@ -25,11 +27,10 @@ export async function getConfig(): Promise<Config> {
     }
 
     const workspaceRoot = mainWorkspace.uri.fsPath;
-    const logger = new LgtmLogger(getOptions().enableDebugOutput);
     const git = await createGit(workspaceRoot);
     const model = await selectChatModel(getOptions().chatModel, logger);
 
-    _config = {
+    const config = {
         git,
         workspaceRoot,
         gitRoot: git.getGitRoot(),
@@ -40,18 +41,18 @@ export async function getConfig(): Promise<Config> {
 
     vscode.lm.onDidChangeChatModels(async () => {
         logger.debug('Chat models were updated, rechecking...');
-        _config.model = await selectChatModel(getOptions().chatModel, logger);
+        config.model = await selectChatModel(getOptions().chatModel, logger);
     });
     vscode.workspace.onDidChangeConfiguration(async (ev) => {
         if (!ev.affectsConfiguration('lgtm')) {
             return;
         }
         logger.debug('Updating config...');
-        _config.logger.setEnableDebug(getOptions().enableDebugOutput);
-        _config.model = await selectChatModel(getOptions().chatModel, logger);
+        config.logger.setEnableDebug(getOptions().enableDebugOutput);
+        config.model = await selectChatModel(getOptions().chatModel, logger);
     });
 
-    return _config;
+    return config;
 }
 
 /** Converts file path relative to gitRoot to a vscode.Uri */

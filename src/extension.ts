@@ -7,9 +7,6 @@ import { ReviewScope } from './types/ReviewScope';
 import { getConfig, toUri } from './vscode/config';
 import { pickCommit, pickRef, pickRefs } from './vscode/ui';
 
-// defined when built via `npm run dev`
-declare const __GIT_VERSION__: string | undefined;
-
 let chatParticipant: vscode.ChatParticipant;
 
 // called the first time a command is executed
@@ -33,9 +30,7 @@ async function handler(
     stream: vscode.ChatResponseStream,
     cancellationToken: vscode.CancellationToken
 ): Promise<void> {
-    if (__GIT_VERSION__) {
-        stream.markdown(`**LGTM dev build**: ${__GIT_VERSION__}\n\n`);
-    }
+    const config = await getConfig();
 
     if (
         !chatRequest.command ||
@@ -50,9 +45,7 @@ async function handler(
         return;
     }
 
-    const config = await getConfig();
     const git = config.git;
-    config.logger.debug(`Model:`, config.model);
 
     let parsedPrompt;
     try {
