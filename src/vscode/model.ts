@@ -7,9 +7,9 @@ import {
     type LanguageModelChatResponse,
 } from 'vscode';
 
+import { Logger } from '../types/Logger';
 import { Model } from '../types/Model';
 import { ModelError } from '../types/ModelError';
-import { Logger } from './logger';
 
 /** Select chat model (asks for permissions the first time) */
 export async function selectChatModel(

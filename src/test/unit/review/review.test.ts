@@ -9,11 +9,11 @@ import {
 } from '../../../review/review';
 import { Config } from '../../../types/Config';
 import { FileComments } from '../../../types/FileComments';
+import { Logger } from '../../../types/Logger';
 import { Model } from '../../../types/Model';
 import { ModelError } from '../../../types/ModelError';
 import { ReviewScope } from '../../../types/ReviewScope';
 import { Git } from '../../../utils/git';
-import type { Logger } from '../../../vscode/logger';
 
 const model = {
     sendRequest: vi.fn(async () => {
@@ -31,7 +31,7 @@ const git = {
 const logger = {
     debug: vi.fn(),
     info: vi.fn(),
-} as unknown as Logger;
+} as Logger;
 
 const config = {
     git,

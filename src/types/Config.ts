@@ -1,5 +1,5 @@
 import type { Git } from '../utils/git';
-import type { Logger } from '../vscode/logger';
+import type { Logger } from './Logger';
 import type { Model } from './Model';
 
 export type Config = {

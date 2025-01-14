@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { Config, Options } from '../types/Config';
 import { createGit } from '../utils/git';
-import { Logger } from './logger';
+import { LgtmLogger } from './logger';
 import { selectChatModel } from './model';
 
 let _config: Config;
@@ -25,7 +25,7 @@ export async function getConfig(): Promise<Config> {
     }
 
     const workspaceRoot = mainWorkspace.uri.fsPath;
-    const logger = new Logger(getOptions().enableDebugOutput);
+    const logger = new LgtmLogger(getOptions().enableDebugOutput);
     const git = await createGit(workspaceRoot);
     const model = await selectChatModel(getOptions().chatModel, logger);
 

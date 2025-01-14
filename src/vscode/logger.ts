@@ -1,12 +1,17 @@
 import * as vscode from 'vscode';
 
-export class Logger {
+import { Logger } from '../types/Logger';
+
+const outputChannelName = 'LGTM';
+
+/** Logs to vscode output channel */
+export class LgtmLogger implements Logger {
     private outputChannel?: vscode.OutputChannel;
 
     constructor(enableDebug: boolean) {
         if (enableDebug) {
             this.outputChannel = vscode.window.createOutputChannel(
-                'LGTM',
+                outputChannelName,
                 'json'
             );
         }
