@@ -52,12 +52,7 @@ async function handler(
 
     const config = await getConfig();
     const git = config.git;
-    if (config.getOptions().enableDebugOutput) {
-        const model = config.model;
-        stream.markdown(
-            `**Model**: ${model.name} (${model.vendor}), input token limit: ${model.maxInputTokens} tokens\n\n`
-        );
-    }
+    config.logger.debug(`Model:`, config.model);
 
     let parsedPrompt;
     try {
@@ -150,11 +145,10 @@ function showReviewResults(
             (comment) => comment.severity >= options.minSeverity
         );
 
-        if (filteredFileComments.length === 0 && !options.enableDebugOutput) {
-            continue;
+        if (filteredFileComments.length > 0) {
+            stream.anchor(toUri(config, file.target), file.target);
         }
 
-        stream.anchor(toUri(config, file.target), file.target);
         for (const comment of filteredFileComments) {
             const isValidLineNumber = isTargetCheckedOut && comment.line > 0;
             const location = isValidLineNumber
@@ -176,20 +170,19 @@ function showReviewResults(
             noProblemsFound = false;
         }
         if (options.enableDebugOutput && file.debug) {
-            stream.markdown(`\n\n**Debug Info:**`);
-            stream.markdown(`\nInput tokens: ${file.debug?.promptTokens}`);
-            stream.markdown(`\nResponse tokens: ${file.debug?.responseTokens}`);
-
             const numCommentsSkipped = file.comments.reduce(
                 (acc, comment) =>
                     comment.severity < options.minSeverity ? acc + 1 : acc,
                 0
             );
-            if (numCommentsSkipped > 0) {
-                stream.markdown(`\nSkipped comments: ${numCommentsSkipped}`);
-            }
+            config.logger.debug(
+                `File: ${file.target} Input tokens: ${file.debug?.promptTokens} Response tokens: ${file.debug?.responseTokens} Skipped comments: ${numCommentsSkipped}`
+            );
         }
-        stream.markdown('\n\n');
+
+        if (filteredFileComments.length > 0) {
+            stream.markdown('\n\n');
+        }
     }
 
     if (noProblemsFound) {

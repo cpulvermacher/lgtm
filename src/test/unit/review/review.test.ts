@@ -13,6 +13,7 @@ import { Model } from '../../../types/Model';
 import { ModelError } from '../../../types/ModelError';
 import { ReviewScope } from '../../../types/ReviewScope';
 import { Git } from '../../../utils/git';
+import type { Logger } from '../../../vscode/logger';
 
 const model = {
     sendRequest: vi.fn(async () => {
@@ -27,6 +28,11 @@ const git = {
     getFileDiff: vi.fn((_, __, path) => `diff for ${path}`),
 } as unknown as Git;
 
+const logger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+} as unknown as Logger;
+
 const config = {
     git,
     model,
@@ -36,6 +42,7 @@ const config = {
         excludeGlobs: [] as string[],
         enableDebugOutput: false,
     }),
+    logger,
 } as Config;
 
 const diff = 'Some diff content';

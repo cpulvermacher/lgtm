@@ -43,6 +43,7 @@ export async function reviewDiff(
             config.logger.debug('No changes in file:', file);
             continue;
         }
+        config.logger.debug(`Diff for ${file}:`, diff);
 
         try {
             const { response, promptTokens, responseTokens } =

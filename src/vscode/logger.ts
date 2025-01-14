@@ -12,6 +12,7 @@ export class Logger {
         }
     }
 
+    /** Log a debug message to the output channel. Does nothing if enableDebug is turned off. */
     debug(message: string, ...optionalParams: unknown[]) {
         if (!this.outputChannel) {
             return;
