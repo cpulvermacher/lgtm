@@ -20,7 +20,7 @@ export class LgtmLogger implements Logger {
 
         console.debug(message, ...optionalParams);
         this.outputChannel.appendLine(
-            '[DEBUG] ' + this.createJsonMessage(message, optionalParams)
+            '[DEBUG] ' + this.createMessage(message, optionalParams)
         );
     }
 
@@ -28,22 +28,9 @@ export class LgtmLogger implements Logger {
         console.info(message, ...optionalParams);
         if (this.outputChannel) {
             this.outputChannel.appendLine(
-                '[INFO] ' + this.createJsonMessage(message, optionalParams)
+                '[INFO] ' + this.createMessage(message, optionalParams)
             );
         }
-    }
-
-    private createJsonMessage(
-        message: string,
-        optionalParams: unknown[]
-    ): string {
-        if (optionalParams.length > 0) {
-            message =
-                message +
-                ' ' +
-                optionalParams.map((p) => JSON.stringify(p)).join(' ');
-        }
-        return message;
     }
 
     setEnableDebug(enableDebug: boolean) {
@@ -56,5 +43,17 @@ export class LgtmLogger implements Logger {
             this.outputChannel.dispose();
             this.outputChannel = undefined;
         }
+    }
+
+    private createMessage(message: string, optionalParams: unknown[]): string {
+        for (const param of optionalParams) {
+            if (typeof param === 'string') {
+                message += ' ' + param;
+            } else {
+                message += ' ' + JSON.stringify(param);
+            }
+        }
+
+        return message;
     }
 }
