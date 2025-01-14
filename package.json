@@ -84,7 +84,7 @@
         "lgtm.enableDebugOutput": {
           "type": "boolean",
           "default": false,
-          "description": "Print debug information (model info, token count, etc.) in the chat."
+          "description": "Log debug output to OUTPUT panel > LGTM."
         },
         "lgtm.chatModel": {
           "type": "string",

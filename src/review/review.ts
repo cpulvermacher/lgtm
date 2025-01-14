@@ -40,7 +40,7 @@ export async function reviewDiff(
             file
         );
         if (diff.length === 0) {
-            console.debug('No changes in file:', file);
+            config.logger.debug('No changes in file:', file);
             continue;
         }
 
@@ -52,7 +52,7 @@ export async function reviewDiff(
                     diff,
                     cancellationToken
                 );
-            console.debug(`Response for ${file}:`, response);
+            config.logger.debug(`Response for ${file}:`, response);
 
             fileComments.push({
                 target: file,
@@ -93,7 +93,9 @@ export async function getReviewResponse(
     const originalSize = diff.length;
     diff = await model.limitTokens(diff);
     if (diff.length < originalSize) {
-        console.debug(`Diff truncated from ${originalSize} to ${diff.length}`);
+        config.logger.info(
+            `Diff truncated from ${originalSize} to ${diff.length}`
+        );
     }
 
     const prompt = createReviewPrompt(

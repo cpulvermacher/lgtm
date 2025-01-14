@@ -9,16 +9,20 @@ import {
 
 import { Model } from '../types/Model';
 import { ModelError } from '../types/ModelError';
+import { Logger } from './logger';
 
 /** Select chat model (asks for permissions the first time) */
-export async function selectChatModel(modelFamily: string): Promise<Model> {
+export async function selectChatModel(
+    modelFamily: string,
+    logger: Logger
+): Promise<Model> {
     const models = await lm.selectChatModels({
         vendor: 'copilot',
         family: modelFamily,
     });
-    console.debug('Found models:', models);
+    logger.debug('Found models:', models);
     const allModels = await lm.selectChatModels();
-    console.debug('All models:', allModels);
+    logger.debug('All models:', allModels);
 
     if (models.length === 0) {
         throw new Error(

@@ -29,11 +29,10 @@ export function deactivate() {
 
 async function handler(
     chatRequest: vscode.ChatRequest,
-    context: vscode.ChatContext,
+    _context: vscode.ChatContext,
     stream: vscode.ChatResponseStream,
     cancellationToken: vscode.CancellationToken
 ): Promise<void> {
-    console.debug('Received request:', chatRequest, 'with context:', context);
     if (__GIT_VERSION__) {
         stream.markdown(`**LGTM dev build**: ${__GIT_VERSION__}\n\n`);
     }

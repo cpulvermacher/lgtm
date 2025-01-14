@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import { Config, Options } from '../types/Config';
 import { createGit } from '../utils/git';
+import { Logger } from './logger';
 import { selectChatModel } from './model';
 
 let _config: Config;
@@ -24,8 +25,9 @@ export async function getConfig(): Promise<Config> {
     }
 
     const workspaceRoot = mainWorkspace.uri.fsPath;
+    const logger = new Logger(getOptions().enableDebugOutput);
     const git = await createGit(workspaceRoot);
-    const model = await selectChatModel(getOptions().chatModel);
+    const model = await selectChatModel(getOptions().chatModel, logger);
 
     _config = {
         git,
@@ -33,18 +35,19 @@ export async function getConfig(): Promise<Config> {
         gitRoot: git.getGitRoot(),
         model,
         getOptions,
+        logger,
     };
 
     vscode.lm.onDidChangeChatModels(async () => {
-        console.log('Chat models were updated, rechecking...');
-        _config.model = await selectChatModel(getOptions().chatModel);
+        logger.debug('Chat models were updated, rechecking...');
+        _config.model = await selectChatModel(getOptions().chatModel, logger);
     });
     vscode.workspace.onDidChangeConfiguration(async (ev) => {
         if (!ev.affectsConfiguration('lgtm')) {
             return;
         }
-        console.log('Config updated, updating model...');
-        _config.model = await selectChatModel(getOptions().chatModel);
+        logger.debug('Config updated, updating model...');
+        _config.model = await selectChatModel(getOptions().chatModel, logger);
     });
 
     return _config;
