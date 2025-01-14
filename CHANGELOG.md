@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.10.0] (pre-release)
+- The "Enable Debug Output" setting now logs to a separate channel in the output view.
+
 ## [0.9.0]
 - Highlight: Added /review to compare branches, commits, or tags with a single command.
 - Avoid review comments regarding formatting
