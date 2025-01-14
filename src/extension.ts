@@ -19,6 +19,45 @@ export function activate(context: vscode.ExtensionContext) {
         context.extensionUri,
         'images/chat_icon.png'
     );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'lgtm.deleteComment',
+            (thread: vscode.CommentThread) => {
+                if (!config) {
+                    return;
+                }
+                config.logger.debug('deleting comment', thread);
+                if (thread) {
+                    thread.dispose();
+                }
+            }
+        ),
+        vscode.commands.registerCommand(
+            'lgtm.resolveComment',
+            (thread: vscode.CommentThread) => {
+                if (!config) {
+                    return;
+                }
+                config.logger.debug('resolving comment', thread);
+                if (thread) {
+                    thread.state = vscode.CommentThreadState.Resolved;
+                }
+            }
+        ),
+        vscode.commands.registerCommand(
+            'lgtm.resolveAll',
+            (thread: vscode.CommentThread) => {
+                if (!config) {
+                    return;
+                }
+                config.logger.debug('resolving all', thread);
+                if (commentController) {
+                    commentController.dispose();
+                }
+            }
+        )
+    );
 }
 
 export function deactivate() {
@@ -215,22 +254,18 @@ function showReviewResults(
             //     : null;
             const commentMarkdown = `${comment.comment} (Severity: ${comment.severity}/5)`;
 
+            const lgtmComment = new LgtmComment(commentMarkdown);
             const thread = commentController.createCommentThread(
                 toUri(config, file.target),
                 new vscode.Range(startPosition, startPosition),
-                [
-                    {
-                        body: commentMarkdown,
-                        mode: vscode.CommentMode.Preview,
-                        author: { name: 'LGTM' },
-                    },
-                ]
+                [lgtmComment]
             );
             thread.canReply = false;
             if (!isValidLineNumber) {
                 thread.label =
                     '(line information inaccurate since the reviewed commit is not checked out)';
             }
+            // lgtmComment.thread = thread;
 
             // stream.markdown(`\n - `);
             // if (location) {
@@ -253,13 +288,23 @@ function showReviewResults(
         }
 
         if (filteredFileComments.length > 0) {
-            stream.markdown('\n\n');
+            // stream.markdown('\n\n');
         }
     }
 
     if (noProblemsFound) {
         stream.markdown('\nNo problems found.');
     } else {
+        vscode.commands.executeCommand('workbench.action.focusCommentsPanel');
+        stream.button({
+            command: 'workbench.action.focusCommentsPanel',
+            title: 'Show comments',
+        });
+        stream.button({
+            command: 'lgtm.resolveAll',
+            title: 'Resolve all comments',
+        });
+
         if (!isTargetCheckedOut) {
             vscode.commands.executeCommand(
                 'workbench.action.focusCommentsPanel'
@@ -278,4 +323,18 @@ function showReviewResults(
             `${result.errors.length} error(s) occurred during review:\n${errorString}`
         );
     }
+}
+
+class LgtmComment implements vscode.Comment {
+    constructor(commentMarkdown: string) {
+        this.body = new vscode.MarkdownString(commentMarkdown);
+    }
+    body: string | vscode.MarkdownString;
+    mode = vscode.CommentMode.Preview;
+    author = { name: 'LGTM' };
+    contextValue?: string | undefined;
+    reactions?: vscode.CommentReaction[] | undefined;
+    label?: string | undefined;
+    timestamp?: Date | undefined;
+    thread?: vscode.CommentThread;
 }

@@ -52,6 +52,78 @@
         ]
       }
     ],
+    "commands": [
+      {
+        "command": "lgtm.deleteComment",
+        "title": "Delete"
+      },
+      {
+        "command": "lgtm.resolveComment",
+        "title": "Resolve"
+      },
+      {
+        "command": "lgtm.resolveAll",
+        "title": "Resolve All"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "lgtm.deleteComment",
+          "when": "false"
+        },
+        {
+          "command": "lgtm.resolveComment",
+          "when": "false"
+        },
+        {
+          "command": "lgtm.resolveAll",
+          "when": "false"
+        }
+      ],
+      "comments/commentThread/context": [
+        {
+          "command": "lgtm.deleteComment",
+          "group": "inline",
+          "when": "commentController == lgtm"
+        },
+        {
+          "command": "lgtm.deleteComment",
+          "group": "navigation",
+          "when": "commentController == lgtm"
+        },
+        {
+          "command": "lgtm.resolveAll",
+          "group": "navigation",
+          "when": "commentController == lgtm"
+        }
+      ],
+      "comments/commentThread/title": [
+        {
+          "command": "lgtm.resolveComment",
+          "group": "navigation",
+          "when": "commentController == lgtm"
+        },
+        {
+          "command": "lgtm.resolveComment",
+          "when": "commentController == lgtm"
+        }
+      ],
+      "comments/comment/title": [
+        {
+          "command": "lgtm.resolveAll",
+          "group": "group@1",
+          "when": "commentController == lgtm"
+        }
+      ],
+      "comments/comment/context": [
+        {
+          "command": "lgtm.resolveAll",
+          "group": "group@1",
+          "when": "commentController == lgtm"
+        }
+      ]
+    },
     "configuration": {
       "title": "LGTM",
       "properties": {
