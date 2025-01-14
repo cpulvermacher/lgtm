@@ -146,7 +146,7 @@ function showReviewResults(
         );
 
         if (filteredFileComments.length > 0) {
-            stream.anchor(toUri(config, file.target), file.target);
+            stream.anchor(toUri(config, file.target));
         }
 
         for (const comment of filteredFileComments) {
@@ -160,7 +160,7 @@ function showReviewResults(
 
             stream.markdown(`\n - `);
             if (location) {
-                stream.anchor(location, `Line ${comment.line}: `);
+                stream.anchor(location);
             } else {
                 stream.markdown(`Line ${comment.line}: `);
             }
