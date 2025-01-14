@@ -31,6 +31,7 @@ const git = {
 const logger = {
     debug: vi.fn(),
     info: vi.fn(),
+    setEnableDebug: vi.fn(),
 } as Logger;
 
 const config = {

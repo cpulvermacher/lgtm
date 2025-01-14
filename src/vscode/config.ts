@@ -46,7 +46,8 @@ export async function getConfig(): Promise<Config> {
         if (!ev.affectsConfiguration('lgtm')) {
             return;
         }
-        logger.debug('Config updated, updating model...');
+        logger.debug('Updating config...');
+        _config.logger.setEnableDebug(getOptions().enableDebugOutput);
         _config.model = await selectChatModel(getOptions().chatModel, logger);
     });
 

@@ -9,12 +9,7 @@ export class LgtmLogger implements Logger {
     private outputChannel?: vscode.OutputChannel;
 
     constructor(enableDebug: boolean) {
-        if (enableDebug) {
-            this.outputChannel = vscode.window.createOutputChannel(
-                outputChannelName,
-                'json'
-            );
-        }
+        this.setEnableDebug(enableDebug);
     }
 
     /** Log a debug message to the output channel. Does nothing if enableDebug is turned off. */
@@ -49,5 +44,17 @@ export class LgtmLogger implements Logger {
                 optionalParams.map((p) => JSON.stringify(p)).join(' ');
         }
         return message;
+    }
+
+    setEnableDebug(enableDebug: boolean) {
+        if (enableDebug && !this.outputChannel) {
+            this.outputChannel = vscode.window.createOutputChannel(
+                outputChannelName,
+                'json'
+            );
+        } else if (!enableDebug && this.outputChannel) {
+            this.outputChannel.dispose();
+            this.outputChannel = undefined;
+        }
     }
 }
