@@ -110,11 +110,25 @@ async function handler(
         reviewScope = await git.getReviewScope(refs.target, refs.base);
     }
 
-    const reviewResult = await reviewDiff(
-        config,
-        stream,
-        reviewScope,
-        cancellationToken
+    const reviewResult = await vscode.window.withProgress(
+        {
+            cancellable: true,
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reviewing ',
+        },
+        async (progress, cancel) => {
+            const result = await reviewDiff(
+                config,
+                reviewScope,
+                progress,
+                cancel
+            );
+            if (cancel.isCancellationRequested) {
+                stream.markdown('\nCancelled, showing partial results.');
+            }
+
+            return result;
+        }
     );
 
     showReviewResults(reviewResult, stream, config, cancellationToken);
@@ -179,10 +193,10 @@ function showReviewResults(
     }
 
     if (noProblemsFound) {
-        stream.markdown('No problems found.');
+        stream.markdown('\nNo problems found.');
     } else if (!isTargetCheckedOut) {
         stream.markdown(
-            'Note: The target branch or commit is not checked out, so line numbers may not match the current state.'
+            '\nNote: The target branch or commit is not checked out, so line numbers may not match the current state.'
         );
     }
 

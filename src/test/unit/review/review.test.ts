@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { CancellationToken, ChatResponseStream } from 'vscode';
+import type { CancellationToken } from 'vscode';
 
 import { parseResponse } from '../../../review/comment';
 import {
@@ -94,11 +94,9 @@ describe('reviewDiff', () => {
         ),
     }));
 
-    const stream = {
-        markdown: vi.fn(),
-        anchor: vi.fn(),
-        progress: vi.fn(),
-    } as unknown as ChatResponseStream;
+    const progress = {
+        report: vi.fn(),
+    } as const;
 
     const scope = {
         changeDescription: 'chore: dummy change',
@@ -118,8 +116,8 @@ describe('reviewDiff', () => {
 
         const result = await reviewDiff(
             config,
-            stream,
             scope,
+            progress,
             cancellationToken
         );
 
@@ -127,13 +125,14 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(2);
         expect(result.errors).toHaveLength(0);
 
-        expect(stream.markdown).toHaveBeenCalledWith(' Found 2 files.\n\n');
-        expect(stream.progress).toHaveBeenCalledWith(
-            'Reviewing file file1 (1/2)'
-        );
-        expect(stream.progress).toHaveBeenCalledWith(
-            'Reviewing file file2 (2/2)'
-        );
+        expect(progress.report).toHaveBeenCalledWith({
+            message: 'file1...',
+            increment: 50,
+        });
+        expect(progress.report).toHaveBeenCalledWith({
+            message: 'file2...',
+            increment: 50,
+        });
         expect(model.sendRequest).toHaveBeenCalledTimes(2);
         expect(parseResponse).toHaveBeenCalledWith('model response');
     });
@@ -146,8 +145,8 @@ describe('reviewDiff', () => {
 
         const result = await reviewDiff(
             config,
-            stream,
             scope,
+            progress,
             cancellationToken
         );
 
@@ -155,8 +154,7 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(0);
         expect(result.errors).toHaveLength(1);
 
-        expect(stream.markdown).toHaveBeenCalledWith(' Found 2 files.\n\n');
-        expect(stream.progress).toHaveBeenCalledTimes(1);
+        expect(progress.report).toHaveBeenCalledTimes(1);
         expect(model.sendRequest).toHaveBeenCalledTimes(1);
     });
 
@@ -168,8 +166,8 @@ describe('reviewDiff', () => {
 
         const result = await reviewDiff(
             config,
-            stream,
             scope,
+            progress,
             cancellationToken
         );
 
@@ -177,8 +175,7 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toHaveLength(1);
 
-        expect(stream.markdown).toHaveBeenCalledWith(' Found 2 files.\n\n');
-        expect(stream.progress).toHaveBeenCalledTimes(2);
+        expect(progress.report).toHaveBeenCalledTimes(2);
         expect(model.sendRequest).toHaveBeenCalledTimes(2);
     });
 });
