@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { reviewDiff } from './review/review';
 import { Config } from './types/Config';
-import { ReviewScope } from './types/ReviewRequest';
+import { ReviewRequest, ReviewScope } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
 import { getConfig, toUri } from './vscode/config';
 import { pickCommit, pickRef, pickRefs } from './vscode/ui';
@@ -45,63 +45,10 @@ async function handler(
         return;
     }
 
-    const git = config.git;
-
-    let parsedPrompt;
-    try {
-        parsedPrompt = await parseArguments(config, chatRequest.prompt);
-    } catch {
-        throw new Error(
-            `Could not parse "${chatRequest.prompt}" into valid commit refs. Try branch names, commit hashes, tags, or "HEAD".`
-        );
+    const reviewRequest = await getReviewRequest(config, chatRequest);
+    if (!reviewRequest) {
+        return;
     }
-    let reviewScope: ReviewScope;
-    if (chatRequest.command === 'commit') {
-        let commit;
-        if (parsedPrompt.target) {
-            if (parsedPrompt.base) {
-                throw new Error(
-                    '/commit expects at most a single ref as argument'
-                );
-            }
-            commit = parsedPrompt.target;
-        } else {
-            commit = await pickCommit(config);
-        }
-        if (!commit) {
-            return;
-        }
-
-        reviewScope = await git.getReviewScope(commit);
-    } else {
-        let refs;
-        if (parsedPrompt.target && parsedPrompt.base) {
-            // both refs are provided
-            refs = parsedPrompt;
-        } else if (parsedPrompt.target && !parsedPrompt.base) {
-            // only target ref is provided
-            const base = await pickRef(
-                config,
-                'Select a branch/tag/commit to compare with (2/2)',
-                parsedPrompt.target
-            );
-            if (!base) {
-                return;
-            }
-            refs = { target: parsedPrompt.target, base };
-        } else if (chatRequest.command === 'review') {
-            refs = await pickRefs(config, undefined);
-        } else if (chatRequest.command === 'branch') {
-            refs = await pickRefs(config, 'branch');
-        }
-        if (!refs) {
-            return;
-        }
-
-        reviewScope = await git.getReviewScope(refs.target, refs.base);
-    }
-
-    const reviewRequest = { scope: reviewScope };
 
     if (chatRequest.command === 'commit') {
         stream.markdown(
@@ -109,11 +56,11 @@ async function handler(
         );
     } else {
         const { base, target } = reviewRequest.scope;
-        const targetIsBranch = await git.isBranch(target);
+        const targetIsBranch = await config.git.isBranch(target);
         stream.markdown(
             `Reviewing changes ${targetIsBranch ? 'on' : 'at'} \`${target}\` compared to \`${base}\`...`
         );
-        if (await git.isSameRef(base, target)) {
+        if (await config.git.isSameRef(base, target)) {
             stream.markdown(' No changes found.');
             return;
         }
@@ -141,6 +88,68 @@ async function handler(
     );
 
     showReviewResults(reviewResult, stream, config, cancellationToken);
+}
+
+/** Constructs review request (prompting user if needed) */
+async function getReviewRequest(
+    config: Config,
+    chatRequest: vscode.ChatRequest
+): Promise<ReviewRequest | undefined> {
+    let parsedPrompt;
+    try {
+        parsedPrompt = await parseArguments(config, chatRequest.prompt);
+    } catch {
+        throw new Error(
+            `Could not parse "${chatRequest.prompt}" into valid commit refs. Try branch names, commit hashes, tags, or "HEAD".`
+        );
+    }
+    let reviewScope: ReviewScope;
+    if (chatRequest.command === 'commit') {
+        let commit;
+        if (parsedPrompt.target) {
+            if (parsedPrompt.base) {
+                throw new Error(
+                    '/commit expects at most a single ref as argument'
+                );
+            }
+            commit = parsedPrompt.target;
+        } else {
+            commit = await pickCommit(config);
+        }
+        if (!commit) {
+            return;
+        }
+
+        reviewScope = await config.git.getReviewScope(commit);
+    } else {
+        let refs;
+        if (parsedPrompt.target && parsedPrompt.base) {
+            // both refs are provided
+            refs = parsedPrompt;
+        } else if (parsedPrompt.target && !parsedPrompt.base) {
+            // only target ref is provided
+            const base = await pickRef(
+                config,
+                'Select a branch/tag/commit to compare with (2/2)',
+                parsedPrompt.target
+            );
+            if (!base) {
+                return;
+            }
+            refs = { target: parsedPrompt.target, base };
+        } else if (chatRequest.command === 'review') {
+            refs = await pickRefs(config, undefined);
+        } else if (chatRequest.command === 'branch') {
+            refs = await pickRefs(config, 'branch');
+        }
+        if (!refs) {
+            return;
+        }
+
+        reviewScope = await config.git.getReviewScope(refs.target, refs.base);
+    }
+
+    return { scope: reviewScope };
 }
 
 function showReviewResults(
