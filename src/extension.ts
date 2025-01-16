@@ -8,6 +8,7 @@ import { parseArguments } from './utils/parseArguments';
 import { getConfig, toUri } from './vscode/config';
 import { pickCommit, pickRef, pickRefs } from './vscode/ui';
 
+let config: Config | undefined;
 let chatParticipant: vscode.ChatParticipant;
 
 // called the first time a command is executed
@@ -31,7 +32,9 @@ async function handler(
     stream: vscode.ChatResponseStream,
     cancellationToken: vscode.CancellationToken
 ): Promise<void> {
-    const config = await getConfig();
+    if (!config) {
+        config = await getConfig();
+    }
 
     if (
         !chatRequest.command ||
