@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CancellationToken } from 'vscode';
 
 import { parseResponse } from '../../../review/comment';
@@ -15,36 +15,39 @@ import { ModelError } from '../../../types/ModelError';
 import { ReviewScope } from '../../../types/ReviewRequest';
 import { Git } from '../../../utils/git';
 
-const model = {
-    sendRequest: vi.fn(async () => {
-        return Promise.resolve('Some review comment\n3/5');
-    }),
-    limitTokens: vi.fn(async (text: string) => Promise.resolve(text)),
-    countTokens: vi.fn(async () => Promise.resolve(4)),
-} as unknown as Model;
+function createMockConfig() {
+    const model = {
+        sendRequest: vi.fn(async () => {
+            return Promise.resolve('Some review comment\n3/5');
+        }),
+        limitTokens: vi.fn(async (text: string) => Promise.resolve(text)),
+        countTokens: vi.fn(async () => Promise.resolve(4)),
+    } as unknown as Model;
 
-const git = {
-    getChangedFiles: vi.fn(),
-    getFileDiff: vi.fn((_, __, path) => `diff for ${path}`),
-} as unknown as Git;
+    const git = {
+        getChangedFiles: vi.fn(),
+        getFileDiff: vi.fn((_, __, path) => `diff for ${path}`),
+    } as unknown as Git;
 
-const logger = {
-    debug: vi.fn(),
-    info: vi.fn(),
-    setEnableDebug: vi.fn(),
-} as Logger;
+    const logger = {
+        debug: vi.fn(),
+        info: vi.fn(),
+        setEnableDebug: vi.fn(),
+    } as Logger;
 
-const config = {
-    git,
-    model,
-    getOptions: () => ({
-        customPrompt: '',
-        minSeverity: 3,
-        excludeGlobs: [] as string[],
-        enableDebugOutput: false,
-    }),
-    logger,
-} as Config;
+    const config = {
+        git,
+        model,
+        getOptions: () => ({
+            customPrompt: 'custom prompt',
+            minSeverity: 3,
+            excludeGlobs: [] as string[],
+            enableDebugOutput: false,
+        }),
+        logger,
+    } as Config;
+    return { config, model, git, logger };
+}
 
 const diff = 'Some diff content';
 const cancellationToken = {
@@ -52,11 +55,18 @@ const cancellationToken = {
 } as CancellationToken;
 
 describe('getReviewResponse', () => {
+    let config: Config;
+    let model: Model;
+    beforeEach(() => {
+        ({ config, model } = createMockConfig());
+    });
+
     it('should return a comment and severity', async () => {
         const result = await getReviewResponse(
             config,
             'chore: dummy change',
             diff,
+            undefined,
             cancellationToken
         );
 
@@ -80,9 +90,40 @@ describe('getReviewResponse', () => {
                 config,
                 'chore: dummy change',
                 diff,
+                undefined,
                 cancellationToken
             );
         }).rejects.toThrow('Stream error');
+    });
+
+    it('should pass the custom prompt to the model', async () => {
+        const userPrompt = 'prompt for this request';
+
+        const result = await getReviewResponse(
+            config,
+            'chore: dummy change',
+            diff,
+            userPrompt,
+            cancellationToken
+        );
+
+        expect(result.response).toBe('Some review comment\n3/5');
+        expect(result.promptTokens).toBe(4);
+        expect(result.responseTokens).toBe(4);
+
+        expect(model.sendRequest).toHaveBeenCalledWith(
+            expect.stringContaining(`Review rules:\n${userPrompt}`),
+            cancellationToken
+        );
+
+        const customPrompt = config.getOptions().customPrompt;
+        expect(customPrompt.length).toBeGreaterThan(0);
+
+        // check usual custom prompt is NOT included in the model request
+        expect(model.sendRequest).not.toHaveBeenCalledWith(
+            expect.stringContaining(customPrompt),
+            cancellationToken
+        );
     });
 });
 
@@ -93,6 +134,13 @@ describe('reviewDiff', () => {
             (comments: Omit<FileComments, 'maxSeverity'>[]) => comments
         ),
     }));
+
+    let config: Config;
+    let git: Git;
+    let model: Model;
+    beforeEach(() => {
+        ({ config, git, model } = createMockConfig());
+    });
 
     const progress = {
         report: vi.fn(),

@@ -49,6 +49,7 @@ export async function reviewDiff(
                     config,
                     request.scope.changeDescription,
                     diff,
+                    request.userPrompt,
                     cancellationToken
                 );
             config.logger.debug(`Response for ${file}:`, response);
@@ -85,6 +86,7 @@ export async function getReviewResponse(
     config: Config,
     changeDescription: string,
     diff: string,
+    userPrompt: string | undefined,
     cancellationToken: CancellationToken
 ) {
     const model = config.model;
@@ -100,7 +102,8 @@ export async function getReviewResponse(
     const prompt = createReviewPrompt(
         changeDescription,
         diff,
-        options.customPrompt
+        options.customPrompt,
+        userPrompt
     );
     const response = await model.sendRequest(prompt, cancellationToken);
 
@@ -114,8 +117,18 @@ export async function getReviewResponse(
 export function createReviewPrompt(
     changeDescription: string,
     diff: string,
-    customPrompt: string
+    customPrompt: string,
+    userPrompt?: string
 ): string {
+    const defaultRules = `
+- Provide comments on bugs, security vulnerabilities, code smells, and typos.
+- Only provide comments for added lines.
+- Do not provide comments on formatting.
+- Do not make assumptions about code that is not included in the diff.
+${customPrompt}
+`;
+    const reviewRules = userPrompt ? userPrompt.trim() : defaultRules.trim();
+
     return `You are a senior software engineer reviewing a pull request. Analyze the following git diff for one of the changed files.
 
 Diff format:
@@ -126,11 +139,7 @@ Diff format:
 - Lines with DIFF TYPE \` \` are unchanged and provided for context.
 
 Review rules:
-- Provide comments on bugs, security vulnerabilities, code smells, and typos.
-- Only provide comments for added lines.
-- Do not provide comments on formatting.
-- Do not make assumptions about code that is not included in the diff.
-${customPrompt}
+${reviewRules}
 
 Output rules:
 - Respond with a JSON list of comments objects, which contain the fields \`comment\`, \`line\`, and \`severity\`.

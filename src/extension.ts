@@ -46,25 +46,34 @@ async function handler(
         return;
     }
 
-    const reviewRequest = await getReviewRequest(config, chatRequest);
+    const reviewRequest = await getReviewRequest(
+        config,
+        chatRequest.command,
+        chatRequest.prompt
+    );
     if (!reviewRequest) {
         return;
     }
 
     if (chatRequest.command === 'commit') {
         stream.markdown(
-            `Reviewing changes in commit \`${reviewRequest.scope.target}\`...`
+            `Reviewing changes in commit \`${reviewRequest.scope.target}\`...\n\n`
         );
     } else {
         const { base, target } = reviewRequest.scope;
         const targetIsBranch = await config.git.isBranch(target);
         stream.markdown(
-            `Reviewing changes ${targetIsBranch ? 'on' : 'at'} \`${target}\` compared to \`${base}\`...`
+            `Reviewing changes ${targetIsBranch ? 'on' : 'at'} \`${target}\` compared to \`${base}\`...\n\n`
         );
         if (await config.git.isSameRef(base, target)) {
-            stream.markdown(' No changes found.');
+            stream.markdown('No changes found.');
             return;
         }
+    }
+    if (reviewRequest.userPrompt) {
+        stream.markdown(
+            `Using custom prompt: \`${reviewRequest.userPrompt}\`\n\n`
+        );
     }
 
     const results = await review(config, reviewRequest, stream);
@@ -75,18 +84,13 @@ async function handler(
 /** Constructs review request (prompting user if needed) */
 async function getReviewRequest(
     config: Config,
-    chatRequest: vscode.ChatRequest
+    command: string,
+    prompt: string
 ): Promise<ReviewRequest | undefined> {
-    let parsedPrompt;
-    try {
-        parsedPrompt = await parseArguments(config.git, chatRequest.prompt);
-    } catch {
-        throw new Error(
-            `Could not parse "${chatRequest.prompt}" into valid commit refs. Try branch names, commit hashes, tags, or "HEAD".`
-        );
-    }
+    const parsedPrompt = await parseArguments(config.git, prompt);
+
     let reviewScope: ReviewScope;
-    if (chatRequest.command === 'commit') {
+    if (command === 'commit') {
         let commit;
         if (parsedPrompt.target) {
             if (parsedPrompt.base) {
@@ -119,9 +123,9 @@ async function getReviewRequest(
                 return;
             }
             refs = { target: parsedPrompt.target, base };
-        } else if (chatRequest.command === 'review') {
+        } else if (command === 'review') {
             refs = await pickRefs(config, undefined);
-        } else if (chatRequest.command === 'branch') {
+        } else if (command === 'branch') {
             refs = await pickRefs(config, 'branch');
         }
         if (!refs || !refs.target || !refs.base) {
@@ -131,7 +135,7 @@ async function getReviewRequest(
         reviewScope = await config.git.getReviewScope(refs.target, refs.base);
     }
 
-    return { scope: reviewScope };
+    return { scope: reviewScope, userPrompt: parsedPrompt.customPrompt };
 }
 
 /** Reviews changes and displays progress bar */

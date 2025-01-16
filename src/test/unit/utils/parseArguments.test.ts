@@ -36,22 +36,101 @@ describe('parseArguments', () => {
         expect(result).toEqual({ target: 'target', base: 'base' });
     });
 
-    it('throws for invalid target', async () => {
-        vi.mocked(mockGit.getCommitRef).mockRejectedValue(
-            new Error('not found')
+    it('parses more than two arguments', async () => {
+        const result = await parseArguments(
+            mockGit,
+            'target base some long prompt'
         );
 
-        await expect(parseArguments(mockGit, 'target')).rejects.toThrow();
+        expect(result).toEqual({
+            target: 'target',
+            base: 'base',
+            customPrompt: 'some long prompt',
+        });
     });
 
-    it('throws for invalid base', async () => {
-        vi.mocked(mockGit.getCommitRef).mockResolvedValueOnce('ignored');
-        vi.mocked(mockGit.getCommitRef).mockRejectedValueOnce(
-            new Error('not found')
+    it('parses single non-commit-ref argument into customPrompt', async () => {
+        vi.mocked(mockGit.getCommitRef).mockRejectedValue(new Error());
+
+        const result = await parseArguments(mockGit, 'prompt');
+
+        expect(result).toEqual({ customPrompt: 'prompt' });
+    });
+
+    it('parses two non-commit-ref arguments into customPrompt', async () => {
+        vi.mocked(mockGit.getCommitRef).mockRejectedValue(new Error());
+
+        const result = await parseArguments(mockGit, 'prompt1 prompt2');
+
+        expect(result).toEqual({ customPrompt: 'prompt1 prompt2' });
+    });
+
+    it('parses longer non-commit-ref arguments into customPrompt', async () => {
+        vi.mocked(mockGit.getCommitRef).mockRejectedValue(new Error());
+
+        const result = await parseArguments(
+            mockGit,
+            'this is a longish prompt'
         );
 
-        await expect(parseArguments(mockGit, 'target base')).rejects.toThrow();
+        expect(result).toEqual({
+            customPrompt: 'this is a longish prompt',
+        });
+    });
 
-        expect(mockGit.getCommitRef).toHaveBeenCalledTimes(2);
+    it('parses single commit-ref argument and rest into customPrompt', async () => {
+        vi.mocked(mockGit.getCommitRef)
+            .mockResolvedValueOnce('')
+            .mockRejectedValue(new Error());
+
+        const result = await parseArguments(mockGit, 'target prompt');
+
+        expect(result).toEqual({ target: 'target', customPrompt: 'prompt' });
+    });
+
+    it('parses two commit-ref arguments and rest into customPrompt', async () => {
+        vi.mocked(mockGit.getCommitRef)
+            .mockResolvedValueOnce('')
+            .mockResolvedValueOnce('')
+            .mockRejectedValue(new Error());
+
+        const result = await parseArguments(mockGit, 'target base prompt');
+
+        expect(result).toEqual({
+            target: 'target',
+            base: 'base',
+            customPrompt: 'prompt',
+        });
+    });
+
+    it('parses single commit-ref argument and longer rest into customPrompt', async () => {
+        vi.mocked(mockGit.getCommitRef)
+            .mockResolvedValueOnce('')
+            .mockRejectedValue(new Error());
+
+        const result = await parseArguments(mockGit, 'target longer prompt');
+
+        expect(result).toEqual({
+            target: 'target',
+            customPrompt: 'longer prompt',
+        });
+    });
+
+    it('parses two commit-ref arguments and longer rest into customPrompt', async () => {
+        vi.mocked(mockGit.getCommitRef)
+            .mockResolvedValueOnce('')
+            .mockResolvedValueOnce('')
+            .mockRejectedValue(new Error());
+
+        const result = await parseArguments(
+            mockGit,
+            'target base longer prompt'
+        );
+
+        expect(result).toEqual({
+            target: 'target',
+            base: 'base',
+            customPrompt: 'longer prompt',
+        });
     });
 });
