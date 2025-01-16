@@ -87,7 +87,7 @@ async function handler(
         }
     );
 
-    showReviewResults(reviewResult, stream, config, cancellationToken);
+    showReviewResults(config, reviewResult, stream, cancellationToken);
 }
 
 /** Constructs review request (prompting user if needed) */
@@ -153,9 +153,9 @@ async function getReviewRequest(
 }
 
 function showReviewResults(
+    config: Config,
     result: ReviewResult,
     stream: vscode.ChatResponseStream,
-    config: Config,
     cancellationToken: vscode.CancellationToken
 ) {
     const options = config.getOptions();
