@@ -63,6 +63,10 @@ describe('parseComment', () => {
     it('throws on missing comment', () => {
         expect(() => parseComment({ line: 123, severity: 4 })).toThrow();
     });
+
+    it('throws on invalid comment', () => {
+        expect(() => parseComment('abc' as unknown as object)).toThrow();
+    });
 });
 
 describe('parseResponse', () => {
@@ -82,10 +86,19 @@ describe('parseResponse', () => {
         expect(result).toEqual(responseExample);
     });
 
-    it('with no comments', () => {
+    it('returns empty list with no comments', () => {
         const result = parseResponse('[]');
 
         expect(result).toEqual([]);
+    });
+
+    it('returns empty list if no JSON array found ', () => {
+        expect(parseResponse('abc')).toEqual([]);
+        expect(parseResponse('{}')).toEqual([]);
+    });
+
+    it('returns empty list on invalid JSON inside JSON array', () => {
+        expect(parseResponse('[abc]')).toEqual([]);
     });
 });
 
