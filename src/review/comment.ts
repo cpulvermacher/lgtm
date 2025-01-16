@@ -1,6 +1,32 @@
 import { FileComments } from '../types/FileComments';
 import { ReviewComment } from '../types/ReviewComment';
 
+/** Parse model response into individual comments  */
+export function parseResponse(response: string): ReviewComment[] {
+    return parseAsJsonArray(response).map(parseComment);
+}
+
+/** Parse JSON string from model into array */
+function parseAsJsonArray(response: string): unknown[] {
+    // remove additional text before parsing (most responses are wrapped in markup code blocks)
+    const start = response.indexOf('[');
+    const end = response.lastIndexOf(']');
+    if (start === -1 || end === -1) {
+        return [];
+    }
+
+    try {
+        const rawComments: unknown = JSON.parse(response.slice(start, end + 1));
+        if (!Array.isArray(rawComments)) {
+            return [];
+        }
+        return rawComments;
+    } catch {
+        return [];
+    }
+}
+
+/** Hopefully parse an object into a ReviewComment; throws if it's badly wrong */
 export function parseComment(comment: unknown): ReviewComment {
     if (
         !comment ||
@@ -35,32 +61,6 @@ export function parseComment(comment: unknown): ReviewComment {
         line,
         severity,
     };
-}
-
-/** Parse model response into individual comments  */
-export function parseResponse(response: string): ReviewComment[] {
-    const rawComments = parseAsJsonArray(response);
-
-    return rawComments.map(parseComment);
-}
-
-function parseAsJsonArray(response: string): unknown[] {
-    // remove additional text before parsing (most responses are wrapped in markup code blocks)
-    const start = response.indexOf('[');
-    const end = response.lastIndexOf(']');
-    if (start === -1 || end === -1) {
-        return [];
-    }
-
-    try {
-        const rawComments: unknown = JSON.parse(response.slice(start, end + 1));
-        if (!Array.isArray(rawComments)) {
-            return [];
-        }
-        return rawComments;
-    } catch {
-        return [];
-    }
 }
 
 /** Returns comments in descending order of severity */
