@@ -1,8 +1,13 @@
 import { FileComments } from '../types/FileComments';
 import { ReviewComment } from '../types/ReviewComment';
 
-export function parseComment(comment: object): ReviewComment {
-    if (!('comment' in comment) || typeof comment.comment !== 'string') {
+export function parseComment(comment: unknown): ReviewComment {
+    if (
+        !comment ||
+        typeof comment !== 'object' ||
+        !('comment' in comment) ||
+        typeof comment.comment !== 'string'
+    ) {
         throw new Error('Expected comment');
     }
 
@@ -34,32 +39,28 @@ export function parseComment(comment: object): ReviewComment {
 
 /** Parse model response into individual comments  */
 export function parseResponse(response: string): ReviewComment[] {
-    let rawComments: unknown = [];
-    try {
-        rawComments = JSON.parse(response);
-    } catch {
-        // try removing additional text before parsing
-        const start = response.indexOf('[');
-        const end = response.lastIndexOf(']');
-        if (start === -1 || end === -1) {
-            console.error('Failed to find comments:', response, start, end);
-            return [];
-        }
+    const rawComments = parseAsJsonArray(response);
 
-        try {
-            rawComments = JSON.parse(response.slice(start, end + 1));
-        } catch (error) {
-            console.error('Failed to parse response:', error);
-            return [];
-        }
-    }
+    return rawComments.map(parseComment);
+}
 
-    if (!Array.isArray(rawComments)) {
-        console.error('response is not a list:', response);
+function parseAsJsonArray(response: string): unknown[] {
+    // remove additional text before parsing (most responses are wrapped in markup code blocks)
+    const start = response.indexOf('[');
+    const end = response.lastIndexOf(']');
+    if (start === -1 || end === -1) {
         return [];
     }
 
-    return rawComments.map(parseComment);
+    try {
+        const rawComments: unknown = JSON.parse(response.slice(start, end + 1));
+        if (!Array.isArray(rawComments)) {
+            return [];
+        }
+        return rawComments;
+    } catch {
+        return [];
+    }
 }
 
 /** Returns comments in descending order of severity */
