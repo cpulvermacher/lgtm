@@ -72,7 +72,6 @@ async function handler(
             return;
         }
 
-        stream.markdown(`Reviewing changes in commit \`${commit}\`.`);
         reviewScope = await git.getReviewScope(commit);
     } else {
         let refs;
@@ -99,18 +98,26 @@ async function handler(
             return;
         }
 
-        const targetIsBranch = await git.isBranch(refs.target);
-        stream.markdown(
-            `Reviewing changes ${targetIsBranch ? 'on' : 'at'} \`${refs.target}\` compared to \`${refs.base}\`.`
-        );
-        if (await git.isSameRef(refs.base, refs.target)) {
-            stream.markdown(' No changes found.');
-            return;
-        }
         reviewScope = await git.getReviewScope(refs.target, refs.base);
     }
 
     const reviewRequest = { scope: reviewScope };
+
+    if (chatRequest.command === 'commit') {
+        stream.markdown(
+            `Reviewing changes in commit \`${reviewRequest.scope.target}\`...`
+        );
+    } else {
+        const { base, target } = reviewRequest.scope;
+        const targetIsBranch = await git.isBranch(target);
+        stream.markdown(
+            `Reviewing changes ${targetIsBranch ? 'on' : 'at'} \`${target}\` compared to \`${base}\`...`
+        );
+        if (await git.isSameRef(base, target)) {
+            stream.markdown(' No changes found.');
+            return;
+        }
+    }
 
     const reviewResult = await vscode.window.withProgress(
         {
