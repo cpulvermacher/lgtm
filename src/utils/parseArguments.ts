@@ -13,7 +13,8 @@ export async function parseArguments(
     git: Git,
     args: string
 ): Promise<ParsedArguments> {
-    if (!args || args.trim().length === 0) {
+    args = args.trim();
+    if (!args || args.length === 0) {
         return { target: undefined, base: undefined };
     }
 
