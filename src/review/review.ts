@@ -2,18 +2,20 @@ import type { CancellationToken, Progress } from 'vscode';
 
 import { Config } from '../types/Config';
 import { ModelError } from '../types/ModelError';
+import { ReviewRequest } from '../types/ReviewRequest';
 import { ReviewResult } from '../types/ReviewResult';
-import { ReviewScope } from '../types/ReviewScope';
 import { filterExcludedFiles } from '../utils/glob';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 
 export async function reviewDiff(
     config: Config,
-    scope: ReviewScope,
+    request: ReviewRequest,
     progress: Progress<{ message?: string; increment?: number }>,
     cancellationToken: CancellationToken
 ): Promise<ReviewResult> {
-    const diffFiles = await config.git.getChangedFiles(scope.revisionRangeDiff);
+    const diffFiles = await config.git.getChangedFiles(
+        request.scope.revisionRangeDiff
+    );
     const files = filterExcludedFiles(
         diffFiles,
         config.getOptions().excludeGlobs
@@ -32,7 +34,7 @@ export async function reviewDiff(
         });
 
         const diff = await config.git.getFileDiff(
-            scope.revisionRangeDiff,
+            request.scope.revisionRangeDiff,
             file
         );
         if (diff.length === 0) {
@@ -45,7 +47,7 @@ export async function reviewDiff(
             const { response, promptTokens, responseTokens } =
                 await getReviewResponse(
                     config,
-                    scope.changeDescription,
+                    request.scope.changeDescription,
                     diff,
                     cancellationToken
                 );
@@ -73,7 +75,7 @@ export async function reviewDiff(
     }
 
     return {
-        scope,
+        request,
         fileComments: sortFileCommentsBySeverity(fileComments),
         errors,
     };

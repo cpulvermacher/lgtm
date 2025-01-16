@@ -1,8 +1,8 @@
 import { FileComments } from './FileComments';
-import { ReviewScope } from './ReviewScope';
+import { ReviewRequest } from './ReviewRequest';
 
 export type ReviewResult = {
-    scope: ReviewScope;
+    request: ReviewRequest;
     fileComments: FileComments[];
     errors: { file: string; error: Error }[];
 };

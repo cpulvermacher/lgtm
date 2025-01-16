@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 
 import { reviewDiff } from './review/review';
 import { Config } from './types/Config';
+import { ReviewScope } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
-import { ReviewScope } from './types/ReviewScope';
 import { getConfig, toUri } from './vscode/config';
 import { pickCommit, pickRef, pickRefs } from './vscode/ui';
 
@@ -110,6 +110,8 @@ async function handler(
         reviewScope = await git.getReviewScope(refs.target, refs.base);
     }
 
+    const reviewRequest = { scope: reviewScope };
+
     const reviewResult = await vscode.window.withProgress(
         {
             cancellable: true,
@@ -119,7 +121,7 @@ async function handler(
         async (progress, cancel) => {
             const result = await reviewDiff(
                 config,
-                reviewScope,
+                reviewRequest,
                 progress,
                 cancel
             );
@@ -141,7 +143,7 @@ function showReviewResults(
     cancellationToken: vscode.CancellationToken
 ) {
     const options = config.getOptions();
-    const isTargetCheckedOut = result.scope.isTargetCheckedOut;
+    const isTargetCheckedOut = result.request.scope.isTargetCheckedOut;
     let noProblemsFound = true;
     for (const file of result.fileComments) {
         if (cancellationToken.isCancellationRequested) {

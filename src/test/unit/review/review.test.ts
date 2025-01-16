@@ -12,7 +12,7 @@ import { FileComments } from '../../../types/FileComments';
 import { Logger } from '../../../types/Logger';
 import { Model } from '../../../types/Model';
 import { ModelError } from '../../../types/ModelError';
-import { ReviewScope } from '../../../types/ReviewScope';
+import { ReviewScope } from '../../../types/ReviewRequest';
 import { Git } from '../../../utils/git';
 
 const model = {
@@ -116,12 +116,12 @@ describe('reviewDiff', () => {
 
         const result = await reviewDiff(
             config,
-            scope,
+            { scope },
             progress,
             cancellationToken
         );
 
-        expect(result.scope).toBe(scope);
+        expect(result.request.scope).toBe(scope);
         expect(result.fileComments).toHaveLength(2);
         expect(result.errors).toHaveLength(0);
 
@@ -145,12 +145,12 @@ describe('reviewDiff', () => {
 
         const result = await reviewDiff(
             config,
-            scope,
+            { scope },
             progress,
             cancellationToken
         );
 
-        expect(result.scope).toBe(scope);
+        expect(result.request.scope).toBe(scope);
         expect(result.fileComments).toHaveLength(0);
         expect(result.errors).toHaveLength(1);
 
@@ -166,12 +166,12 @@ describe('reviewDiff', () => {
 
         const result = await reviewDiff(
             config,
-            scope,
+            { scope },
             progress,
             cancellationToken
         );
 
-        expect(result.scope).toBe(scope);
+        expect(result.request.scope).toBe(scope);
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toHaveLength(1);
 

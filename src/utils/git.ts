@@ -1,6 +1,6 @@
 import simpleGit, { SimpleGit } from 'simple-git';
 
-import { ReviewScope } from '../types/ReviewScope';
+import { ReviewScope } from '../types/ReviewRequest';
 
 /** Create a new Git instance */
 export async function createGit(workspaceRoot: string): Promise<Git> {
