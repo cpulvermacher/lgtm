@@ -184,7 +184,8 @@ function showReviewResults(
         }
 
         const filteredFileComments = file.comments.filter(
-            (comment) => comment.severity >= options.minSeverity
+            (comment) =>
+                comment.severity >= options.minSeverity && comment.line > 0
         );
 
         if (filteredFileComments.length > 0) {
