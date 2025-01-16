@@ -98,7 +98,7 @@ async function getReviewRequest(
 ): Promise<ReviewRequest | undefined> {
     let parsedPrompt;
     try {
-        parsedPrompt = await parseArguments(config, chatRequest.prompt);
+        parsedPrompt = await parseArguments(config.git, chatRequest.prompt);
     } catch {
         throw new Error(
             `Could not parse "${chatRequest.prompt}" into valid commit refs. Try branch names, commit hashes, tags, or "HEAD".`

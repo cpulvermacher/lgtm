@@ -1,4 +1,4 @@
-import { Config } from '../types/Config';
+import { Git } from './git';
 
 export type ParsedArguments = {
     target: string | undefined;
@@ -10,7 +10,7 @@ export type ParsedArguments = {
  * If arguments cannot be parsed into at least one ref, throws.
  */
 export async function parseArguments(
-    config: Config,
+    git: Git,
     args: string
 ): Promise<ParsedArguments> {
     if (!args || args.trim().length === 0) {
@@ -18,9 +18,9 @@ export async function parseArguments(
     }
 
     const [target, base] = args.split(' ', 2);
-    await config.git.getCommitRef(target);
+    await git.getCommitRef(target);
     if (base) {
-        await config.git.getCommitRef(base);
+        await git.getCommitRef(base);
     }
     return { target, base };
 }
