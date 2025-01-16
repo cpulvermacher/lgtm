@@ -67,28 +67,9 @@ async function handler(
         }
     }
 
-    const reviewResult = await vscode.window.withProgress(
-        {
-            cancellable: true,
-            location: vscode.ProgressLocation.Notification,
-            title: 'Reviewing ',
-        },
-        async (progress, cancel) => {
-            const result = await reviewDiff(
-                config,
-                reviewRequest,
-                progress,
-                cancel
-            );
-            if (cancel.isCancellationRequested) {
-                stream.markdown('\nCancelled, showing partial results.');
-            }
+    const results = await review(config, reviewRequest, stream);
 
-            return result;
-        }
-    );
-
-    showReviewResults(config, reviewResult, stream, cancellationToken);
+    showReviewResults(config, results, stream, cancellationToken);
 }
 
 /** Constructs review request (prompting user if needed) */
@@ -151,6 +132,34 @@ async function getReviewRequest(
     }
 
     return { scope: reviewScope };
+}
+
+/** Reviews changes and displays progress bar */
+async function review(
+    config: Config,
+    reviewRequest: ReviewRequest,
+    stream: vscode.ChatResponseStream
+) {
+    return await vscode.window.withProgress(
+        {
+            cancellable: true,
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reviewing ',
+        },
+        async (progress, cancel) => {
+            const result = await reviewDiff(
+                config,
+                reviewRequest,
+                progress,
+                cancel
+            );
+            if (cancel.isCancellationRequested) {
+                stream.markdown('\nCancelled, showing partial results.');
+            }
+
+            return result;
+        }
+    );
 }
 
 function showReviewResults(
