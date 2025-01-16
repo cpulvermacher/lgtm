@@ -66,16 +66,24 @@ describe('parseComment', () => {
 });
 
 describe('parseResponse', () => {
+    const responseJsonString = JSON.stringify(responseExample, undefined, 2);
+
     it('normal', () => {
-        const response = JSON.stringify(responseExample, undefined, 2);
-        const result = parseResponse(response);
+        const result = parseResponse(responseJsonString);
+
+        expect(result).toEqual(responseExample);
+    });
+
+    it('handles extra bits around JSON', () => {
+        const wrappedJson = '```json\n' + responseJsonString + '\n```';
+
+        const result = parseResponse(wrappedJson);
 
         expect(result).toEqual(responseExample);
     });
 
     it('with no comments', () => {
-        const response = '[]';
-        const result = parseResponse(response);
+        const result = parseResponse('[]');
 
         expect(result).toEqual([]);
     });
