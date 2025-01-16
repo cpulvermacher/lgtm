@@ -1,10 +1,9 @@
-/** describes a review request */
 export type ReviewRequest = {
     scope: ReviewScope;
     userPrompt?: string; // optional replacement prompt for this review
 };
 
-/** describes the scope of changes in version control for a given review request  */
+/** scope of changes in version control for a given review request  */
 export type ReviewScope = {
     target: string; // target ref (branch, tag, commit, ...)
     base: string; // base ref (branch, tag, commit, ...)
