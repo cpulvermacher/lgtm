@@ -4,6 +4,7 @@ import { reviewDiff } from './review/review';
 import { Config } from './types/Config';
 import { ReviewRequest, ReviewScope } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
+import { parseArguments } from './utils/parseArguments';
 import { getConfig, toUri } from './vscode/config';
 import { pickCommit, pickRef, pickRefs } from './vscode/ui';
 
@@ -142,7 +143,7 @@ async function getReviewRequest(
         } else if (chatRequest.command === 'branch') {
             refs = await pickRefs(config, 'branch');
         }
-        if (!refs) {
+        if (!refs || !refs.target || !refs.base) {
             return;
         }
 
@@ -226,21 +227,4 @@ function showReviewResults(
             `${result.errors.length} error(s) occurred during review:\n${errorString}`
         );
     }
-}
-
-/** parse given arguments to a /command into target/base refs.
- * If no arguments are provided, returns undefined instead of refs.
- * If arguments cannot be parsed into at least one ref, throws.
- */
-async function parseArguments(config: Config, args: string) {
-    if (!args || args.trim().length === 0) {
-        return { target: undefined, base: undefined };
-    }
-
-    const [target, base] = args.split(' ', 2);
-    await config.git.getCommitRef(target);
-    if (base) {
-        await config.git.getCommitRef(base);
-    }
-    return { target, base };
 }
