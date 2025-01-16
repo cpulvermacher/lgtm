@@ -15,7 +15,7 @@ export function parseComment(comment: object): ReviewComment {
         line = comment.line;
     }
 
-    let severity = 3;
+    let severity = 1; // fallback to lowest severity in case of invalid values
     if (
         'severity' in comment &&
         typeof comment.severity === 'number' &&

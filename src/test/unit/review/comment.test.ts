@@ -28,7 +28,7 @@ describe('parseComment', () => {
         expect(result).toEqual({
             comment: 'Some review comment',
             line: 1,
-            severity: 3,
+            severity: 1,
         });
     });
 
@@ -56,7 +56,7 @@ describe('parseComment', () => {
         expect(result).toEqual({
             comment: 'Some review comment',
             line: 123,
-            severity: 3,
+            severity: 1,
         });
     });
 
