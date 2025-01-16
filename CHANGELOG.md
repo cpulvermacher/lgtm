@@ -2,6 +2,8 @@
 
 ## [0.11.0] (pre-release)
 - Allow replacing standard prompt for a single review by adding it after a chat command (e.g. "Check code for typos only.")
+- Filter comments referencing removed lines
+- Avoid creating multiple output channels
 
 ## [0.10.0] (pre-release)
 - Improve progress display during review.
