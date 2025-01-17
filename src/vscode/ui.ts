@@ -8,30 +8,50 @@ export async function pickRef(
     title: string,
     beforeRef?: string,
     type?: 'branch' | 'tag' | 'commit', // all types by default
-    totalCount: number = 20
+    totalCount: number = 20 // total amount of refs to show in picker
 ): Promise<string | undefined> {
-    const maxCount = type ? totalCount : totalCount / 3;
+    let branches;
+    let commits;
+    let tags;
+    if (!type || type === 'branch') {
+        branches = await config.git.getBranchList(beforeRef, totalCount + 1);
+    }
+    if (!type || type === 'commit') {
+        commits = await config.git.getCommitList(beforeRef, totalCount + 1);
+    }
+    if (!type || type === 'tag') {
+        tags = await config.git.getTagList(beforeRef, totalCount + 1);
+    }
+
+    const [numBranches, numCommits, numTags] = distributeTotalCount(
+        totalCount,
+        [
+            branches?.refs.length ?? 0,
+            commits?.refs.length ?? 0,
+            tags?.refs.length ?? 0,
+        ]
+    );
+
     let moreBranchesOption = undefined;
     let moreCommitsOption = undefined;
     let moreTagsOption = undefined;
-
     const quickPickOptions: vscode.QuickPickItem[] = [];
-    if (!type || type === 'branch') {
-        const branches = await config.git.getBranchList(beforeRef, maxCount);
 
+    if (branches && branches.refs.length > 0) {
         quickPickOptions.push({
             label: 'Branches',
             kind: vscode.QuickPickItemKind.Separator,
         });
         const branchIcon = new vscode.ThemeIcon('git-branch');
-        branches.refs.forEach((branch) => {
+        for (let i = 0; i < numBranches; i++) {
+            const branch = branches.refs[i];
             quickPickOptions.push({
                 label: branch.ref,
                 description: branch.description,
                 iconPath: branchIcon,
             });
-        });
-        if (branches.hasMore) {
+        }
+        if (branches.refs.length > numBranches) {
             moreBranchesOption = {
                 label: 'More branches...',
                 alwaysShow: true,
@@ -40,53 +60,49 @@ export async function pickRef(
         }
     }
 
-    if (!type || type === 'commit') {
-        const commits = await config.git.getCommitList(beforeRef, maxCount);
-        if (commits.refs.length > 0) {
+    if (commits && commits.refs.length > 0) {
+        quickPickOptions.push({
+            label: 'Commits',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+        const commitIcon = new vscode.ThemeIcon('git-commit');
+        for (let i = 0; i < numCommits; i++) {
+            const ref = commits.refs[i];
             quickPickOptions.push({
-                label: 'Commits',
-                kind: vscode.QuickPickItemKind.Separator,
+                label: ref.ref.substring(0, 7), // short hash
+                description: ref.description,
+                iconPath: commitIcon,
             });
-            const commitIcon = new vscode.ThemeIcon('git-commit');
-            commits.refs.forEach((ref) => {
-                quickPickOptions.push({
-                    label: ref.ref.substring(0, 7), //short hash
-                    description: ref.description,
-                    iconPath: commitIcon,
-                });
-            });
-            if (commits.hasMore) {
-                moreCommitsOption = {
-                    label: 'More commits...',
-                    alwaysShow: true,
-                };
-                quickPickOptions.push(moreCommitsOption);
-            }
+        }
+        if (commits.refs.length > numCommits) {
+            moreCommitsOption = {
+                label: 'More commits...',
+                alwaysShow: true,
+            };
+            quickPickOptions.push(moreCommitsOption);
         }
     }
 
-    if (!type || type === 'tag') {
-        const tags = await config.git.getTagList(beforeRef, maxCount);
-        if (tags.refs.length > 0) {
+    if (tags && tags.refs.length > 0) {
+        quickPickOptions.push({
+            label: 'Tags',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+        const tagIcon = new vscode.ThemeIcon('tag');
+        for (let i = 0; i < numTags; i++) {
+            const tag = tags.refs[i];
             quickPickOptions.push({
-                label: 'Tags',
-                kind: vscode.QuickPickItemKind.Separator,
+                label: tag.ref,
+                description: tag.description,
+                iconPath: tagIcon,
             });
-            const tagIcon = new vscode.ThemeIcon('tag');
-            tags.refs.forEach((tag) => {
-                quickPickOptions.push({
-                    label: tag.ref,
-                    description: tag.description,
-                    iconPath: tagIcon,
-                });
-            });
-            if (tags.hasMore) {
-                moreTagsOption = {
-                    label: 'More tags...',
-                    alwaysShow: true,
-                };
-                quickPickOptions.push(moreTagsOption);
-            }
+        }
+        if (tags.refs.length > numTags) {
+            moreTagsOption = {
+                label: 'More tags...',
+                alwaysShow: true,
+            };
+            quickPickOptions.push(moreTagsOption);
         }
     }
 
@@ -109,6 +125,33 @@ export async function pickRef(
         return pickRef(config, title, beforeRef, 'tag', expandedCount);
     }
     return target.label;
+}
+
+/** for the given array of item counts, distribute items evenly up to a total of maxItems.
+ *
+ * E.g.
+ * distributeTotalCount(6, [10, 20, 30]) => [2, 2, 2]
+ * distributeTotalCount(10, [2, 20, 30]) => [2, 4, 4]
+ *
+ */
+export function distributeTotalCount(
+    maxItems: number,
+    availableItems: number[]
+): number[] {
+    const totalItems = Math.min(
+        maxItems,
+        availableItems.reduce((a, b) => a + b, 0)
+    );
+    const distribution = Array<number>(availableItems.length).fill(0);
+    let nextItemType = 0;
+    for (let i = 0; i < totalItems; i++) {
+        while (distribution[nextItemType] >= availableItems[nextItemType]) {
+            nextItemType = (nextItemType + 1) % availableItems.length;
+        }
+        distribution[nextItemType]++;
+    }
+
+    return distribution;
 }
 
 /** Asks user to select base and target. If `type` is set, only shows this type of ref. Otherwise, all types are allowed. Returns undefined if aborted. */
