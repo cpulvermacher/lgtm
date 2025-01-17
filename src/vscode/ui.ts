@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import { Config } from '../types/Config';
+import { distributeItems } from '../utils/distributeItems';
 
 /** Ask user to select a single ref. Returns undefined if aborted */
 export async function pickRef(
@@ -23,14 +24,11 @@ export async function pickRef(
         tags = await config.git.getTagList(beforeRef, totalCount + 1);
     }
 
-    const [numBranches, numCommits, numTags] = distributeTotalCount(
-        totalCount,
-        [
-            branches?.refs.length ?? 0,
-            commits?.refs.length ?? 0,
-            tags?.refs.length ?? 0,
-        ]
-    );
+    const [numBranches, numCommits, numTags] = distributeItems(totalCount, [
+        branches?.refs.length ?? 0,
+        commits?.refs.length ?? 0,
+        tags?.refs.length ?? 0,
+    ]);
 
     let moreBranchesOption = undefined;
     let moreCommitsOption = undefined;
@@ -125,33 +123,6 @@ export async function pickRef(
         return pickRef(config, title, beforeRef, 'tag', expandedCount);
     }
     return target.label;
-}
-
-/** for the given array of item counts, distribute items evenly up to a total of maxItems.
- *
- * E.g.
- * distributeTotalCount(6, [10, 20, 30]) => [2, 2, 2]
- * distributeTotalCount(10, [2, 20, 30]) => [2, 4, 4]
- *
- */
-export function distributeTotalCount(
-    maxItems: number,
-    availableItems: number[]
-): number[] {
-    const totalItems = Math.min(
-        maxItems,
-        availableItems.reduce((a, b) => a + b, 0)
-    );
-    const distribution = Array<number>(availableItems.length).fill(0);
-    let nextItemType = 0;
-    for (let i = 0; i < totalItems; i++) {
-        while (distribution[nextItemType] >= availableItems[nextItemType]) {
-            nextItemType = (nextItemType + 1) % availableItems.length;
-        }
-        distribution[nextItemType]++;
-    }
-
-    return distribution;
 }
 
 /** Asks user to select base and target. If `type` is set, only shows this type of ref. Otherwise, all types are allowed. Returns undefined if aborted. */
