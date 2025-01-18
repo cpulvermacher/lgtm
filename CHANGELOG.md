@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.11.1]
+- Show more branches/commits/tags in picker if there is enough space
+
 ## [0.11.0] (pre-release)
 - Allow replacing standard prompt for a single review by adding it after a chat command (e.g. "Check code for typos only.")
 - Filter comments referencing removed lines
