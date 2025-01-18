@@ -1,17 +1,8 @@
-.vscode
-.vscode-test
-.github
-.gitignore
-.yarnrc
-eslint.config.mjs
-vitest.config.js
-**/tsconfig.json
-**/*.map
-**/*.ts
-src/
-images/
+# ignore all files
+**
+# whitelist included files
+!LICENSE
+!CHANGELOG.md
 !images/icon.png
 !images/chat_icon.png
-node_modules
-tmp/
-out/test
+!out/extension.js
