@@ -15,6 +15,10 @@ describe('distributeItems', () => {
         expect(distributeItems(0, [1, 2, 3])).toEqual([0, 0, 0]);
     });
 
+    it('still returns the same size array with maxItems<0', () => {
+        expect(distributeItems(-2124, [1, 2, 3])).toEqual([0, 0, 0]);
+    });
+
     it('handles maxItems > totalItems', () => {
         expect(distributeItems(10, [1, 2, 3])).toEqual([1, 2, 3]);
     });

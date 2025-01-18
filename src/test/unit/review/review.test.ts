@@ -185,6 +185,26 @@ describe('reviewDiff', () => {
         expect(parseResponse).toHaveBeenCalledWith('model response');
     });
 
+    it('aborts when cancelled', async () => {
+        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
+
+        const cancellationToken = {
+            isCancellationRequested: true,
+        } as CancellationToken;
+
+        const result = await reviewDiff(
+            config,
+            { scope },
+            progress,
+            cancellationToken
+        );
+
+        expect(model.sendRequest).not.toHaveBeenCalled();
+        expect(result.request.scope).toBe(scope);
+        expect(result.fileComments).toHaveLength(0);
+        expect(result.errors).toHaveLength(0);
+    });
+
     it('should abort and return errors if a ModelError occurs', async () => {
         vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
         vi.mocked(model.sendRequest)

@@ -266,6 +266,22 @@ line3`;
         });
     });
 
+    describe('isBranch', () => {
+        vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+            all: ['branch1', 'branch2'],
+        } as BranchSummary);
+
+        it('returns true for branch', async () => {
+            expect(await git.isBranch('branch1')).toBe(true);
+
+            expect(mockSimpleGit.branch).toHaveBeenCalledWith(['--all']);
+        });
+
+        it('returns false for non-branch', async () => {
+            expect(await git.isBranch('tag1')).toBe(false);
+        });
+    });
+
     describe('getBranchList', () => {
         it('returns list of branches', async () => {
             vi.mocked(mockSimpleGit.branch).mockResolvedValue({
@@ -441,6 +457,24 @@ line3`;
 
             expect(mockSimpleGit.tags).toHaveBeenCalledWith([
                 '--sort=-creatordate',
+            ]);
+            expect(result.map((ref) => ref.ref)).toEqual(['tag1', 'tag2']);
+            expect(result.map((ref) => ref.description)).toEqual([
+                undefined,
+                undefined,
+            ]);
+        });
+
+        it('returns list of tags before beforeRef', async () => {
+            vi.mocked(mockSimpleGit.tags).mockResolvedValue({
+                all: ['tag1', 'tag2'],
+            } as TagResult);
+
+            const result = await git.getTagList('beforeRef', 2);
+
+            expect(mockSimpleGit.tags).toHaveBeenCalledWith([
+                '--sort=-creatordate',
+                '--no-contains=beforeRef',
             ]);
             expect(result.map((ref) => ref.ref)).toEqual(['tag1', 'tag2']);
             expect(result.map((ref) => ref.description)).toEqual([
