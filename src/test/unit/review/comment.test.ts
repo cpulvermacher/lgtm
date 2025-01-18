@@ -10,12 +10,14 @@ import { responseExample } from '../../../review/review';
 describe('parseComment', () => {
     it('normal', () => {
         const result = parseComment({
+            file: 'a.js',
             comment: 'Some review comment',
             line: 123,
             severity: 4,
         });
 
         expect(result).toEqual({
+            file: 'a.js',
             comment: 'Some review comment',
             line: 123,
             severity: 4,
@@ -23,9 +25,13 @@ describe('parseComment', () => {
     });
 
     it('uses default for line/severity', () => {
-        const result = parseComment({ comment: 'Some review comment' });
+        const result = parseComment({
+            file: 'a.js',
+            comment: 'Some review comment',
+        });
 
         expect(result).toEqual({
+            file: 'a.js',
             comment: 'Some review comment',
             line: 1,
             severity: 1,
@@ -34,12 +40,14 @@ describe('parseComment', () => {
 
     it('uses default for out-of-range line', () => {
         const result = parseComment({
+            file: 'a.js',
             comment: 'Some review comment',
             line: -1,
             severity: 4,
         });
 
         expect(result).toEqual({
+            file: 'a.js',
             comment: 'Some review comment',
             line: 1,
             severity: 4,
@@ -48,24 +56,45 @@ describe('parseComment', () => {
 
     it('uses default for out-of-range severity', () => {
         const result = parseComment({
+            file: 'a.js',
             comment: 'Some review comment',
             line: 123,
             severity: 6,
         });
 
         expect(result).toEqual({
+            file: 'a.js',
             comment: 'Some review comment',
             line: 123,
             severity: 1,
         });
     });
 
-    it('throws on missing comment', () => {
-        expect(() => parseComment({ line: 123, severity: 4 })).toThrow();
-    });
-
     it('throws on invalid comment', () => {
         expect(() => parseComment('abc' as unknown as object)).toThrow();
+    });
+
+    it('throws on missing file field', () => {
+        expect(() =>
+            parseComment({ comment: ' text ', line: 123, severity: 4 })
+        ).toThrow();
+    });
+
+    it('throws on empty file field', () => {
+        expect(() =>
+            parseComment({
+                file: '',
+                comment: ' text ',
+                line: 123,
+                severity: 4,
+            })
+        ).toThrow();
+    });
+
+    it('throws on missing comment field', () => {
+        expect(() =>
+            parseComment({ file: 'abc', line: 123, severity: 4 })
+        ).toThrow();
     });
 });
 

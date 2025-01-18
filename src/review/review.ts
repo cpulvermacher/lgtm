@@ -167,11 +167,13 @@ ${diff}
 
 export const responseExample = [
     {
+        file: 'src/index.html',
         comment: 'The <script> tag is misspelled as <scirpt>.',
         line: 23,
         severity: 4,
     },
     {
+        file: 'src/js/main.js',
         comment:
             'Using `eval()` with a possibly user-supplied string may result in code injection.',
         line: 55,

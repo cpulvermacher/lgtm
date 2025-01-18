@@ -28,13 +28,18 @@ function parseAsJsonArray(response: string): unknown[] {
 
 /** Hopefully parse an object into a ReviewComment; throws if it's badly wrong */
 export function parseComment(comment: unknown): ReviewComment {
-    if (
-        !comment ||
-        typeof comment !== 'object' ||
-        !('comment' in comment) ||
-        typeof comment.comment !== 'string'
-    ) {
+    if (!comment || typeof comment !== 'object') {
         throw new Error('Expected comment');
+    }
+    if (
+        !('file' in comment) ||
+        typeof comment.file !== 'string' ||
+        !comment.file
+    ) {
+        throw new Error('Missing `file` field');
+    }
+    if (!('comment' in comment) || typeof comment.comment !== 'string') {
+        throw new Error('Missing `comment` field');
     }
 
     let line = 1;
@@ -57,6 +62,7 @@ export function parseComment(comment: unknown): ReviewComment {
     }
 
     return {
+        file: comment.file,
         comment: comment.comment.trim(),
         line,
         severity,

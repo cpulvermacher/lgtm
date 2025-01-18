@@ -156,6 +156,7 @@ describe('reviewDiff', () => {
         vi.mocked(model.sendRequest).mockResolvedValue('model response');
         vi.mocked(parseResponse).mockReturnValue([
             {
+                file: 'file1',
                 comment: 'Some review comment',
                 line: 1,
                 severity: 3,
