@@ -4,6 +4,7 @@
 .gitignore
 .yarnrc
 eslint.config.mjs
+vitest.config.js
 **/tsconfig.json
 **/*.map
 **/*.ts
