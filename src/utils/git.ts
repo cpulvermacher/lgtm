@@ -192,10 +192,7 @@ export class Git {
             refs.sort((a, b) => getPriority(a.ref) - getPriority(b.ref));
         }
 
-        return {
-            refs: refs.slice(0, maxCount),
-            hasMore: branches.all.length > maxCount,
-        };
+        return refs.slice(0, maxCount);
     }
 
     /** returns up to `maxCount` tags.
@@ -211,13 +208,9 @@ export class Git {
             tagOptions.push(`--no-contains=${beforeRef}`);
         }
         const tags = await this.git.tags(tagOptions);
-        const refs = tags.all.slice(0, maxCount).map((tag) => ({
+        return tags.all.slice(0, maxCount).map((tag) => ({
             ref: tag,
         }));
-        return {
-            refs,
-            hasMore: tags.all.length > maxCount,
-        };
     }
 
     /** returns up to `maxCount` commit refs.
@@ -231,27 +224,19 @@ export class Git {
         const fromRef = beforeRef ? await this.git.firstCommit() : undefined;
         const toRef = beforeRef ? `${beforeRef}^` : undefined;
         const commits = await this.git.log({
-            maxCount: maxCount + 1,
+            maxCount: maxCount,
             from: fromRef,
             to: toRef,
         });
 
-        const refs = commits.all.slice(0, maxCount).map((commit) => ({
+        return commits.all.slice(0, maxCount).map((commit) => ({
             ref: commit.hash,
             description: commit.message,
         }));
-
-        return {
-            refs,
-            hasMore: commits.all.length > maxCount,
-        };
     }
 }
 
 export type RefList = {
-    refs: {
-        ref: string;
-        description?: string; // e.g. commit message for a commit ref
-    }[];
-    hasMore: boolean; // true if there are more refs available than maxCount
-};
+    ref: string;
+    description?: string; // e.g. commit message for a commit ref
+}[];

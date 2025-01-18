@@ -288,15 +288,14 @@ line3`;
                 '--all',
                 '--sort=-committerdate',
             ]);
-            expect(result.refs.map((ref) => ref.ref)).toEqual([
+            expect(result.map((ref) => ref.ref)).toEqual([
                 'branch1',
                 'branch2',
             ]);
-            expect(result.refs.map((ref) => ref.description)).toEqual([
+            expect(result.map((ref) => ref.description)).toEqual([
                 'abc1',
                 'abc2',
             ]);
-            expect(result.hasMore).toBe(false);
         });
 
         it('handles empty list', async () => {
@@ -307,8 +306,7 @@ line3`;
 
             const result = await git.getBranchList(undefined, 2);
 
-            expect(result.refs.length).toBe(0);
-            expect(result.hasMore).toBe(false);
+            expect(result.length).toBe(0);
         });
 
         it('limits results to maxCount', async () => {
@@ -328,9 +326,8 @@ line3`;
 
             const result = await git.getBranchList(undefined, 1);
 
-            expect(result.refs.map((ref) => ref.ref)).toEqual(['branch1']);
-            expect(result.refs.map((ref) => ref.description)).toEqual(['abc1']);
-            expect(result.hasMore).toBe(true);
+            expect(result.map((ref) => ref.ref)).toEqual(['branch1']);
+            expect(result.map((ref) => ref.description)).toEqual(['abc1']);
         });
 
         it('puts current branch first with beforeRef=undefined', async () => {
@@ -350,15 +347,14 @@ line3`;
 
             const result = await git.getBranchList(undefined, 2);
 
-            expect(result.refs.map((ref) => ref.ref)).toEqual([
+            expect(result.map((ref) => ref.ref)).toEqual([
                 'branch2',
                 'branch1',
             ]);
-            expect(result.refs.map((ref) => ref.description)).toEqual([
+            expect(result.map((ref) => ref.description)).toEqual([
                 '(current) abc2',
                 'abc1',
             ]);
-            expect(result.hasMore).toBe(false);
         });
 
         it('does not put current branch first with beforeRef set', async () => {
@@ -383,15 +379,14 @@ line3`;
                 '--sort=-committerdate',
                 '--no-contains=some-other-ref',
             ]);
-            expect(result.refs.map((ref) => ref.ref)).toEqual([
+            expect(result.map((ref) => ref.ref)).toEqual([
                 'branch1',
                 'branch2',
             ]);
-            expect(result.refs.map((ref) => ref.description)).toEqual([
+            expect(result.map((ref) => ref.description)).toEqual([
                 'abc1',
                 '(current) abc2',
             ]);
-            expect(result.hasMore).toBe(false);
         });
 
         it('puts common base branches first when beforeRef set', async () => {
@@ -429,11 +424,10 @@ line3`;
                 'trunk',
                 'other',
             ];
-            expect(result.refs.map((ref) => ref.ref)).toEqual(expectedBranches);
-            expect(result.refs.map((ref) => ref.description)).toEqual(
+            expect(result.map((ref) => ref.ref)).toEqual(expectedBranches);
+            expect(result.map((ref) => ref.description)).toEqual(
                 expectedBranches.map((branch) => branch.substring(0, 7))
             );
-            expect(result.hasMore).toBe(true);
         });
     });
 
@@ -448,12 +442,11 @@ line3`;
             expect(mockSimpleGit.tags).toHaveBeenCalledWith([
                 '--sort=-creatordate',
             ]);
-            expect(result.refs.map((ref) => ref.ref)).toEqual(['tag1', 'tag2']);
-            expect(result.refs.map((ref) => ref.description)).toEqual([
+            expect(result.map((ref) => ref.ref)).toEqual(['tag1', 'tag2']);
+            expect(result.map((ref) => ref.description)).toEqual([
                 undefined,
                 undefined,
             ]);
-            expect(result.hasMore).toBe(false);
         });
 
         it('limits results to maxCount', async () => {
@@ -463,11 +456,8 @@ line3`;
 
             const result = await git.getTagList(undefined, 1);
 
-            expect(result.refs.map((ref) => ref.ref)).toEqual(['tag1']);
-            expect(result.refs.map((ref) => ref.description)).toEqual([
-                undefined,
-            ]);
-            expect(result.hasMore).toBe(true);
+            expect(result.map((ref) => ref.ref)).toEqual(['tag1']);
+            expect(result.map((ref) => ref.description)).toEqual([undefined]);
         });
 
         it('handles empty list', async () => {
@@ -477,8 +467,7 @@ line3`;
 
             const result = await git.getTagList(undefined, 2);
 
-            expect(result.refs.length).toBe(0);
-            expect(result.hasMore).toBe(false);
+            expect(result.length).toBe(0);
         });
     });
 
@@ -491,14 +480,10 @@ line3`;
             const result = await git.getCommitList(undefined, 2);
 
             expect(mockSimpleGit.log).toHaveBeenCalledWith({
-                maxCount: 3,
+                maxCount: 2,
             });
             expect(mockSimpleGit.firstCommit).not.toHaveBeenCalled();
-            expect(result.refs.map((ref) => ref.ref)).toEqual([
-                'hash1',
-                'hash2',
-            ]);
-            expect(result.hasMore).toBe(false);
+            expect(result.map((ref) => ref.ref)).toEqual(['hash1', 'hash2']);
         });
 
         it('limits results to maxCount', async () => {
@@ -508,8 +493,7 @@ line3`;
 
             const result = await git.getCommitList(undefined, 1);
 
-            expect(result.refs.map((ref) => ref.ref)).toEqual(['hash1']);
-            expect(result.hasMore).toBe(true);
+            expect(result.map((ref) => ref.ref)).toEqual(['hash1']);
         });
 
         it('handles empty list', async () => {
@@ -519,8 +503,7 @@ line3`;
 
             const result = await git.getCommitList(undefined, 2);
 
-            expect(result.refs.length).toBe(0);
-            expect(result.hasMore).toBe(false);
+            expect(result.length).toBe(0);
         });
 
         it('returns commits before beforeRef', async () => {
@@ -534,16 +517,12 @@ line3`;
             const result = await git.getCommitList('beforeRef', 2);
 
             expect(mockSimpleGit.log).toHaveBeenCalledWith({
-                maxCount: 3,
+                maxCount: 2,
                 from: 'firstCommit',
                 to: 'beforeRef^',
             });
             expect(mockSimpleGit.firstCommit).toHaveBeenCalledOnce();
-            expect(result.refs.map((ref) => ref.ref)).toEqual([
-                'hash1',
-                'hash2',
-            ]);
-            expect(result.hasMore).toBe(false);
+            expect(result.map((ref) => ref.ref)).toEqual(['hash1', 'hash2']);
         });
     });
 });

@@ -2,6 +2,10 @@ import * as vscode from 'vscode';
 
 import { Config } from '../types/Config';
 import { distributeItems } from '../utils/distributeItems';
+import { RefList } from '../utils/git';
+
+/** same as git's default length for short commit hashes */
+const shortHashLength = 7;
 
 /** Ask user to select a single ref. Returns undefined if aborted */
 export async function pickRef(
@@ -11,9 +15,9 @@ export async function pickRef(
     type?: 'branch' | 'tag' | 'commit', // all types by default
     totalCount: number = 20 // total amount of refs to show in picker
 ): Promise<string | undefined> {
-    let branches;
-    let commits;
-    let tags;
+    let branches: RefList = [];
+    let commits: RefList = [];
+    let tags: RefList = [];
     if (!type || type === 'branch') {
         branches = await config.git.getBranchList(beforeRef, totalCount + 1);
     }
@@ -25,9 +29,9 @@ export async function pickRef(
     }
 
     const [numBranches, numCommits, numTags] = distributeItems(totalCount, [
-        branches?.refs.length ?? 0,
-        commits?.refs.length ?? 0,
-        tags?.refs.length ?? 0,
+        branches.length,
+        commits.length,
+        tags.length,
     ]);
 
     let moreBranchesOption = undefined;
@@ -35,21 +39,21 @@ export async function pickRef(
     let moreTagsOption = undefined;
     const quickPickOptions: vscode.QuickPickItem[] = [];
 
-    if (branches && branches.refs.length > 0) {
+    if (branches && branches.length > 0) {
         quickPickOptions.push({
             label: 'Branches',
             kind: vscode.QuickPickItemKind.Separator,
         });
         const branchIcon = new vscode.ThemeIcon('git-branch');
         for (let i = 0; i < numBranches; i++) {
-            const branch = branches.refs[i];
+            const branch = branches[i];
             quickPickOptions.push({
                 label: branch.ref,
                 description: branch.description,
                 iconPath: branchIcon,
             });
         }
-        if (branches.refs.length > numBranches) {
+        if (branches.length > numBranches) {
             moreBranchesOption = {
                 label: 'More branches...',
                 alwaysShow: true,
@@ -58,21 +62,21 @@ export async function pickRef(
         }
     }
 
-    if (commits && commits.refs.length > 0) {
+    if (commits && commits.length > 0) {
         quickPickOptions.push({
             label: 'Commits',
             kind: vscode.QuickPickItemKind.Separator,
         });
         const commitIcon = new vscode.ThemeIcon('git-commit');
         for (let i = 0; i < numCommits; i++) {
-            const ref = commits.refs[i];
+            const ref = commits[i];
             quickPickOptions.push({
-                label: ref.ref.substring(0, 7), // short hash
+                label: ref.ref.substring(0, shortHashLength), // short hash
                 description: ref.description,
                 iconPath: commitIcon,
             });
         }
-        if (commits.refs.length > numCommits) {
+        if (commits.length > numCommits) {
             moreCommitsOption = {
                 label: 'More commits...',
                 alwaysShow: true,
@@ -81,21 +85,21 @@ export async function pickRef(
         }
     }
 
-    if (tags && tags.refs.length > 0) {
+    if (tags && tags.length > 0) {
         quickPickOptions.push({
             label: 'Tags',
             kind: vscode.QuickPickItemKind.Separator,
         });
         const tagIcon = new vscode.ThemeIcon('tag');
         for (let i = 0; i < numTags; i++) {
-            const tag = tags.refs[i];
+            const tag = tags[i];
             quickPickOptions.push({
                 label: tag.ref,
                 description: tag.description,
                 iconPath: tagIcon,
             });
         }
-        if (tags.refs.length > numTags) {
+        if (tags.length > numTags) {
             moreTagsOption = {
                 label: 'More tags...',
                 alwaysShow: true,
