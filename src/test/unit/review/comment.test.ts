@@ -5,7 +5,8 @@ import {
     parseResponse,
     sortFileCommentsBySeverity,
 } from '../../../review/comment';
-import { responseExample } from '../../../review/review';
+import { responseExample } from '../../../review/ModelRequest';
+import type { FileComments } from '../../../types/FileComments';
 
 describe('parseComment', () => {
     it('normal', () => {
@@ -133,51 +134,58 @@ describe('parseResponse', () => {
 
 describe('sortFileCommentsBySeverity', () => {
     it('normal', () => {
-        const fileComments = [
+        const fileComments: FileComments[] = [
             {
                 target: 'file2',
                 comments: [
                     {
+                        file: 'file2',
                         comment: 'Yet another review comment',
                         line: 1,
                         severity: 3,
                     },
                     {
+                        file: 'file2',
                         comment: 'Another review comment',
                         line: 2,
                         severity: 5,
                     },
                 ],
+                maxSeverity: 5,
             },
             {
                 target: 'file1',
                 comments: [
                     {
+                        file: 'file1',
                         comment: 'Another review comment',
                         line: 3,
                         severity: 2,
                     },
                     {
+                        file: 'file1',
                         comment: 'Some review comment',
                         line: 4,
                         severity: 4,
                     },
                 ],
+                maxSeverity: 4,
             },
         ];
 
         const result = sortFileCommentsBySeverity(fileComments);
-
-        expect(result).toEqual([
+        const expectedFileComments: FileComments[] = [
             {
                 target: 'file2',
                 comments: [
                     {
+                        file: 'file2',
                         comment: 'Another review comment',
                         line: 2,
                         severity: 5,
                     },
                     {
+                        file: 'file2',
                         comment: 'Yet another review comment',
                         line: 1,
                         severity: 3,
@@ -189,11 +197,13 @@ describe('sortFileCommentsBySeverity', () => {
                 target: 'file1',
                 comments: [
                     {
+                        file: 'file1',
                         comment: 'Some review comment',
                         line: 4,
                         severity: 4,
                     },
                     {
+                        file: 'file1',
                         comment: 'Another review comment',
                         line: 3,
                         severity: 2,
@@ -201,7 +211,8 @@ describe('sortFileCommentsBySeverity', () => {
                 ],
                 maxSeverity: 4,
             },
-        ]);
+        ];
+        expect(result).toEqual(expectedFileComments);
     });
 
     it('with no comments', () => {

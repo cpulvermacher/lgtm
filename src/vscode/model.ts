@@ -36,33 +36,11 @@ export async function selectChatModel(
         vendor: model.vendor,
         maxInputTokens: model.maxInputTokens,
         countTokens: async (text: string) => model.countTokens(text),
-        limitTokens: async (text: string) => limitTokens(model, text),
         sendRequest: async (
             prompt: string,
             cancellationToken: CancellationToken
         ) => sendRequest(model, prompt, cancellationToken),
     };
-}
-
-/** Limit the number of tokens to within the model's capacity */
-async function limitTokens(
-    model: LanguageModelChat,
-    text: string
-): Promise<string> {
-    const maxDiffTokens = model.maxInputTokens * 0.8;
-
-    while (true) {
-        const tokenCount = await model.countTokens(text);
-        if (tokenCount <= maxDiffTokens) {
-            break;
-        }
-
-        const tokensPerChar = tokenCount / text.length;
-        const adjustedLength = maxDiffTokens / tokensPerChar;
-        // adjustedLength is guaranteed to be less than text.length
-        text = text.slice(0, adjustedLength);
-    }
-    return text;
 }
 
 async function sendRequest(

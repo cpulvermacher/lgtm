@@ -2,10 +2,12 @@ import type { CancellationToken, Progress } from 'vscode';
 
 import { Config } from '../types/Config';
 import { ModelError } from '../types/ModelError';
+import { ReviewComment } from '../types/ReviewComment';
 import { ReviewRequest } from '../types/ReviewRequest';
 import { ReviewResult } from '../types/ReviewResult';
 import { filterExcludedFiles } from '../utils/glob';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
+import { ModelRequest } from './ModelRequest';
 
 export async function reviewDiff(
     config: Config,
@@ -21,15 +23,23 @@ export async function reviewDiff(
         config.getOptions().excludeGlobs
     );
 
-    const fileComments = [];
-    const errors = [];
+    //TODO reorder to get relevant input files together, e.g.
+    // order by distance: file move < main+test < same dir (levenshtein) < parent dir (levenshtein) < ...
+
+    const modelRequests = [
+        new ModelRequest(
+            config,
+            request.scope.changeDescription,
+            request.userPrompt
+        ),
+    ];
     for (const file of files) {
         if (cancellationToken.isCancellationRequested) {
             break;
         }
 
         progress.report({
-            message: `${file}...`,
+            message: 'Gathering changes...',
             increment: 100 / files.length,
         });
 
@@ -43,36 +53,65 @@ export async function reviewDiff(
         }
         config.logger.debug(`Diff for ${file}:`, diff);
 
+        // try adding this diff to the last model request
+        try {
+            await modelRequests[modelRequests.length - 1].addDiff(file, diff);
+        } catch {
+            // if the diff cannot be added to the last request, create a new one
+            const modelRequest = new ModelRequest(
+                config,
+                request.scope.changeDescription,
+                request.userPrompt
+            );
+            await modelRequest.addDiff(file, diff);
+            modelRequests.push(modelRequest);
+        }
+    }
+    //TODO log the assignment of files
+
+    const errors = [];
+    const commentsPerFile = new Map<string, ReviewComment[]>();
+    for (const modelRequest of modelRequests) {
+        if (cancellationToken.isCancellationRequested) {
+            break;
+        }
+
+        progress.report({
+            message: 'Reviewing...',
+            increment:
+                modelRequests.length === 1 ? 0 : 100 / modelRequests.length,
+        });
         try {
             const { response, promptTokens, responseTokens } =
-                await getReviewResponse(
-                    config,
-                    request.scope.changeDescription,
-                    diff,
-                    request.userPrompt,
-                    cancellationToken
-                );
-            config.logger.debug(`Response for ${file}:`, response);
+                await modelRequest.getReviewResponse(cancellationToken);
+            config.logger.debug(
+                `Request with ${modelRequest.files.length} files used ${promptTokens} tokens, response used ${responseTokens} tokens. Response: ${response}`
+            );
 
-            fileComments.push({
-                target: file,
-                comments: parseResponse(response),
-                debug: {
-                    promptTokens,
-                    responseTokens,
-                },
-            });
+            const comments = parseResponse(response);
+            for (const comment of comments) {
+                const commentsForFile = commentsPerFile.get(comment.file) || [];
+                commentsForFile.push(comment);
+                commentsPerFile.set(comment.file, commentsForFile);
+            }
         } catch (error) {
             // it's entirely possible that something bad happened for a request, let's store the error and continue if possible
             if (error instanceof ModelError) {
-                errors.push({ file, error });
+                errors.push(error);
                 break; // would also fail for the remaining files
             } else if (error instanceof Error) {
-                errors.push({ file, error });
+                errors.push(error);
                 continue;
             }
             continue;
         }
+    }
+    const fileComments = [];
+    for (const [file, comments] of commentsPerFile) {
+        fileComments.push({
+            target: file,
+            comments: comments,
+        });
     }
 
     return {
@@ -81,102 +120,3 @@ export async function reviewDiff(
         errors,
     };
 }
-
-export async function getReviewResponse(
-    config: Config,
-    changeDescription: string,
-    diff: string,
-    userPrompt: string | undefined,
-    cancellationToken: CancellationToken
-) {
-    const model = config.model;
-    const options = config.getOptions();
-    const originalSize = diff.length;
-    diff = await model.limitTokens(diff);
-    if (diff.length < originalSize) {
-        config.logger.info(
-            `Diff truncated from ${originalSize} to ${diff.length}`
-        );
-    }
-
-    const prompt = createReviewPrompt(
-        changeDescription,
-        diff,
-        options.customPrompt,
-        userPrompt
-    );
-    const response = await model.sendRequest(prompt, cancellationToken);
-
-    return {
-        response,
-        promptTokens: await model.countTokens(prompt),
-        responseTokens: await model.countTokens(response),
-    };
-}
-
-export function createReviewPrompt(
-    changeDescription: string,
-    diff: string,
-    customPrompt: string,
-    userPrompt?: string
-): string {
-    const defaultRules = `
-- Provide comments on bugs, security vulnerabilities, code smells, and typos.
-- Only provide comments for added lines.
-- Do not provide comments on formatting.
-- Do not make assumptions about code that is not included in the diff.
-${customPrompt}
-`;
-    const reviewRules = userPrompt ? userPrompt.trim() : defaultRules.trim();
-
-    return `You are a senior software engineer reviewing a pull request. Analyze the following git diff for one of the changed files.
-
-Diff format:
-- The diff starts with a diff header, followed by diff lines.
-- Diff lines have the format \`<LINE NUMBER><TAB><DIFF TYPE><LINE>\`.
-- Lines with DIFF TYPE \`+\` are added.
-- Lines with DIFF TYPE \`-\` are removed. (LINE NUMBER will be 0)
-- Lines with DIFF TYPE \` \` are unchanged and provided for context.
-
-Review rules:
-${reviewRules}
-
-Output rules:
-- Respond with a JSON list of comments objects, which contain the fields \`comment\`, \`line\`, and \`severity\`.
-\`comment\` is a string describing the issue.
-\`line\` is the first affected LINE NUMBER.
-\`severity\` is the severity of the issue as an integer from 1 (likely irrelevant) to 5 (critical).
-- Respond with only JSON, do NOT include other text or markdown.
-
-Example response:
-\`\`\`json
-${JSON.stringify(responseExample, undefined, 2)}
-\`\`\`
-
-Change description:
-\`\`\`
-${changeDescription}
-\`\`\`
-
-Diff to review:
-\`\`\`
-${diff}
-\`\`\`
-`;
-}
-
-export const responseExample = [
-    {
-        file: 'src/index.html',
-        comment: 'The <script> tag is misspelled as <scirpt>.',
-        line: 23,
-        severity: 4,
-    },
-    {
-        file: 'src/js/main.js',
-        comment:
-            'Using `eval()` with a possibly user-supplied string may result in code injection.',
-        line: 55,
-        severity: 5,
-    },
-];

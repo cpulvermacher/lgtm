@@ -212,14 +212,14 @@ function showReviewResults(
             );
             noProblemsFound = false;
         }
-        if (options.enableDebugOutput && file.debug) {
+        if (options.enableDebugOutput) {
             const numCommentsSkipped = file.comments.reduce(
                 (acc, comment) =>
                     comment.severity < options.minSeverity ? acc + 1 : acc,
                 0
             );
             config.logger.debug(
-                `File: ${file.target} Input tokens: ${file.debug?.promptTokens} Response tokens: ${file.debug?.responseTokens} Skipped comments: ${numCommentsSkipped}`
+                `File: ${file.target} Skipped comments: ${numCommentsSkipped}`
             );
         }
 
@@ -237,7 +237,7 @@ function showReviewResults(
     }
 
     const errorString = result.errors
-        .map((error) => ` - ${error.file}: ${error.error.message}`)
+        .map((error) => ` - ${error.message}`)
         .join('\n');
     if (errorString.length > 0) {
         throw new Error(

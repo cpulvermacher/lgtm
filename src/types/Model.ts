@@ -6,8 +6,8 @@ export interface Model {
     name: string;
     vendor: string;
     maxInputTokens: number;
+    /** counting tokens works locally and does not need network requests. */
     countTokens: (text: string) => Promise<number>;
-    limitTokens: (text: string) => Promise<string>;
     sendRequest: (
         prompt: string,
         cancellationToken: CancellationToken
