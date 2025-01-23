@@ -7,7 +7,7 @@ describe('distributeItems', () => {
         expect(distributeItems(10, [])).toEqual([]);
     });
 
-    it('hnadles total available items < maxItems', () => {
+    it('handles total available items < maxItems', () => {
         expect(distributeItems(10, [1, 2, 3])).toEqual([1, 2, 3]);
     });
 
