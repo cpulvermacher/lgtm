@@ -3,6 +3,7 @@ import simpleGit, {
     LogResult,
     SimpleGit,
     TagResult,
+    type BranchSummaryBranch,
 } from 'simple-git';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -416,18 +417,18 @@ line3`;
                 'remotes/origin/other',
                 'remotes/mirror/myfeature',
             ];
-            const branchSummaries = {};
+            const branchSummaries: Record<string, BranchSummaryBranch> = {};
             branches.forEach((branch) => {
                 branchSummaries[branch] = {
                     current: false,
                     commit: branch,
-                };
+                } as BranchSummaryBranch;
             });
 
             vi.mocked(mockSimpleGit.branch).mockResolvedValue({
                 all: branches,
                 branches: branchSummaries,
-            } as unknown as BranchSummary);
+            } as BranchSummary);
 
             const result = await git.getBranchList('myfeature', 7);
 
