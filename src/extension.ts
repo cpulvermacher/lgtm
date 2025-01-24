@@ -151,7 +151,6 @@ async function review(
         {
             cancellable: true,
             location: vscode.ProgressLocation.Notification,
-            title: 'Reviewing ',
         },
         async (progress, cancel) => {
             const result = await reviewDiff(

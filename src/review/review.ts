@@ -76,11 +76,10 @@ export async function reviewDiff(
             break;
         }
 
-        progress.report({
-            message: 'Reviewing...',
-            increment:
-                modelRequests.length === 1 ? 0 : 100 / modelRequests.length,
-        });
+        // for a single request, use -100 to get an indeterminate progress bar
+        const increment =
+            modelRequests.length === 1 ? -100 : 100 / modelRequests.length;
+        progress.report({ message: 'Reviewing...', increment });
         try {
             const { response, promptTokens, responseTokens } =
                 await modelRequest.getReviewResponse(cancellationToken);

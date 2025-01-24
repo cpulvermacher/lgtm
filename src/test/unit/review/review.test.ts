@@ -106,7 +106,7 @@ describe('reviewDiff', () => {
         });
         expect(progress.report).toHaveBeenCalledWith({
             message: 'Reviewing...',
-            increment: 0,
+            increment: -100,
         });
         expect(progress.report).toHaveBeenCalledTimes(3);
 
