@@ -113,6 +113,7 @@ export function createReviewPrompt(
     const defaultRules = `
 - Provide comments on bugs, security vulnerabilities, code smells, and typos.
 - Only provide comments for added lines.
+- All comments must be actionable. Do not provide comments that are only positive feedback.
 - Do not provide comments on formatting.
 - Do not make assumptions about code that is not included in the diff.
 ${customPrompt}
