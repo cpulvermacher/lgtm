@@ -33,3 +33,4 @@ jobs:
       if: runner.os != 'Linux'
     - run: npm audit --production
     - run: npm run dev
+    - run: npm run unit --coverage
