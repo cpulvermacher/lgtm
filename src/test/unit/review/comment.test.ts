@@ -220,4 +220,55 @@ describe('sortFileCommentsBySeverity', () => {
 
         expect(result).toEqual([]);
     });
+
+    it('skips files with no comments', () => {
+        const fileComments: FileComments[] = [
+            {
+                target: 'file2',
+                comments: [],
+                maxSeverity: 5, // nonsense, but should be ignored
+            },
+            {
+                target: 'file1',
+                comments: [
+                    {
+                        file: 'file1',
+                        comment: 'Another review comment',
+                        line: 3,
+                        severity: 2,
+                    },
+                    {
+                        file: 'file1',
+                        comment: 'Some review comment',
+                        line: 4,
+                        severity: 4,
+                    },
+                ],
+                maxSeverity: 4,
+            },
+        ];
+
+        const result = sortFileCommentsBySeverity(fileComments);
+        const expectedFileComments: FileComments[] = [
+            {
+                target: 'file1',
+                comments: [
+                    {
+                        file: 'file1',
+                        comment: 'Some review comment',
+                        line: 4,
+                        severity: 4,
+                    },
+                    {
+                        file: 'file1',
+                        comment: 'Another review comment',
+                        line: 3,
+                        severity: 2,
+                    },
+                ],
+                maxSeverity: 4,
+            },
+        ];
+        expect(result).toEqual(expectedFileComments);
+    });
 });
