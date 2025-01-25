@@ -143,6 +143,7 @@ describe('reviewDiff', () => {
         expect(result.request.scope).toBe(scope);
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toHaveLength(0);
+        expect(progress.report).toHaveBeenCalledTimes(3);
     });
 
     it('does not merge file review requests if disabled', async () => {
@@ -168,6 +169,7 @@ describe('reviewDiff', () => {
         expect(result.request.scope).toBe(scope);
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toHaveLength(0);
+        expect(progress.report).toHaveBeenCalledTimes(5);
     });
 
     it('aborts when cancelled', async () => {
@@ -249,7 +251,7 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toEqual([nonModelError]);
 
-        expect(progress.report).toHaveBeenCalledTimes(4);
+        expect(progress.report).toHaveBeenCalledTimes(5);
         expect(parseResponse).toHaveBeenCalledOnce();
         expect(parseResponse).toHaveBeenCalledWith('model response');
     });

@@ -73,6 +73,8 @@ export async function reviewDiff(
         `Assigned ${files.length} files to ${modelRequests.length} model requests.`
     );
 
+    // reset to  an indeterminate progress bar for the review
+    progress.report({ message: 'Reviewing...', increment: -100 });
     const errors = [];
     const commentsPerFile = new Map<string, ReviewComment[]>();
     for (const modelRequest of modelRequests) {
@@ -80,10 +82,12 @@ export async function reviewDiff(
             break;
         }
 
-        // for a single request, use -100 to get an indeterminate progress bar
-        const increment =
-            modelRequests.length === 1 ? -100 : 100 / modelRequests.length;
-        progress.report({ message: 'Reviewing...', increment });
+        if (modelRequests.length > 1) {
+            progress.report({
+                message: 'Reviewing...',
+                increment: 100 / modelRequests.length,
+            });
+        }
         try {
             const { response, promptTokens, responseTokens } =
                 await modelRequest.getReviewResponse(cancellationToken);
