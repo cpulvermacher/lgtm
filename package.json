@@ -115,7 +115,8 @@
     "pretest": "tsc -p ./",
     "lint": "tsc --noEmit && eslint src && prettier src --check",
     "test": "node ./out/test/runTest.js",
-    "unit": "vitest run ./src/test/unit/**/*.test.ts"
+    "unit": "vitest run ./src/test/unit/**/*.test.ts",
+    "checkall": "npm run test && npm run lint && npm run build"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
