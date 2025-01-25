@@ -11,5 +11,6 @@
         "noFallthroughCasesInSwitch": true,
         "noUnusedParameters": true,
         "skipLibCheck": true // workaround for lru-cache types (can be removed if only lru-cache@11.0.1 is used)
-    }
+    },
+    "exclude": ["vitest.config.mts"]
 }
