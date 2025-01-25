@@ -68,27 +68,30 @@ describe('reviewDiff', () => {
     const progress = {
         report: vi.fn(),
     } as const;
-
     const scope = {
         changeDescription: 'chore: dummy change',
         revisionRangeDiff: 'base...target',
     } as ReviewScope;
+    const reviewResponse = {
+        response: 'model response',
+        promptTokens: 4,
+        responseTokens: 2,
+    };
+    const mockComments = [
+        {
+            file: 'file2',
+            comment: 'Some review comment',
+            line: 1,
+            severity: 3,
+        },
+    ];
 
     it('should return a review result', async () => {
         vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
-        vi.mocked(modelRequest.getReviewResponse).mockResolvedValueOnce({
-            response: 'model response',
-            promptTokens: 4,
-            responseTokens: 2,
-        });
-        vi.mocked(parseResponse).mockReturnValue([
-            {
-                file: 'file1',
-                comment: 'Some review comment',
-                line: 1,
-                severity: 3,
-            },
-        ]);
+        vi.mocked(modelRequest.getReviewResponse).mockResolvedValueOnce(
+            reviewResponse
+        );
+        vi.mocked(parseResponse).mockReturnValue(mockComments);
 
         const result = await reviewDiff(
             config,
@@ -117,19 +120,10 @@ describe('reviewDiff', () => {
 
     it('merges file review requests if enabled', async () => {
         vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
-        vi.mocked(modelRequest.getReviewResponse).mockResolvedValue({
-            response: 'model response',
-            promptTokens: 4,
-            responseTokens: 2,
-        });
-        vi.mocked(parseResponse).mockReturnValue([
-            {
-                file: 'file1',
-                comment: 'Some review comment',
-                line: 1,
-                severity: 3,
-            },
-        ]);
+        vi.mocked(modelRequest.getReviewResponse).mockResolvedValue(
+            reviewResponse
+        );
+        vi.mocked(parseResponse).mockReturnValue(mockComments);
 
         const result = await reviewDiff(
             config,
@@ -220,22 +214,11 @@ describe('reviewDiff', () => {
             .mockResolvedValueOnce()
             .mockRejectedValueOnce(new Error('modelrequest full'));
 
-        vi.mocked(parseResponse).mockReturnValue([
-            {
-                file: 'file1',
-                comment: 'Some review comment',
-                line: 1,
-                severity: 3,
-            },
-        ]);
+        vi.mocked(parseResponse).mockReturnValue(mockComments);
         const nonModelError = new Error('review failed');
         vi.mocked(modelRequest.getReviewResponse)
             .mockRejectedValueOnce(nonModelError)
-            .mockResolvedValueOnce({
-                response: 'model response',
-                promptTokens: 4,
-                responseTokens: 2,
-            });
+            .mockResolvedValueOnce(reviewResponse);
 
         const result = await reviewDiff(
             config,
@@ -254,5 +237,30 @@ describe('reviewDiff', () => {
         expect(progress.report).toHaveBeenCalledTimes(5);
         expect(parseResponse).toHaveBeenCalledOnce();
         expect(parseResponse).toHaveBeenCalledWith('model response');
+    });
+
+    it('skips files with empty diff', async () => {
+        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
+        vi.mocked(git.getFileDiff).mockResolvedValueOnce('');
+        vi.mocked(git.getFileDiff).mockResolvedValueOnce('diff for file2');
+
+        vi.mocked(modelRequest.getReviewResponse).mockResolvedValueOnce(
+            reviewResponse
+        );
+        vi.mocked(parseResponse).mockReturnValue(mockComments);
+
+        const result = await reviewDiff(
+            config,
+            { scope },
+            progress,
+            cancellationToken
+        );
+
+        expect(result.request.scope).toBe(scope);
+        expect(result.errors).toEqual([]);
+        expect(result.fileComments).toHaveLength(1);
+
+        expect(modelRequest.addDiff).toHaveBeenCalledTimes(1);
+        expect(parseResponse).toHaveBeenCalledOnce();
     });
 });
