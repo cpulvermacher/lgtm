@@ -235,10 +235,14 @@ function showReviewResults(
         );
     }
 
-    const errorString = result.errors
-        .map((error) => ` - ${error.message}`)
-        .join('\n');
-    if (errorString.length > 0) {
+    if (result.errors.length > 0) {
+        for (const error of result.errors) {
+            config.logger.info('Error: ', error.message, error.stack);
+        }
+
+        const errorString = result.errors
+            .map((error) => ` - ${error.message}`)
+            .join('\n');
         throw new Error(
             `${result.errors.length} error(s) occurred during review:\n${errorString}`
         );
