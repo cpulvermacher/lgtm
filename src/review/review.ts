@@ -67,7 +67,9 @@ export async function reviewDiff(
             modelRequests.push(modelRequest);
         }
     }
-    //TODO log the assignment of files
+    config.logger.debug(
+        `Assigned ${files.length} files to ${modelRequests.length} model requests.`
+    );
 
     const errors = [];
     const commentsPerFile = new Map<string, ReviewComment[]>();
