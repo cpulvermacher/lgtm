@@ -68,6 +68,9 @@ function getOptions(): Options {
     const exclude = config.get<string[]>('exclude');
     const enableDebugOutput = config.get<boolean>('enableDebugOutput');
     const chatModel = config.get<string>('chatModel');
+    const mergeFileReviewRequests = config.get<boolean>(
+        'mergeFileReviewRequests'
+    );
 
     return {
         minSeverity: minSeverity ?? 1,
@@ -75,5 +78,6 @@ function getOptions(): Options {
         excludeGlobs: exclude ?? [],
         enableDebugOutput: enableDebugOutput ?? false,
         chatModel: chatModel ?? 'gpt-4o',
+        mergeFileReviewRequests: mergeFileReviewRequests ?? false,
     };
 }

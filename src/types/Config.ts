@@ -17,4 +17,5 @@ export type Options = {
     excludeGlobs: string[];
     enableDebugOutput: boolean;
     chatModel: string;
+    mergeFileReviewRequests: boolean;
 };

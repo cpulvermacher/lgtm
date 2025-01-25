@@ -25,14 +25,15 @@ function createMockConfig() {
 
     const config = {
         git,
-        getOptions: () => ({
+        getOptions: vi.fn(() => ({
             customPrompt: 'custom prompt',
             minSeverity: 3,
             excludeGlobs: [] as string[],
             enableDebugOutput: false,
-        }),
+            mergeFileReviewRequests: true,
+        })),
         logger,
-    } as Config;
+    } as unknown as Config;
     return { config, git, logger };
 }
 
@@ -112,6 +113,61 @@ describe('reviewDiff', () => {
 
         expect(modelRequest.addDiff).toHaveBeenCalledTimes(2);
         expect(parseResponse).toHaveBeenCalledWith('model response');
+    });
+
+    it('merges file review requests if enabled', async () => {
+        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
+        vi.mocked(modelRequest.getReviewResponse).mockResolvedValue({
+            response: 'model response',
+            promptTokens: 4,
+            responseTokens: 2,
+        });
+        vi.mocked(parseResponse).mockReturnValue([
+            {
+                file: 'file1',
+                comment: 'Some review comment',
+                line: 1,
+                severity: 3,
+            },
+        ]);
+
+        const result = await reviewDiff(
+            config,
+            { scope },
+            progress,
+            cancellationToken
+        );
+
+        expect(modelRequest.addDiff).toHaveBeenCalledTimes(2);
+        expect(modelRequest.getReviewResponse).toHaveBeenCalledTimes(1);
+        expect(result.request.scope).toBe(scope);
+        expect(result.fileComments).toHaveLength(1);
+        expect(result.errors).toHaveLength(0);
+    });
+
+    it('does not merge file review requests if disabled', async () => {
+        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
+        vi.mocked(config.getOptions).mockReturnValue({
+            customPrompt: 'custom prompt',
+            minSeverity: 3,
+            excludeGlobs: [] as string[],
+            enableDebugOutput: false,
+            chatModel: 'gpt-4o',
+            mergeFileReviewRequests: false,
+        });
+
+        const result = await reviewDiff(
+            config,
+            { scope },
+            progress,
+            cancellationToken
+        );
+
+        expect(modelRequest.addDiff).toHaveBeenCalledTimes(2);
+        expect(modelRequest.getReviewResponse).toHaveBeenCalledTimes(2);
+        expect(result.request.scope).toBe(scope);
+        expect(result.fileComments).toHaveLength(1);
+        expect(result.errors).toHaveLength(0);
     });
 
     it('aborts when cancelled', async () => {

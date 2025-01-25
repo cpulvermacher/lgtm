@@ -100,6 +100,11 @@
           ],
           "default": "gpt-4o",
           "markdownDescription": "Chat model family to use for generating review comments. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits. (EXPERIMENTAL)"
+        },
+        "lgtm.mergeFileReviewRequests": {
+          "type": "boolean",
+          "default": false,
+          "description": "Combine changes for multiple files into a single review request sent to the model. (EXPERIMENTAL)"
         }
       }
     }

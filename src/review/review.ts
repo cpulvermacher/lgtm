@@ -18,21 +18,13 @@ export async function reviewDiff(
     const diffFiles = await config.git.getChangedFiles(
         request.scope.revisionRangeDiff
     );
-    const files = filterExcludedFiles(
-        diffFiles,
-        config.getOptions().excludeGlobs
-    );
+    const options = config.getOptions();
+    const files = filterExcludedFiles(diffFiles, options.excludeGlobs);
 
     //TODO reorder to get relevant input files together, e.g.
     // order by distance: file move < main+test < same dir (levenshtein) < parent dir (levenshtein) < ...
 
-    const modelRequests = [
-        new ModelRequest(
-            config,
-            request.scope.changeDescription,
-            request.userPrompt
-        ),
-    ];
+    const modelRequests: ModelRequest[] = [];
     for (const file of files) {
         if (cancellationToken.isCancellationRequested) {
             break;
@@ -53,6 +45,16 @@ export async function reviewDiff(
         }
         config.logger.debug(`Diff for ${file}:`, diff);
 
+        // if merging is off, create a new request for each file
+        if (modelRequests.length === 0 || !options.mergeFileReviewRequests) {
+            const modelRequest = new ModelRequest(
+                config,
+                request.scope.changeDescription,
+                request.userPrompt
+            );
+            modelRequests.push(modelRequest);
+        }
+
         // try adding this diff to the last model request
         try {
             await modelRequests[modelRequests.length - 1].addDiff(file, diff);
@@ -63,7 +65,7 @@ export async function reviewDiff(
                 request.scope.changeDescription,
                 request.userPrompt
             );
-            await modelRequest.addDiff(file, diff);
+            await modelRequest.addDiff(file, diff); // adding the first diff will never throw
             modelRequests.push(modelRequest);
         }
     }
