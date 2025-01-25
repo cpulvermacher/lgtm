@@ -44,14 +44,10 @@ user prompt
 </Output Example>
 
 <Change Description>
-```
 Various refactorings
-```
 </Change Description>
 
 <Diff>
-```
 diff
 here
-```
 </Diff>

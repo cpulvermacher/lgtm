@@ -148,15 +148,11 @@ ${JSON.stringify(responseExample, undefined, 2)}
 </Output Example>
 
 <Change Description>
-\`\`\`
 ${changeDescription}
-\`\`\`
 </Change Description>
 
 <Diff>
-\`\`\`
 ${diff}
-\`\`\`
 </Diff>
 `;
 }
