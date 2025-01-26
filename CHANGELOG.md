@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.12.0] (pre-release)
+- Add experimental "Lgtm: Merge File Review Requests" setting to provide more complete context to the model and reduce the number of requests
+- Avoid comments with bland positive feedback
+
 ## [0.11.1]
 - Show more branches/commits/tags in picker if there is enough space
 
