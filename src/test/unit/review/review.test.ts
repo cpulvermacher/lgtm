@@ -166,6 +166,34 @@ describe('reviewDiff', () => {
         expect(progress.report).toHaveBeenCalledTimes(5);
     });
 
+    it('corrects file names if there is a mismatch', async () => {
+        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
+        vi.mocked(modelRequest.getReviewResponse).mockResolvedValue(
+            reviewResponse
+        );
+        vi.mocked(parseResponse).mockReturnValue([
+            {
+                ...mockComments[0],
+                file: 'ile1',
+            },
+        ]);
+
+        const result = await reviewDiff(
+            config,
+            { scope },
+            progress,
+            cancellationToken
+        );
+
+        expect(result.request.scope).toBe(scope);
+        expect(result.errors).toHaveLength(0);
+        expect(result.fileComments).toHaveLength(1);
+        expect(result.fileComments[0].target).toBe('file1');
+        expect(config.logger.info).toHaveBeenCalledWith(
+            'File name mismatch, correcting "ile1" to "file1"!'
+        );
+    });
+
     it('aborts when cancelled', async () => {
         vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
 

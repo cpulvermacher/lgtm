@@ -5,6 +5,7 @@ import { ModelError } from '../types/ModelError';
 import { ReviewComment } from '../types/ReviewComment';
 import { ReviewRequest } from '../types/ReviewRequest';
 import { ReviewResult } from '../types/ReviewResult';
+import { correctFilename } from '../utils/filenames';
 import { filterExcludedFiles } from '../utils/glob';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { ModelRequest } from './ModelRequest';
@@ -97,6 +98,18 @@ export async function reviewDiff(
 
             const comments = parseResponse(response);
             for (const comment of comments) {
+                //check file name
+                if (!modelRequest.files.includes(comment.file)) {
+                    const closestFile = correctFilename(
+                        comment.file,
+                        modelRequest.files
+                    );
+                    config.logger.info(
+                        `File name mismatch, correcting "${comment.file}" to "${closestFile}"!`
+                    );
+                    comment.file = closestFile;
+                }
+
                 const commentsForFile = commentsPerFile.get(comment.file) || [];
                 commentsForFile.push(comment);
                 commentsPerFile.set(comment.file, commentsForFile);
