@@ -17,7 +17,6 @@ export async function selectChatModel(
     logger: Logger
 ): Promise<Model> {
     const models = await lm.selectChatModels({
-        vendor: 'copilot',
         family: modelFamily,
     });
     logger.debug('Found models:', models);
