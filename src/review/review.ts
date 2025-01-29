@@ -19,57 +19,21 @@ export async function reviewDiff(
     const diffFiles = await config.git.getChangedFiles(
         request.scope.revisionRangeDiff
     );
-    const options = config.getOptions();
-    const files = filterExcludedFiles(diffFiles, options.excludeGlobs);
+    const files = filterExcludedFiles(
+        diffFiles,
+        config.getOptions().excludeGlobs
+    );
 
     //TODO reorder to get relevant input files together, e.g.
     // order by distance: file move < main+test < same dir (levenshtein) < parent dir (levenshtein) < ...
 
-    const modelRequests: ModelRequest[] = [];
-    for (const file of files) {
-        if (cancellationToken.isCancellationRequested) {
-            break;
-        }
-
-        progress.report({
-            message: `Gathering changes for ${files.length} files...`,
-            increment: 100 / files.length,
-        });
-
-        const diff = await config.git.getFileDiff(
-            request.scope.revisionRangeDiff,
-            file
-        );
-        if (diff.length === 0) {
-            config.logger.debug('No changes in file:', file);
-            continue;
-        }
-        config.logger.debug(`Diff for ${file}:`, diff);
-
-        // if merging is off, create a new request for each file
-        if (modelRequests.length === 0 || !options.mergeFileReviewRequests) {
-            const modelRequest = new ModelRequest(
-                config,
-                request.scope.changeDescription,
-                request.userPrompt
-            );
-            modelRequests.push(modelRequest);
-        }
-
-        // try adding this diff to the last model request
-        try {
-            await modelRequests[modelRequests.length - 1].addDiff(file, diff);
-        } catch {
-            // if the diff cannot be added to the last request, create a new one
-            const modelRequest = new ModelRequest(
-                config,
-                request.scope.changeDescription,
-                request.userPrompt
-            );
-            await modelRequest.addDiff(file, diff); // adding the first diff will never throw
-            modelRequests.push(modelRequest);
-        }
-    }
+    const modelRequests = await aggregateFileDiffs(
+        config,
+        request,
+        files,
+        progress,
+        cancellationToken
+    );
     config.logger.debug(
         `Assigned ${files.length} files to ${modelRequests.length} model requests.`
     );
@@ -140,4 +104,60 @@ export async function reviewDiff(
         fileComments: sortFileCommentsBySeverity(fileComments),
         errors,
     };
+}
+
+async function aggregateFileDiffs(
+    config: Config,
+    request: ReviewRequest,
+    files: string[],
+    progress: Progress<{ message?: string; increment?: number }>,
+    cancellationToken: CancellationToken
+) {
+    const options = config.getOptions();
+    const modelRequests: ModelRequest[] = [];
+    for (const file of files) {
+        if (cancellationToken.isCancellationRequested) {
+            break;
+        }
+
+        progress.report({
+            message: `Gathering changes for ${files.length} files...`,
+            increment: 100 / files.length,
+        });
+
+        const diff = await config.git.getFileDiff(
+            request.scope.revisionRangeDiff,
+            file
+        );
+        if (diff.length === 0) {
+            config.logger.debug('No changes in file:', file);
+            continue;
+        }
+        config.logger.debug(`Diff for ${file}:`, diff);
+
+        // if merging is off, create a new request for each file
+        if (modelRequests.length === 0 || !options.mergeFileReviewRequests) {
+            const modelRequest = new ModelRequest(
+                config,
+                request.scope.changeDescription,
+                request.userPrompt
+            );
+            modelRequests.push(modelRequest);
+        }
+
+        // try adding this diff to the last model request
+        try {
+            await modelRequests[modelRequests.length - 1].addDiff(file, diff);
+        } catch {
+            // if the diff cannot be added to the last request, create a new one
+            const modelRequest = new ModelRequest(
+                config,
+                request.scope.changeDescription,
+                request.userPrompt
+            );
+            await modelRequest.addDiff(file, diff); // adding the first diff will never throw
+            modelRequests.push(modelRequest);
+        }
+    }
+    return modelRequests;
 }
