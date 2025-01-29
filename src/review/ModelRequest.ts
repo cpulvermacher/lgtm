@@ -135,7 +135,8 @@ ${reviewRules}
 </Review Rules>
 
 <Output Rules>
-- Respond with a JSON list of comments objects, which contain the fields \`comment\`, \`line\`, and \`severity\`.
+- Respond with a JSON list of comments objects, which contain the fields \`file\`, \`line\`, \`comment\`, and \`severity\`.
+\`file\` is the path of the file, taken from the diff header.
 \`comment\` is a string describing the issue.
 \`line\` is the first affected LINE NUMBER.
 \`severity\` is the severity of the issue as an integer from 1 (likely irrelevant) to 5 (critical).
@@ -161,15 +162,15 @@ ${diff}
 export const responseExample = [
     {
         file: 'src/index.html',
-        comment: 'The <script> tag is misspelled as <scirpt>.',
         line: 23,
+        comment: 'The <script> tag is misspelled as <scirpt>.',
         severity: 4,
     },
     {
         file: 'src/js/main.js',
+        line: 55,
         comment:
             'Using `eval()` with a possibly user-supplied string may result in code injection.',
-        line: 55,
         severity: 5,
     },
 ];
