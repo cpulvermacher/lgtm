@@ -514,10 +514,7 @@ line3`;
 
             const result = await git.getCommitList(undefined, 2);
 
-            expect(mockSimpleGit.log).toHaveBeenCalledWith({
-                maxCount: 2,
-            });
-            expect(mockSimpleGit.firstCommit).not.toHaveBeenCalled();
+            expect(mockSimpleGit.log).toHaveBeenCalledWith(['--max-count=2']);
             expect(result.map((ref) => ref.ref)).toEqual(['hash1', 'hash2']);
         });
 
@@ -545,18 +542,13 @@ line3`;
             vi.mocked(mockSimpleGit.log).mockResolvedValue({
                 all: [{ hash: 'hash1' }, { hash: 'hash2' }],
             } as unknown as LogResult);
-            vi.mocked(mockSimpleGit.firstCommit).mockResolvedValue(
-                'firstCommit'
-            );
 
             const result = await git.getCommitList('beforeRef', 2);
 
-            expect(mockSimpleGit.log).toHaveBeenCalledWith({
-                maxCount: 2,
-                from: 'firstCommit',
-                to: 'beforeRef^',
-            });
-            expect(mockSimpleGit.firstCommit).toHaveBeenCalledOnce();
+            expect(mockSimpleGit.log).toHaveBeenCalledWith([
+                '--max-count=2',
+                'beforeRef^',
+            ]);
             expect(result.map((ref) => ref.ref)).toEqual(['hash1', 'hash2']);
         });
     });

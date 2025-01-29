@@ -221,13 +221,11 @@ export class Git {
         beforeRef: string | undefined,
         maxCount: number
     ): Promise<RefList> {
-        const fromRef = beforeRef ? await this.git.firstCommit() : undefined;
-        const toRef = beforeRef ? `${beforeRef}^` : undefined;
-        const commits = await this.git.log({
-            maxCount: maxCount,
-            from: fromRef,
-            to: toRef,
-        });
+        const logOptions = [`--max-count=${maxCount}`];
+        if (beforeRef) {
+            logOptions.push(`${beforeRef}^`);
+        }
+        const commits = await this.git.log(logOptions);
 
         return commits.all.slice(0, maxCount).map((commit) => ({
             ref: commit.hash,
