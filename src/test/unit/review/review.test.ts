@@ -105,7 +105,7 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(1);
 
         expect(progress.report).toHaveBeenCalledWith({
-            message: 'Gathering changes...',
+            message: 'Gathering changes for 2 files...',
             increment: 50,
         });
         expect(progress.report).toHaveBeenCalledWith({

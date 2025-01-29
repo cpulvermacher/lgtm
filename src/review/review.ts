@@ -32,7 +32,7 @@ export async function reviewDiff(
         }
 
         progress.report({
-            message: 'Gathering changes...',
+            message: `Gathering changes for ${files.length} files...`,
             increment: 100 / files.length,
         });
 
@@ -78,14 +78,15 @@ export async function reviewDiff(
     progress.report({ message: 'Reviewing...', increment: -100 });
     const errors = [];
     const commentsPerFile = new Map<string, ReviewComment[]>();
-    for (const modelRequest of modelRequests) {
+    for (let i = 0; i < modelRequests.length; i++) {
         if (cancellationToken.isCancellationRequested) {
             break;
         }
 
+        const modelRequest = modelRequests[i];
         if (modelRequests.length > 1) {
             progress.report({
-                message: 'Reviewing...',
+                message: `Reviewing (${i + 1}/${modelRequests.length})...`,
                 increment: 100 / modelRequests.length,
             });
         }
