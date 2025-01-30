@@ -129,7 +129,7 @@
     "@types/vscode": "^1.96.0",
     "@vitest/coverage-v8": "^3.0.4",
     "@vscode/test-electron": "^2.4.1",
-    "@vscode/vsce": "^3.2.1",
+    "@vscode/vsce": "^3.2.2",
     "esbuild": "^0.24.2",
     "eslint": "^9.19.0",
     "glob": "^11.0.1",
