@@ -2,10 +2,7 @@ import * as vscode from 'vscode';
 
 import { Config } from '../types/Config';
 import { distributeItems } from '../utils/distributeItems';
-import { RefList } from '../utils/git';
-
-/** same as git's default length for short commit hashes */
-const shortHashLength = 7;
+import { RefList, shortHashLength } from '../utils/git';
 
 /** Ask user to select a single ref. Returns undefined if aborted */
 export async function pickRef(
@@ -71,7 +68,7 @@ export async function pickRef(
         for (let i = 0; i < numCommits; i++) {
             const ref = commits[i];
             quickPickOptions.push({
-                label: ref.ref.substring(0, shortHashLength), // short hash
+                label: ref.ref.substring(0, shortHashLength),
                 description: ref.description,
                 iconPath: commitIcon,
             });

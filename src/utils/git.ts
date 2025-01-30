@@ -2,6 +2,9 @@ import simpleGit, { SimpleGit } from 'simple-git';
 
 import { ReviewScope } from '../types/ReviewRequest';
 
+/** same as git's default length for short commit hashes */
+export const shortHashLength = 7;
+
 /** Create a new Git instance */
 export async function createGit(workspaceRoot: string): Promise<Git> {
     const git = simpleGit(workspaceRoot);
