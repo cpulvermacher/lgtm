@@ -47,6 +47,7 @@ export async function pickRef(
             quickPickOptions.push({
                 label: branch.ref,
                 description: branch.description,
+                detail: branch.extra,
                 iconPath: branchIcon,
             });
         }
@@ -108,6 +109,7 @@ export async function pickRef(
     const target = await vscode.window.showQuickPick(quickPickOptions, {
         title,
         matchOnDescription: true, //match by commit message as well
+        matchOnDetail: true, //match by other branch names as well
     });
     if (!target) {
         return;

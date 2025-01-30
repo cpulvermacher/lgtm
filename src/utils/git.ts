@@ -152,9 +152,11 @@ export class Git {
         return (await this.git.branch(['--all'])).all.includes(ref);
     }
 
-    /** returns up to `maxCount` branches.
+    /** returns up to `maxCount` branches. Branches are sorted by last commit date,
+     * with current branch first. Branches with same ref are grouped together.
      *
-     * If `beforeRef` is given, only returns branches that don't include that ref.
+     * If `beforeRef` is given, only returns branches that don't include that ref, and
+     * prioritizes the suspected remote branch and common main branches in order.
      */
     async getBranchList(
         beforeRef: string | undefined,
@@ -165,35 +167,57 @@ export class Git {
             branchOptions.push(`--no-contains=${beforeRef}`);
         }
         const branches = await this.git.branch(branchOptions);
-        const refs = branches.all.map((branch) => {
+
+        const branchesByCommitRef: { [commit: string]: string[] } = {};
+        const orderedUniqueRefs: string[] = [];
+        branches.all.forEach((branch) => {
             const branchSummary = branches.branches[branch];
-            return {
-                ref: branch,
-                description:
-                    (branchSummary.current ? '(current) ' : '') +
-                    branchSummary.commit.substring(0, 7),
-            };
+            if (branchSummary.commit in branchesByCommitRef) {
+                branchesByCommitRef[branchSummary.commit].push(branch);
+            } else {
+                orderedUniqueRefs.push(branchSummary.commit);
+                branchesByCommitRef[branchSummary.commit] = [branch];
+            }
         });
 
+        let firstBranch;
         if (!beforeRef) {
-            //for target: current branch is not necessarily the newest, let's put it first
-            refs.sort((a) => (branches.branches[a.ref].current ? -1 : 0));
+            //for target: put current branch first
+            firstBranch = new RegExp(`^${branches.current}$`);
         } else {
             //for base: put remote for `beforeRef` and common main branches first
-            const getPriority = (ref: string) => {
-                if (
-                    ref.startsWith('remotes/') &&
-                    ref.endsWith('/' + beforeRef)
-                ) {
-                    return -5;
-                }
-                const index = ['develop', 'main', 'master', 'trunk'].indexOf(
-                    ref
-                );
-                return index >= 0 ? -4 + index : 0;
-            };
-            refs.sort((a, b) => getPriority(a.ref) - getPriority(b.ref));
+            firstBranch = new RegExp(`^remotes/.*/${beforeRef}$`);
         }
+
+        // sort each branchesByCommitRef entry
+        for (const commit in branchesByCommitRef) {
+            branchesByCommitRef[commit].sort(
+                (a, b) =>
+                    getBranchPriority(a, firstBranch) -
+                    getBranchPriority(b, firstBranch)
+            );
+        }
+        // sort the orderedUniqueRefs
+        orderedUniqueRefs.sort(
+            (a, b) =>
+                getBranchPriority(branchesByCommitRef[a][0], firstBranch) -
+                getBranchPriority(branchesByCommitRef[b][0], firstBranch)
+        );
+
+        const refs = orderedUniqueRefs.map((commit) => {
+            const [ref, ...otherBranches] = branchesByCommitRef[commit];
+            const isCurrent = branches.branches[ref].current;
+
+            let description = '';
+            if (isCurrent) {
+                description += '(current) ';
+            }
+            description += commit.substring(0, shortHashLength);
+
+            const extra = formatExtraBranches(otherBranches);
+
+            return { ref, description, extra };
+        });
 
         return refs.slice(0, maxCount);
     }
@@ -240,4 +264,26 @@ export class Git {
 export type RefList = {
     ref: string;
     description?: string; // e.g. commit message for a commit ref
+    extra?: string; // e.g. additional branches names pointing to the same commit
 }[];
+
+function formatExtraBranches(otherBranches: string[]) {
+    if (otherBranches.length === 0) {
+        return undefined;
+    }
+    return '       Same as: ' + otherBranches.join(', ');
+}
+
+/** returns a numerical value for the branch priority to be used with sort().
+ * Priority is as follows:
+ * -5: branch that matches the regex `first`, if provided
+ * -4..-1: develop, main, master, trunk
+ * 0 otherwise
+ */
+const getBranchPriority = (ref: string, first?: RegExp) => {
+    if (first && first.test(ref)) {
+        return -5;
+    }
+    const index = ['develop', 'main', 'master', 'trunk'].indexOf(ref);
+    return index >= 0 ? -4 + index : 0;
+};

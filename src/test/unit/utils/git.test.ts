@@ -305,13 +305,54 @@ line3`;
                 '--all',
                 '--sort=-committerdate',
             ]);
-            expect(result.map((ref) => ref.ref)).toEqual([
-                'branch1',
-                'branch2',
+
+            expect(result).toHaveLength(2);
+            expect(result).toEqual([
+                {
+                    ref: 'branch1',
+                    description: 'abc1',
+                },
+                {
+                    ref: 'branch2',
+                    description: 'abc2',
+                },
             ]);
-            expect(result.map((ref) => ref.description)).toEqual([
-                'abc1',
-                'abc2',
+        });
+
+        it('merges branches with same ref', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['branch1', 'remotes/something/branch1', 'branch2'],
+                branches: {
+                    branch1: {
+                        commit: 'abc1',
+                    },
+                    branch2: {
+                        commit: 'abc2',
+                    },
+                    'remotes/something/branch1': {
+                        commit: 'abc1',
+                    },
+                },
+            } as unknown as BranchSummary);
+
+            const result = await git.getBranchList(undefined, 2);
+
+            expect(mockSimpleGit.branch).toHaveBeenCalledWith([
+                '--all',
+                '--sort=-committerdate',
+            ]);
+
+            expect(result).toHaveLength(2);
+            expect(result).toEqual([
+                {
+                    ref: 'branch1',
+                    description: 'abc1',
+                    extra: '       Same as: remotes/something/branch1',
+                },
+                {
+                    ref: 'branch2',
+                    description: 'abc2',
+                },
             ]);
         });
 
@@ -360,6 +401,7 @@ line3`;
                         commit: 'abc2',
                     },
                 },
+                current: 'branch2',
             } as unknown as BranchSummary);
 
             const result = await git.getBranchList(undefined, 2);
@@ -387,6 +429,7 @@ line3`;
                         commit: 'abc2',
                     },
                 },
+                current: 'branch2',
             } as unknown as BranchSummary);
 
             const result = await git.getBranchList('some-other-ref', 2);
