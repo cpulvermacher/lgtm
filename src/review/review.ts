@@ -38,66 +38,17 @@ export async function reviewDiff(
         `Assigned ${files.length} files to ${modelRequests.length} model requests.`
     );
 
-    // reset to  an indeterminate progress bar for the review
-    progress.report({ message: 'Reviewing...', increment: -100 });
-    const errors = [];
-    const commentsPerFile = new Map<string, ReviewComment[]>();
-    for (let i = 0; i < modelRequests.length; i++) {
-        if (cancellationToken.isCancellationRequested) {
-            break;
-        }
+    const { commentsPerFile, errors } = await generateReviewComments(
+        config,
+        modelRequests,
+        progress,
+        cancellationToken
+    );
 
-        const modelRequest = modelRequests[i];
-        if (modelRequests.length > 1) {
-            progress.report({
-                message: `Reviewing (${i + 1}/${modelRequests.length})...`,
-                increment: 100 / modelRequests.length,
-            });
-        }
-        try {
-            const { response, promptTokens, responseTokens } =
-                await modelRequest.getReviewResponse(cancellationToken);
-            config.logger.debug(
-                `Request with ${modelRequest.files.length} files used ${promptTokens} tokens, response used ${responseTokens} tokens. Response: ${response}`
-            );
-
-            const comments = parseResponse(response);
-            for (const comment of comments) {
-                //check file name
-                if (!modelRequest.files.includes(comment.file)) {
-                    const closestFile = correctFilename(
-                        comment.file,
-                        modelRequest.files
-                    );
-                    config.logger.info(
-                        `File name mismatch, correcting "${comment.file}" to "${closestFile}"!`
-                    );
-                    comment.file = closestFile;
-                }
-
-                const commentsForFile = commentsPerFile.get(comment.file) || [];
-                commentsForFile.push(comment);
-                commentsPerFile.set(comment.file, commentsForFile);
-            }
-        } catch (error) {
-            // it's entirely possible that something bad happened for a request, let's store the error and continue if possible
-            if (error instanceof ModelError) {
-                errors.push(error);
-                break; // would also fail for the remaining files
-            } else if (error instanceof Error) {
-                errors.push(error);
-                continue;
-            }
-            continue;
-        }
-    }
-    const fileComments = [];
-    for (const [file, comments] of commentsPerFile) {
-        fileComments.push({
-            target: file,
-            comments: comments,
-        });
-    }
+    const fileComments = Array.from(commentsPerFile, ([target, comments]) => ({
+        target,
+        comments,
+    }));
 
     return {
         request,
@@ -160,4 +111,68 @@ async function aggregateFileDiffs(
         }
     }
     return modelRequests;
+}
+
+async function generateReviewComments(
+    config: Config,
+    modelRequests: ModelRequest[],
+    progress: Progress<{ message?: string; increment?: number }>,
+    cancellationToken: CancellationToken
+) {
+    // reset to  an indeterminate progress bar for the review
+    progress.report({ message: 'Reviewing...', increment: -100 });
+
+    const errors = [];
+    const commentsPerFile = new Map<string, ReviewComment[]>();
+    for (let i = 0; i < modelRequests.length; i++) {
+        if (cancellationToken.isCancellationRequested) {
+            break;
+        }
+
+        const modelRequest = modelRequests[i];
+        if (modelRequests.length > 1) {
+            progress.report({
+                message: `Reviewing (${i + 1}/${modelRequests.length})...`,
+                increment: 100 / modelRequests.length,
+            });
+        }
+        try {
+            const { response, promptTokens, responseTokens } =
+                await modelRequest.getReviewResponse(cancellationToken);
+            config.logger.debug(
+                `Request with ${modelRequest.files.length} files used ${promptTokens} tokens, response used ${responseTokens} tokens. Response: ${response}`
+            );
+
+            const comments = parseResponse(response);
+            for (const comment of comments) {
+                //check file name
+                if (!modelRequest.files.includes(comment.file)) {
+                    const closestFile = correctFilename(
+                        comment.file,
+                        modelRequest.files
+                    );
+                    config.logger.info(
+                        `File name mismatch, correcting "${comment.file}" to "${closestFile}"!`
+                    );
+                    comment.file = closestFile;
+                }
+
+                const commentsForFile = commentsPerFile.get(comment.file) || [];
+                commentsForFile.push(comment);
+                commentsPerFile.set(comment.file, commentsForFile);
+            }
+        } catch (error) {
+            // it's entirely possible that something bad happened for a request, let's store the error and continue if possible
+            if (error instanceof ModelError) {
+                errors.push(error);
+                break; // would also fail for the remaining files
+            } else if (error instanceof Error) {
+                errors.push(error);
+                continue;
+            }
+            continue;
+        }
+    }
+
+    return { commentsPerFile, errors };
 }
