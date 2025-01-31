@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.12.1] (pre-release)
+- Enable "Lgtm: Merge File Review Requests" by default
+- Merge branches with same ref in branch picker
+- Show initial commit when picking base ref
+
 ## [0.12.0] (pre-release)
 - Add experimental "Lgtm: Merge File Review Requests" setting to provide more complete context to the model and reduce the number of requests
 - Avoid comments with bland positive feedback
