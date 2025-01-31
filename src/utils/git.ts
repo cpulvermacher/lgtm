@@ -280,10 +280,10 @@ function formatExtraBranches(otherBranches: string[]) {
  * -4..-1: develop, main, master, trunk
  * 0 otherwise
  */
-const getBranchPriority = (ref: string, first?: RegExp) => {
+function getBranchPriority(ref: string, first?: RegExp) {
     if (first && first.test(ref)) {
         return -5;
     }
     const index = ['develop', 'main', 'master', 'trunk'].indexOf(ref);
     return index >= 0 ? -4 + index : 0;
-};
+}
