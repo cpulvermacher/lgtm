@@ -78,6 +78,6 @@ function getOptions(): Options {
         excludeGlobs: exclude ?? [],
         enableDebugOutput: enableDebugOutput ?? false,
         chatModel: chatModel ?? 'gpt-4o',
-        mergeFileReviewRequests: mergeFileReviewRequests ?? false,
+        mergeFileReviewRequests: mergeFileReviewRequests ?? true,
     };
 }

@@ -103,8 +103,8 @@
         },
         "lgtm.mergeFileReviewRequests": {
           "type": "boolean",
-          "default": false,
-          "description": "Combine changes for multiple files into a single review request sent to the model. (EXPERIMENTAL)"
+          "default": true,
+          "description": "Combine changes for multiple files into a single review request sent to the model."
         }
       }
     }
