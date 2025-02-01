@@ -5,6 +5,7 @@ import { Config } from './types/Config';
 import { ReviewRequest, ReviewScope } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
 import { parseArguments } from './utils/parseArguments';
+import { MergedCancellationToken } from './vscode/MergedCancellationToken';
 import { getConfig, toUri } from './vscode/config';
 import { pickCommit, pickRef, pickRefs } from './vscode/ui';
 
@@ -30,7 +31,7 @@ async function handler(
     chatRequest: vscode.ChatRequest,
     _context: vscode.ChatContext,
     stream: vscode.ChatResponseStream,
-    cancellationToken: vscode.CancellationToken
+    handlerToken: vscode.CancellationToken
 ): Promise<void> {
     if (!config) {
         config = await getConfig();
@@ -79,9 +80,14 @@ async function handler(
         );
     }
 
-    const results = await review(config, reviewRequest, stream);
+    const token = new MergedCancellationToken();
+    token.add(handlerToken);
 
-    showReviewResults(config, results, stream, cancellationToken);
+    const results = await review(config, reviewRequest, stream, token);
+
+    showReviewResults(config, results, stream, token);
+
+    token.dispose();
 }
 
 /** Constructs review request (prompting user if needed) */
@@ -145,7 +151,8 @@ async function getReviewRequest(
 async function review(
     config: Config,
     reviewRequest: ReviewRequest,
-    stream: vscode.ChatResponseStream
+    stream: vscode.ChatResponseStream,
+    token: MergedCancellationToken
 ) {
     return await vscode.window.withProgress(
         {
@@ -153,14 +160,20 @@ async function review(
             location: vscode.ProgressLocation.Notification,
         },
         async (progress, cancel) => {
+            token.add(cancel); // cancel from progress bar should cancel entire process
+
             const result = await reviewDiff(
                 config,
                 reviewRequest,
                 progress,
-                cancel
+                token
             );
-            if (cancel.isCancellationRequested) {
-                stream.markdown('\nCancelled, showing partial results.');
+            if (token.isCancellationRequested) {
+                if (result.fileComments.length > 0) {
+                    stream.markdown('\nCancelled, showing partial results.');
+                } else {
+                    stream.markdown('\nCancelled.');
+                }
             }
 
             return result;
@@ -172,13 +185,13 @@ function showReviewResults(
     config: Config,
     result: ReviewResult,
     stream: vscode.ChatResponseStream,
-    cancellationToken: vscode.CancellationToken
+    token: MergedCancellationToken
 ) {
     const options = config.getOptions();
     const isTargetCheckedOut = result.request.scope.isTargetCheckedOut;
     let noProblemsFound = true;
     for (const file of result.fileComments) {
-        if (cancellationToken.isCancellationRequested) {
+        if (token.isCancellationRequested) {
             return;
         }
 
