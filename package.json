@@ -111,18 +111,19 @@
     }
   },
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "check-exclusive": "ps aux | grep -v grep | grep -q 'esbuild.*--watch' && echo 'esbuild --watch running, aborting!' && exit 1 || exit 0",
-    "vscode:prepublish": "npm run check-exclusive && rm -rf ./out && npm run esbuild-base -- --minify --pure:console.debug",
+    "vscode:prepublish": "pnpm check-exclusive && rm -rf ./out && pnpm esbuild-base --minify --pure:console.debug",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --define:__GIT_VERSION__=\\\"$GIT_VERSION\\\"",
-    "esbuild": "npm run esbuild-base -- --sourcemap",
-    "watch": "npm run esbuild-base -- --sourcemap --watch",
-    "dev": "GIT_VERSION=$(git describe  --tags --long) npm run build",
-    "build": "npx vsce package",
+    "esbuild": "pnpm esbuild-base --sourcemap",
+    "watch": "pnpm esbuild-base --sourcemap --watch",
+    "dev": "GIT_VERSION=$(git describe  --tags --long) pnpm build",
+    "build": "npx vsce package --no-dependencies",
     "pretest": "tsc -p ./",
     "lint": "tsc --noEmit && eslint src && prettier src --check",
     "test": "node ./out/test/runTest.js",
     "unit": "vitest run ./src/test/unit/**/*.test.ts",
-    "checkall": "npm run unit && npm run test && npm run lint && npm run build"
+    "checkall": "pnpm unit && pnpm test && pnpm lint && pnpm build"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

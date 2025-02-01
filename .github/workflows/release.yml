@@ -15,18 +15,24 @@ jobs:
       with:
         fetch-depth: 0
         fetch-tags: true
-    - uses: actions/setup-node@v3
+    - uses: pnpm/action-setup@v4
       with:
-        node-version: '20.x'
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run pretest
-    - run: xvfb-run -a npm test
+        version: 9
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'pnpm'
+    - run: pnpm i
+    - run: pnpm unit
+    - run: pnpm lint
+    - run: pnpm pretest
+    - run: xvfb-run -a pnpm test
       if: runner.os == 'Linux'
-    - run: npm test
+    - run: pnpm test
       if: runner.os != 'Linux'
-    - run: npm run lint
-    - run: npm run build
+    - run: pnpm audit --production
+    - run: pnpm build
     - name: Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
