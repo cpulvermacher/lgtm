@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.12.2] (pre-release)
+- Avoid exceeding token limit with very large files
+- Allow cancelling a review from either the progress indicator or the chat side bar
+
 ## [0.12.1] (pre-release)
 - Enable "Lgtm: Merge File Review Requests" by default
 - Merge branches with same ref in branch picker
