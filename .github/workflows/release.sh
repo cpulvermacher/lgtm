@@ -16,9 +16,11 @@ CHANGELOG=$(awk -v version="$VERSION" '
 
 # Check if changelog has "pre-release" after the version
 RELEASE_OPTS=""
+VSCE_OPTS=""
 if grep -q "^## \[$VERSION\] (pre-release)" <<< "$CHANGELOG"; then
     echo "Marking release as pre-release"
     RELEASE_OPTS="--prerelease"
+    VSCE_OPTS="--pre-release"
 fi
 
 # Abort if empty
@@ -27,8 +29,12 @@ if [ -z "$CHANGELOG" ]; then
     exit 1
 fi
 
+echo "Creating GitHub release..."
 gh release create "${TAG}" \
     --title "${TAG}" \
     $RELEASE_OPTS \
     ./*"${VERSION}".vsix \
     -n "$CHANGELOG"
+
+echo "Publishing to VS Code Marketplace..."
+npx vsce publish --no-dependencies --no-git-tag-version --no-update-package-json $VSCE_OPTS "$VERSION"

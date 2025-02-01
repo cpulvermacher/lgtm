@@ -36,5 +36,6 @@ jobs:
     - name: Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
       run: >-
         bash .github/workflows/release.sh ${{ github.ref_name }}
