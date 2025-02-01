@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.12.2] (pre-release)
+## [0.12.4] (pre-release)
 - Avoid exceeding token limit with very large files
 - Allow cancelling a review from either the progress indicator or the chat side bar
 
