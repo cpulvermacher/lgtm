@@ -11,6 +11,12 @@ import { Logger } from '../types/Logger';
 import { Model } from '../types/Model';
 import { ModelError } from '../types/ModelError';
 
+/** fraction of the model's input token limit that we want to use.
+ *
+ * Actually hitting the maximum results in "Message exceeds token limit" errors, so let's stay below that.
+ */
+const maxInputTokensFraction = 0.95;
+
 /** Select chat model (asks for permissions the first time) */
 export async function selectChatModel(
     modelFamily: string,
@@ -33,7 +39,9 @@ export async function selectChatModel(
     return {
         name: model.name,
         vendor: model.vendor,
-        maxInputTokens: model.maxInputTokens,
+        maxInputTokens: Math.floor(
+            maxInputTokensFraction * model.maxInputTokens
+        ),
         countTokens: async (text: string) => model.countTokens(text),
         sendRequest: async (
             prompt: string,

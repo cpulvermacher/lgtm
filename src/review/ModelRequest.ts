@@ -15,7 +15,7 @@ export class ModelRequest {
         this.customPrompt = config.getOptions().customPrompt;
     }
 
-    /** add diff for one file, throw if we cannot fit this into the current request */
+    /** add diff for one file, throw if we cannot fit this into the current request (caller should create new ModelRequest) */
     async addDiff(fileName: string, diff: string) {
         if (this.diffs.length === 0) {
             await this.setFirstDiff(fileName, diff);
@@ -85,7 +85,7 @@ export class ModelRequest {
         }
         if (diff.length < originalSize) {
             this.config.logger.info(
-                `Diff truncated from ${originalSize} to ${diff.length}`
+                `Diff truncated from ${originalSize} to ${diff.length} characters`
             );
         }
 
