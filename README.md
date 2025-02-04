@@ -23,7 +23,6 @@ You'll receive review comments grouped by file after selecting the desired revis
 - Review content remains in chat history, so you can ask follow-up questions to Copilot (without `@lgtm`).
 
 ## Limitations
-- LGTM may lack some information on how your changes work together. At the moment, most comments will point out local bugs or typos rather than architecture-level comments looking at how multiple files work together.
 - Since this project is still work in progress, quality of comments may be mixed. This should improve in future versions.
 - For now, only Copilot's language model can be used via the `vscode.lm` API.
 - For larger change sets (e.g. >100 files) you may encounter rate-limiting errors from Copilot. Please wait for the indicated time before retrying.
