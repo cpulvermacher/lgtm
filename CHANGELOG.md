@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.13.0] (pre-release)
+- For renamed files, only review changed lines
+- Avoid reviewing deleted files
+
 ## [0.12.4] (pre-release)
 - Avoid exceeding token limit with very large files
 - Allow cancelling a review from either the progress indicator or the chat side bar
