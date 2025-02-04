@@ -59,11 +59,6 @@ describe('reviewDiff', () => {
         getReviewResponse: vi.fn(),
         files: ['file1', 'file2'],
     } as unknown as ModelRequest;
-    beforeEach(() => {
-        ({ config, git } = createMockConfig());
-
-        vi.mocked(ModelRequest).mockImplementation(() => modelRequest);
-    });
 
     const progress = {
         report: vi.fn(),
@@ -86,8 +81,24 @@ describe('reviewDiff', () => {
         },
     ];
 
+    const diffFiles = [
+        {
+            file: 'file1',
+            status: 'A',
+        },
+        {
+            file: 'file2',
+            status: 'M',
+        },
+    ];
+
+    beforeEach(() => {
+        ({ config, git } = createMockConfig());
+
+        vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
+        vi.mocked(ModelRequest).mockImplementation(() => modelRequest);
+    });
     it('should return a review result', async () => {
-        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
         vi.mocked(modelRequest.getReviewResponse).mockResolvedValueOnce(
             reviewResponse
         );
@@ -119,7 +130,6 @@ describe('reviewDiff', () => {
     });
 
     it('merges file review requests if enabled', async () => {
-        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
         vi.mocked(modelRequest.getReviewResponse).mockResolvedValue(
             reviewResponse
         );
@@ -141,7 +151,6 @@ describe('reviewDiff', () => {
     });
 
     it('does not merge file review requests if disabled', async () => {
-        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
         vi.mocked(config.getOptions).mockReturnValue({
             customPrompt: 'custom prompt',
             minSeverity: 3,
@@ -167,7 +176,6 @@ describe('reviewDiff', () => {
     });
 
     it('corrects file names if there is a mismatch', async () => {
-        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
         vi.mocked(modelRequest.getReviewResponse).mockResolvedValue(
             reviewResponse
         );
@@ -195,8 +203,6 @@ describe('reviewDiff', () => {
     });
 
     it('aborts when cancelled', async () => {
-        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
-
         const cancellationToken = {
             isCancellationRequested: true,
         } as CancellationToken;
@@ -216,7 +222,6 @@ describe('reviewDiff', () => {
     });
 
     it('should abort and return errors if a ModelError occurs', async () => {
-        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
         vi.mocked(modelRequest.getReviewResponse).mockRejectedValueOnce(
             new ModelError('Blocked', 'Model error')
         );
@@ -237,7 +242,6 @@ describe('reviewDiff', () => {
     });
 
     it('should continue and return errors if a non-ModelError occurs', async () => {
-        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
         vi.mocked(modelRequest.addDiff)
             .mockResolvedValueOnce()
             .mockRejectedValueOnce(new Error('modelrequest full'));
@@ -268,7 +272,6 @@ describe('reviewDiff', () => {
     });
 
     it('skips files with empty diff', async () => {
-        vi.mocked(git.getChangedFiles).mockResolvedValue(['file1', 'file2']);
         vi.mocked(git.getFileDiff).mockResolvedValueOnce('');
         vi.mocked(git.getFileDiff).mockResolvedValueOnce('diff for file2');
 
