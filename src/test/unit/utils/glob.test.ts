@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { filterExcludedFiles } from '../../../utils/glob';
+import { isPathNotExcluded } from '../../../utils/glob';
 
-describe('filterExcludedFiles', () => {
+describe('isPathNotExcluded', () => {
+    function filterExcludedFiles(
+        files: string[],
+        excludeGlobs: string[]
+    ): string[] {
+        return files.filter((file) => isPathNotExcluded(file, excludeGlobs));
+    }
+
     it('does not filter for empty exclude list', () => {
         const files = ['file1', 'file2', 'file3'];
 

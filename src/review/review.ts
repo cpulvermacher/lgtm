@@ -6,7 +6,8 @@ import { ReviewComment } from '../types/ReviewComment';
 import { ReviewRequest } from '../types/ReviewRequest';
 import { ReviewResult } from '../types/ReviewResult';
 import { correctFilename } from '../utils/filenames';
-import { filterExcludedFiles } from '../utils/glob';
+import { DiffFile } from '../utils/git';
+import { isPathNotExcluded } from '../utils/glob';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { ModelRequest } from './ModelRequest';
 
@@ -19,9 +20,11 @@ export async function reviewDiff(
     const diffFiles = await config.git.getChangedFiles(
         request.scope.revisionRangeDiff
     );
-    const files = filterExcludedFiles(
-        diffFiles,
-        config.getOptions().excludeGlobs
+    const options = config.getOptions();
+    const files = diffFiles.filter(
+        (file) =>
+            isPathNotExcluded(file.file, options.excludeGlobs) &&
+            file.status !== 'D' // ignore deleted files
     );
 
     //TODO reorder to get relevant input files together, e.g.
@@ -60,7 +63,7 @@ export async function reviewDiff(
 async function aggregateFileDiffs(
     config: Config,
     request: ReviewRequest,
-    files: string[],
+    files: DiffFile[],
     progress: Progress<{ message?: string; increment?: number }>,
     cancellationToken: CancellationToken
 ) {
@@ -84,7 +87,7 @@ async function aggregateFileDiffs(
             config.logger.debug('No changes in file:', file);
             continue;
         }
-        config.logger.debug(`Diff for ${file}:`, diff);
+        config.logger.debug(`Diff for ${file.file}:`, diff);
 
         // if merging is off, create a new request for each file
         if (modelRequests.length === 0 || !options.mergeFileReviewRequests) {
@@ -98,7 +101,10 @@ async function aggregateFileDiffs(
 
         // try adding this diff to the last model request
         try {
-            await modelRequests[modelRequests.length - 1].addDiff(file, diff);
+            await modelRequests[modelRequests.length - 1].addDiff(
+                file.file,
+                diff
+            );
         } catch {
             // if the diff cannot be added to the last request, create a new one
             const modelRequest = new ModelRequest(
@@ -106,7 +112,7 @@ async function aggregateFileDiffs(
                 request.scope.changeDescription,
                 request.userPrompt
             );
-            await modelRequest.addDiff(file, diff); // adding the first diff will never throw
+            await modelRequest.addDiff(file.file, diff); // adding the first diff will never throw
             modelRequests.push(modelRequest);
         }
     }

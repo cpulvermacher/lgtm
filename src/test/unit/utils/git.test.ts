@@ -4,6 +4,7 @@ import simpleGit, {
     SimpleGit,
     TagResult,
     type BranchSummaryBranch,
+    type DiffResult,
 } from 'simple-git';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -43,6 +44,7 @@ describe('git', () => {
         cwd: vi.fn(),
         log: vi.fn(),
         diff: vi.fn(),
+        diffSummary: vi.fn(),
         branch: vi.fn(),
         tags: vi.fn(),
         firstCommit: vi.fn(),
@@ -69,22 +71,40 @@ describe('git', () => {
     });
 
     it('getChangedFiles', async () => {
-        vi.mocked(mockSimpleGit.diff).mockResolvedValue('\nfile1\nfile2');
+        vi.mocked(mockSimpleGit.diffSummary).mockResolvedValue({
+            files: [
+                { file: 'file1', status: 'M', from: 'othername' },
+                { file: 'file2' },
+            ],
+        } as unknown as DiffResult);
 
         const result = await git.getChangedFiles('rev...rev');
 
-        expect(mockSimpleGit.diff).toHaveBeenCalledWith([
-            '--name-only',
+        expect(mockSimpleGit.diffSummary).toHaveBeenCalledWith([
+            '--name-status',
             'rev...rev',
         ]);
-        expect(result).toEqual(['file1', 'file2']);
+        expect(result).toEqual([
+            { file: 'file1', status: 'M', from: 'othername' },
+            { file: 'file2', status: 'X', from: undefined },
+        ]);
     });
 
     describe('getFileDiff', () => {
+        const file = {
+            file: 'file',
+            status: '?',
+        };
+        const fileWithPreviousName = {
+            file: 'file',
+            status: 'M',
+            from: 'othername',
+        };
+
         it('returns diff with line numbers', async () => {
             vi.mocked(mockSimpleGit.diff).mockResolvedValue('diff');
 
-            const result = await git.getFileDiff('rev...rev', 'file');
+            const result = await git.getFileDiff('rev...rev', file);
 
             expect(mockSimpleGit.diff).toHaveBeenCalledWith([
                 '--no-prefix',
@@ -96,10 +116,41 @@ describe('git', () => {
             expect(result).toBe('0\tdiff');
         });
 
+        it('passes both file and previous name to diff call', async () => {
+            vi.mocked(mockSimpleGit.diff).mockResolvedValue(
+                'diff --git a/main.html b/index.html\n\
+similarity index 76%\n\
+rename from main.html\n\
+rename to index.html'
+            );
+
+            const result = await git.getFileDiff(
+                'rev...rev',
+                fileWithPreviousName
+            );
+
+            expect(mockSimpleGit.diff).toHaveBeenCalledWith([
+                '--no-prefix',
+                '-U3',
+                'rev...rev',
+                '--',
+                'othername',
+                'file',
+            ]);
+            expect(result).toMatchInlineSnapshot(
+                `
+              "0	diff --git a/main.html b/index.html
+              0	similarity index 76%
+              0	rename from main.html
+              0	rename to index.html"
+            `
+            );
+        });
+
         it('passes contextLines to diff call', async () => {
             vi.mocked(mockSimpleGit.diff).mockResolvedValue('diff');
 
-            await git.getFileDiff('rev...rev', 'file', 99);
+            await git.getFileDiff('rev...rev', file, 99);
 
             expect(mockSimpleGit.diff).toHaveBeenCalledWith([
                 '--no-prefix',
@@ -115,7 +166,7 @@ describe('git', () => {
                 'diff\n\\ No newline at end of file'
             );
 
-            const result = await git.getFileDiff('rev...rev', 'file');
+            const result = await git.getFileDiff('rev...rev', file);
 
             expect(result).toBe('0\tdiff');
         });
@@ -123,7 +174,7 @@ describe('git', () => {
         it('adds line numbers for a complete diff', async () => {
             vi.mocked(mockSimpleGit.diff).mockResolvedValue(completeDiff);
 
-            const result = await git.getFileDiff('rev...rev', 'file');
+            const result = await git.getFileDiff('rev...rev', file);
 
             expect(result).toMatchInlineSnapshot(`
               "0	diff --git a/index.html b/index.html

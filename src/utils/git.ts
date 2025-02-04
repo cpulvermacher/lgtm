@@ -5,6 +5,12 @@ import { ReviewScope } from '../types/ReviewRequest';
 /** same as git's default length for short commit hashes */
 export const shortHashLength = 7;
 
+export type DiffFile = {
+    file: string;
+    from?: string; //previous file name (if renamed)
+    status: string; // see --diff-filter in git-diff(1). Interesting for us: D (deleted), R (renamed)
+};
+
 /** Create a new Git instance */
 export async function createGit(workspaceRoot: string): Promise<Git> {
     const git = simpleGit(workspaceRoot);
@@ -28,29 +34,47 @@ export class Git {
     }
 
     /** Get list of files in the commit */
-    async getChangedFiles(diffRevisionRange: string): Promise<string[]> {
-        const fileString = await this.git.diff([
-            '--name-only',
+    async getChangedFiles(diffRevisionRange: string): Promise<DiffFile[]> {
+        const summary = await this.git.diffSummary([
+            '--name-status',
             diffRevisionRange,
         ]);
-        return fileString.split('\n').filter((f) => f.length > 0);
+        return summary.files.map((file) => {
+            if ('status' in file) {
+                return {
+                    file: file.file,
+                    status: file.status || 'X',
+                    from: file.from,
+                };
+            }
+            return {
+                file: file.file,
+                status: 'X', // unknown
+            };
+        });
     }
 
     /** get diff of the given file between the two revisions */
     async getFileDiff(
         diffRevisionRange: string,
-        file: string,
+        file: DiffFile,
         contextLines: number = 3
     ): Promise<string> {
-        let diff = await this.git.diff([
+        // add all relevant file paths to the diff command to ensure renames are not handled as add+delete
+        const fileArgs = [file.file];
+        if (file.from) {
+            fileArgs.unshift(file.from);
+        }
+
+        const rawDiff = await this.git.diff([
             '--no-prefix',
             `-U${contextLines}`,
             diffRevisionRange,
             '--',
-            file,
+            ...fileArgs,
         ]);
 
-        diff = diff
+        const diff = rawDiff
             .split('\n')
             .filter((line) => line !== '\\ No newline at end of file')
             .join('\n');
