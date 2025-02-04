@@ -129,6 +129,48 @@ describe('reviewDiff', () => {
         expect(parseResponse).toHaveBeenCalledWith('model response');
     });
 
+    it('skips deleted files', async () => {
+        vi.mocked(git.getChangedFiles).mockResolvedValue([
+            {
+                file: 'file1',
+                status: 'D',
+            },
+            {
+                file: 'file2',
+                status: 'M',
+            },
+        ]);
+
+        vi.mocked(modelRequest.getReviewResponse).mockResolvedValueOnce(
+            reviewResponse
+        );
+        vi.mocked(parseResponse).mockReturnValue(mockComments);
+
+        const result = await reviewDiff(
+            config,
+            { scope },
+            progress,
+            cancellationToken
+        );
+
+        expect(result.request.scope).toBe(scope);
+        expect(result.errors).toEqual([]);
+        expect(result.fileComments).toHaveLength(1);
+
+        expect(progress.report).toHaveBeenCalledWith({
+            message: 'Gathering changes for 1 files...',
+            increment: 100,
+        });
+        expect(progress.report).toHaveBeenCalledWith({
+            message: 'Reviewing...',
+            increment: -100,
+        });
+        expect(progress.report).toHaveBeenCalledTimes(2);
+
+        expect(modelRequest.addDiff).toHaveBeenCalledTimes(1);
+        expect(parseResponse).toHaveBeenCalledWith('model response');
+    });
+
     it('merges file review requests if enabled', async () => {
         vi.mocked(modelRequest.getReviewResponse).mockResolvedValue(
             reviewResponse
