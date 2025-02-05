@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.13.1] (pre-release)
+- Move progress indicator back into chat sidebar
+
 ## [0.13.0] (pre-release)
 - For renamed files, only review changed lines
 - Avoid reviewing deleted files
