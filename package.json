@@ -129,7 +129,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.96.0",
-    "@vitest/coverage-v8": "^3.0.4",
+    "@vitest/coverage-v8": "^3.0.5",
     "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^3.2.2",
     "esbuild": "^0.24.2",
@@ -138,8 +138,8 @@
     "mocha": "^11.1.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.21.0",
-    "vitest": "^3.0.4"
+    "typescript-eslint": "^8.23.0",
+    "vitest": "^3.0.5"
   },
   "dependencies": {
     "fastest-levenshtein": "^1.0.16",
