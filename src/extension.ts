@@ -5,7 +5,6 @@ import { Config } from './types/Config';
 import { ReviewRequest, ReviewScope } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
 import { parseArguments } from './utils/parseArguments';
-import { MergedCancellationToken } from './vscode/MergedCancellationToken';
 import { getConfig, toUri } from './vscode/config';
 import { pickCommit, pickRef, pickRefs } from './vscode/ui';
 
@@ -31,7 +30,7 @@ async function handler(
     chatRequest: vscode.ChatRequest,
     _context: vscode.ChatContext,
     stream: vscode.ChatResponseStream,
-    handlerToken: vscode.CancellationToken
+    token: vscode.CancellationToken
 ): Promise<void> {
     if (!config) {
         config = await getConfig();
@@ -80,14 +79,9 @@ async function handler(
         );
     }
 
-    const token = new MergedCancellationToken();
-    token.add(handlerToken);
-
     const results = await review(config, reviewRequest, stream, token);
 
     showReviewResults(config, results, stream, token);
-
-    token.dispose();
 }
 
 /** Constructs review request (prompting user if needed) */
@@ -152,40 +146,35 @@ async function review(
     config: Config,
     reviewRequest: ReviewRequest,
     stream: vscode.ChatResponseStream,
-    token: MergedCancellationToken
+    token: vscode.CancellationToken
 ) {
-    return await vscode.window.withProgress(
-        {
-            cancellable: true,
-            location: vscode.ProgressLocation.Notification,
-        },
-        async (progress, cancel) => {
-            token.add(cancel); // cancel from progress bar should cancel entire process
-
-            const result = await reviewDiff(
-                config,
-                reviewRequest,
-                progress,
-                token
-            );
-            if (token.isCancellationRequested) {
-                if (result.fileComments.length > 0) {
-                    stream.markdown('\nCancelled, showing partial results.');
-                } else {
-                    stream.markdown('\nCancelled.');
-                }
+    const progress = {
+        lastMessage: '',
+        report: ({ message }: { message: string }) => {
+            if (message && message !== progress.lastMessage) {
+                stream.progress(message);
+                progress.lastMessage = message;
             }
+        },
+    };
 
-            return result;
+    const result = await reviewDiff(config, reviewRequest, progress, token);
+    if (token.isCancellationRequested) {
+        if (result.fileComments.length > 0) {
+            stream.markdown('\nCancelled, showing partial results.');
+        } else {
+            stream.markdown('\nCancelled.');
         }
-    );
+    }
+
+    return result;
 }
 
 function showReviewResults(
     config: Config,
     result: ReviewResult,
     stream: vscode.ChatResponseStream,
-    token: MergedCancellationToken
+    token: vscode.CancellationToken
 ) {
     const options = config.getOptions();
     const isTargetCheckedOut = result.request.scope.isTargetCheckedOut;
