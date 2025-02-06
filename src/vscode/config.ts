@@ -41,18 +41,50 @@ export async function getConfig(): Promise<Config> {
 
     vscode.lm.onDidChangeChatModels(async () => {
         logger.debug('Chat models were updated, rechecking...');
-        config.model = await selectChatModel(getOptions().chatModel, logger);
+        try {
+            config.model = await selectChatModel(
+                getOptions().chatModel,
+                logger
+            );
+        } catch (e) {
+            await handleModelNotFoundError(e);
+        }
     });
     vscode.workspace.onDidChangeConfiguration(async (ev) => {
         if (!ev.affectsConfiguration('lgtm')) {
             return;
         }
         logger.debug('Updating config...');
-        config.logger.setEnableDebug(getOptions().enableDebugOutput);
-        config.model = await selectChatModel(getOptions().chatModel, logger);
+        const newOptions = getOptions();
+        config.logger.setEnableDebug(newOptions.enableDebugOutput);
+        try {
+            config.model = await selectChatModel(newOptions.chatModel, logger);
+        } catch (e) {
+            await handleModelNotFoundError(e);
+        }
     });
 
     return config;
+}
+
+async function handleModelNotFoundError(error: unknown): Promise<void> {
+    const msg =
+        error instanceof Error ? error.message : 'Error updating chat model';
+    const option = await vscode.window.showErrorMessage(
+        msg,
+        'Reset to Default',
+        'Open Settings'
+    );
+    if (option === 'Reset to Default') {
+        await vscode.workspace
+            .getConfiguration('lgtm')
+            .update('chatModel', undefined, vscode.ConfigurationTarget.Global);
+    } else if (option === 'Open Settings') {
+        await vscode.commands.executeCommand(
+            'workbench.action.openSettings',
+            'lgtm.chatModel'
+        );
+    }
 }
 
 /** Converts file path relative to gitRoot to a vscode.Uri */
