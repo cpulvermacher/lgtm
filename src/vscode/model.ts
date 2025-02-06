@@ -22,20 +22,17 @@ export async function selectChatModel(
     modelFamily: string,
     logger: Logger
 ): Promise<Model> {
-    const models = await lm.selectChatModels({
-        family: modelFamily,
-    });
-    logger.debug('Found models:', models);
-    const allModels = await lm.selectChatModels();
-    logger.debug('All models:', allModels);
+    logger.debug('Available chat models:', await lm.selectChatModels());
+    const models = await lm.selectChatModels({ family: modelFamily });
+    const model = models[0];
+    logger.debug('Selected model:', model);
 
-    if (models.length === 0) {
+    if (model === undefined) {
         throw new Error(
             `No model found for family "${modelFamily}". Please ensure the lgtm.chatModel setting is set to an available model.`
         );
     }
 
-    const model = models[0];
     return {
         name: model.name,
         vendor: model.vendor,
