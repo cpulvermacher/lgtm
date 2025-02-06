@@ -19,13 +19,13 @@ You'll receive review comments grouped by file after selecting the desired revis
 ## Features
 - Uses Copilot Chat for reviewing changes, so only a GitHub Copilot subscription is required. Source code data is sent only to Copilot, which you presumably trust already.
 - Allows adding custom instructions via the Lgtm: Custom Prompt setting to e.g. change the language of review comments.
-- Allows choosing other language models (default: GPT-4o) via Lgtm: Chat model setting.
+- Allows choosing other language models via Lgtm: Chat model setting (default: GPT-4o).
 - Review content remains in chat history, so you can ask follow-up questions to Copilot (without `@lgtm`).
 
 ## Limitations
 - Since this project is still work in progress, quality of comments may be mixed. This should improve in future versions.
-- For now, only Copilot's language model can be used via the `vscode.lm` API.
-- For larger change sets (e.g. >100 files) you may encounter rate-limiting errors from Copilot. Please wait for the indicated time before retrying.
+- For now, only language models provided by GitHub Copilot Chat can be used via the `vscode.lm` API.
+- For larger change sets you may encounter rate-limiting errors from Copilot. Please wait for the indicated time before retrying.
 
 ## Data Usage
 Source code checked into Git and selected for review and commit messages will be sent to GitHub Copilot.

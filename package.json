@@ -85,7 +85,7 @@
         "lgtm.enableDebugOutput": {
           "type": "boolean",
           "default": false,
-          "description": "Log debug output to OUTPUT panel > LGTM."
+          "description": "Log debug output to Output Panel > LGTM."
         },
         "lgtm.chatModel": {
           "type": "string",
