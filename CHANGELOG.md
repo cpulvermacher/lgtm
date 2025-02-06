@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.13.2] (pre-release)
+- Fix error handling when an unavailable chat model is selected
+
 ## [0.13.1] (pre-release)
 - Move progress indicator back into chat sidebar
 
