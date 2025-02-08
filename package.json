@@ -74,13 +74,12 @@
             "package-lock.json",
             "yarn.lock",
             "pnpm-lock.yaml",
-            "*.min.js",
-            "*.jar"
+            "*.min.js"
           ],
           "items": {
             "type": "string"
           },
-          "description": "Exclude paths from review using glob patterns."
+          "description": "Exclude paths from review using glob patterns. Binary files are not reviewed and do not need to be excluded."
         },
         "lgtm.enableDebugOutput": {
           "type": "boolean",
