@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.13.3]
+Includes changes from 0.12.0 to 0.13.2.
+Highlights:
+- Use fewer requests for reviewing changes, providing extra context for the language model and improving performance. This can be disabled via the "Merge File Review Requests" setting.
+- Fix handling of deleted and renamed files
+- Merge branches with same ref in branch picker
+- Move progress indicator back into chat sidebar
+- Allow selecting new o3-mini and gemini-2.0-flash models (Note: may not be available to all users)
+
 ## [0.13.2] (pre-release)
 - Fix error handling when an unavailable chat model is selected
 
