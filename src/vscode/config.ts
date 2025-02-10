@@ -23,12 +23,22 @@ export async function getConfig(): Promise<Config> {
 
     if (!mainWorkspace) {
         throw new Error(
-            'No workspace found. Please open a folder containing a Git repository using File -> Open Folder...'
+            'No workspace found. Please open a folder containing a Git repository using `File -> Open Folder`.'
         );
     }
 
     const workspaceRoot = mainWorkspace.uri.fsPath;
-    const git = await createGit(workspaceRoot);
+    let git;
+    try {
+        git = await createGit(workspaceRoot);
+    } catch (error) {
+        const message =
+            error instanceof Error ? '\n\n```\n' + error.message + '\n```' : '';
+        throw new Error(
+            'Error opening Git repository. Please open a folder containing a Git repository using `File -> Open Folder` and make sure Git is installed.' +
+                message
+        );
+    }
     const model = await selectChatModel(getOptions().chatModel, logger);
 
     const config = {
