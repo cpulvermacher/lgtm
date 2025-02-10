@@ -22,8 +22,9 @@ export async function getConfig(): Promise<Config> {
     }
 
     if (!mainWorkspace) {
-        vscode.window.showErrorMessage('No workspace found');
-        throw new Error('No workspace found');
+        throw new Error(
+            'No workspace found. Please open a folder containing a Git repository using File -> Open Folder...'
+        );
     }
 
     const workspaceRoot = mainWorkspace.uri.fsPath;
