@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.13.4]
+- Improve error message if no workspace is found
+- Handle missing git repository more gracefully
+
 ## [0.13.3]
 Includes changes from 0.12.0 to 0.13.2.
 Highlights:
