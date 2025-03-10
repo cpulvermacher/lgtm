@@ -69,9 +69,23 @@ export class ModelRequest {
             }
 
             const tokensPerChar = tokenCount / prompt.length;
-            const adjustedPromptLength = maxTokens / tokensPerChar;
+            const adjustedPromptLength = maxTokens / tokensPerChar; // guaranteed to be less than prompt.length
             const numCharsToRemove = prompt.length - adjustedPromptLength;
-            // adjustedPromptLength is guaranteed to be less than prompt.length
+
+            // try truncating changeDescription (better than truncating diff)
+            if (this.changeDescription.length > 0) {
+                const newLength = Math.max(
+                    0,
+                    this.changeDescription.length - numCharsToRemove
+                );
+                this.changeDescription = this.changeDescription.slice(
+                    0,
+                    newLength
+                );
+                continue;
+            }
+
+            // try truncating diff
             if (numCharsToRemove >= diff.length) {
                 throw new Error(
                     `prompt size ${tokenCount} exceeds limit. Prompt itself too long?`
@@ -120,6 +134,10 @@ ${customPrompt}
 `;
     const reviewRules = userPrompt ? userPrompt.trim() : defaultRules.trim();
 
+    const wrappedChangeDescription = changeDescription
+        ? `<Change Description>\n${changeDescription}\n</Change Description>`
+        : '';
+
     return `You are a senior software engineer reviewing a pull request. Analyze the following git diff for the changed files.
 
 <Diff Format>
@@ -149,9 +167,7 @@ ${JSON.stringify(responseExample, undefined, 2)}
 \`\`\`
 </Output Example>
 
-<Change Description>
-${changeDescription}
-</Change Description>
+${wrappedChangeDescription}
 
 <Diff>
 ${diff}

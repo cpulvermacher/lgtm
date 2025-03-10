@@ -42,7 +42,7 @@ describe('ModelRequest', () => {
         expect(request.getPrompt()).toContain('DIFF1');
     });
 
-    it('truncates first diff if it exceeds token limit', async () => {
+    it('for first diff, truncates change description if prompt exceeds token limit', async () => {
         vi.mocked(model.countTokens)
             .mockResolvedValueOnce(2000)
             .mockResolvedValueOnce(2);
@@ -51,15 +51,40 @@ describe('ModelRequest', () => {
         await request.addDiff('file1.ts', longDiff);
 
         expect(request.files).toEqual(['file1.ts']);
-        //only contains truncated diff
-        expect(request.getPrompt()).toContain('d'.repeat(100));
-        expect(request.getPrompt()).not.toContain(longDiff);
+        //change description truncated first
+        expect(request.getPrompt()).not.toContain('<Change Description>');
+        expect(request.getPrompt()).not.toContain('Various refactorings');
+
+        //diff not truncated
+        expect(request.getPrompt()).toContain(longDiff);
 
         expect(model.countTokens).toHaveBeenCalledTimes(2);
     });
 
+    it('for first diff, truncates diff if prompt still exceeds token limit', async () => {
+        vi.mocked(model.countTokens)
+            .mockResolvedValueOnce(2000)
+            .mockResolvedValueOnce(2000)
+            .mockResolvedValueOnce(2);
+
+        const longDiff = 'd'.repeat(10000);
+        await request.addDiff('file1.ts', longDiff);
+
+        expect(request.files).toEqual(['file1.ts']);
+        //change description truncated first
+        expect(request.getPrompt()).not.toContain('<Change description>');
+        expect(request.getPrompt()).not.toContain('Various refactorings');
+        //diff was truncated
+        expect(request.getPrompt()).toContain('d'.repeat(100));
+        expect(request.getPrompt()).not.toContain(longDiff);
+
+        expect(model.countTokens).toHaveBeenCalledTimes(3);
+    });
+
     it('throws if first diff cannot be truncated to fit token limit', async () => {
-        vi.mocked(model.countTokens).mockResolvedValueOnce(2000);
+        vi.mocked(model.countTokens)
+            .mockResolvedValueOnce(2000)
+            .mockResolvedValueOnce(2000);
 
         await expect(async () => {
             await request.addDiff('file1.ts', 'DIFF');
@@ -68,7 +93,7 @@ describe('ModelRequest', () => {
         );
 
         expect(request.files).toEqual([]);
-        expect(model.countTokens).toHaveBeenCalledTimes(1);
+        expect(model.countTokens).toHaveBeenCalledTimes(2);
     });
 
     it('adds second diff to request', async () => {
