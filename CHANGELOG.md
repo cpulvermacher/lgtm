@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.13.5]
+- If token window exceedeed, truncate commit messages first. Fixes issues with larger changesets not being reviewable at all.
+- Allow choosing Claude 3.7 Sonnet preview models (may not be available to all users).
+
 ## [0.13.4]
 - Improve error message if no workspace is found
 - Handle missing git repository more gracefully
