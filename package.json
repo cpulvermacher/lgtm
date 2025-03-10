@@ -95,6 +95,8 @@
             "o1-mini",
             "o3-mini",
             "claude-3.5-sonnet",
+            "claude-3.7-sonnet",
+            "claude-3.7-sonnet-thought",
             "gemini-1.5-pro",
             "gemini-2.0-flash",
             "gpt-4",
