@@ -27,8 +27,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
     - run: pnpm i
-    - run: pnpm unit
     - run: pnpm lint
+    - run: pnpm unit
     - run: pnpm pretest
     - run: xvfb-run -a pnpm test
       if: runner.os == 'Linux'
