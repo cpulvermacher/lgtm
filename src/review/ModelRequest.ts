@@ -184,6 +184,13 @@ export const responseExample = [
     },
     {
         file: 'src/js/main.js',
+        line: 43,
+        comment:
+            'This method duplicates some of the logic defined in `calculateTotal` inside `src/js/util.js`. Consider refactoring this into a separate helper function to improve readability and reduce duplication.',
+        severity: 3,
+    },
+    {
+        file: 'src/js/main.js',
         line: 55,
         comment:
             'Using `eval()` with a possibly user-supplied string may result in code injection.',
