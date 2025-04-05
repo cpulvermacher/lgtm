@@ -129,6 +129,7 @@ export function createReviewPrompt(
 - Only provide comments for added lines.
 - All comments must be actionable. Do not provide comments that are only positive feedback.
 - Do not provide comments on formatting.
+- Avoid repetitive comments.
 - Do not make assumptions about code that is not included in the diff.
 ${customPrompt}
 `;
