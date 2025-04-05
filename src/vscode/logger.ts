@@ -45,6 +45,10 @@ export class LgtmLogger implements Logger {
         }
     }
 
+    isDebugEnabled(): boolean {
+        return this.outputChannel !== undefined;
+    }
+
     private createMessage(message: string, optionalParams: unknown[]): string {
         for (const param of optionalParams) {
             if (typeof param === 'string') {

@@ -22,7 +22,18 @@ export async function selectChatModel(
     modelFamily: string,
     logger: Logger
 ): Promise<Model> {
-    logger.debug('Available chat models:', await lm.selectChatModels());
+    if (logger.isDebugEnabled()) {
+        const allModels = await lm.selectChatModels();
+        logger.debug(
+            'Available chat models:',
+            allModels
+                .map(
+                    (m) =>
+                        `\n ${m.family}\t(Vendor: ${m.vendor}\tName: ${m.name}\t Max input tokens: ${m.maxInputTokens})`
+                )
+                .join('')
+        );
+    }
     const models = await lm.selectChatModels({ family: modelFamily });
     const model = models[0];
     logger.debug('Selected model:', model);

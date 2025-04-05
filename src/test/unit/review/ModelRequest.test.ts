@@ -152,6 +152,7 @@ function createMockConfig() {
         debug: vi.fn(),
         info: vi.fn(),
         setEnableDebug: vi.fn(),
+        isDebugEnabled: vi.fn(() => false),
     } as Logger;
 
     const config = {
