@@ -283,10 +283,33 @@ export class Git {
             description: commit.message,
         }));
     }
+
+    async getUncommittedChanges(): Promise<RefList> {
+        const status = await this.git.status();
+        // get unstaged changes
+        const unstaged = status.files.filter(
+            (file) => file.working_dir !== ' ' && file.working_dir !== '?'
+        );
+
+        const refs: RefList = [];
+        if (status.staged.length > 0) {
+            refs.push({
+                ref: 'staged',
+                description: `Staged changes in ${status.staged.length} files`,
+            });
+        }
+        if (unstaged.length > 0) {
+            refs.push({
+                ref: 'unstaged',
+                description: `Unstaged changes in ${unstaged.length} files`,
+            });
+        }
+        return refs;
+    }
 }
 
 export type RefList = {
-    ref: string;
+    ref: string; // a git ref, or 'staged'
     description?: string; // e.g. commit message for a commit ref
     extra?: string; // e.g. additional branches names pointing to the same commit
 }[];
@@ -310,4 +333,9 @@ function getBranchPriority(ref: string, first?: RegExp) {
     }
     const index = ['develop', 'main', 'master', 'trunk'].indexOf(ref);
     return index >= 0 ? -4 + index : 0;
+}
+
+/** returns true iff this ref doesn't require a 2nd ref to compare to */
+export function isStandaloneRef(ref: string): ref is 'staged' | 'unstaged' {
+    return ref === 'staged' || ref === 'unstaged';
 }

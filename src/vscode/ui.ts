@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { Config } from '../types/Config';
 import { distributeItems } from '../utils/distributeItems';
-import { RefList, shortHashLength } from '../utils/git';
+import { isStandaloneRef, RefList, shortHashLength } from '../utils/git';
 
 /** Ask user to select a single ref. Returns undefined if aborted */
 export async function pickRef(
@@ -12,9 +12,13 @@ export async function pickRef(
     type?: 'branch' | 'tag' | 'commit', // all types by default
     totalCount: number = 20 // total amount of refs to show in picker
 ): Promise<string | undefined> {
+    let uncommitted: RefList = [];
     let branches: RefList = [];
     let commits: RefList = [];
     let tags: RefList = [];
+    if (!type && !beforeRef) {
+        uncommitted = await config.git.getUncommittedChanges();
+    }
     if (!type || type === 'branch') {
         branches = await config.git.getBranchList(beforeRef, totalCount + 1);
     }
@@ -25,17 +29,30 @@ export async function pickRef(
         tags = await config.git.getTagList(beforeRef, totalCount + 1);
     }
 
-    const [numBranches, numCommits, numTags] = distributeItems(totalCount, [
-        branches.length,
-        commits.length,
-        tags.length,
-    ]);
+    const [numBranches, numCommits, numTags] = distributeItems(
+        totalCount - uncommitted.length,
+        [branches.length, commits.length, tags.length]
+    );
 
     let moreBranchesOption = undefined;
     let moreCommitsOption = undefined;
     let moreTagsOption = undefined;
     const quickPickOptions: vscode.QuickPickItem[] = [];
 
+    if (uncommitted && uncommitted.length > 0) {
+        const uncommittedIcon = new vscode.ThemeIcon('request-changes');
+        quickPickOptions.push({
+            label: 'Not comitted',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+        for (const ref of uncommitted) {
+            quickPickOptions.push({
+                label: ref.ref,
+                description: ref.description,
+                iconPath: uncommittedIcon,
+            });
+        }
+    }
     if (branches && branches.length > 0) {
         quickPickOptions.push({
             label: 'Branches',
@@ -139,6 +156,9 @@ export async function pickRefs(config: Config, type?: 'branch') {
     );
     if (!target) {
         return;
+    }
+    if (isStandaloneRef(target)) {
+        return { target };
     }
     const base = await pickRef(
         config,
