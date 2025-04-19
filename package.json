@@ -9,7 +9,7 @@
     "url": "https://github.com/cpulvermacher/lgtm.git"
   },
   "engines": {
-    "vscode": "^1.96.0"
+    "vscode": "^1.99.1"
   },
   "categories": [
     "AI",
@@ -129,7 +129,7 @@
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
-    "@types/vscode": "^1.96.0",
+    "@types/vscode": "^1.99.1",
     "@vitest/coverage-v8": "^3.1.1",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.3.2",
