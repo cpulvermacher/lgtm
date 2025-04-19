@@ -294,13 +294,13 @@ export class Git {
         const refs: RefList = [];
         if (status.staged.length > 0) {
             refs.push({
-                ref: 'staged',
+                ref: '::staged',
                 description: `Staged changes in ${status.staged.length} files`,
             });
         }
         if (unstaged.length > 0) {
             refs.push({
-                ref: 'unstaged',
+                ref: '::unstaged',
                 description: `Unstaged changes in ${unstaged.length} files`,
             });
         }
@@ -309,7 +309,8 @@ export class Git {
 }
 
 export type RefList = {
-    ref: string; // a git ref, or 'staged'
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+    ref: string | '::staged' | '::unstaged';
     description?: string; // e.g. commit message for a commit ref
     extra?: string; // e.g. additional branches names pointing to the same commit
 }[];
@@ -336,6 +337,6 @@ function getBranchPriority(ref: string, first?: RegExp) {
 }
 
 /** returns true iff this ref doesn't require a 2nd ref to compare to */
-export function isStandaloneRef(ref: string): ref is 'staged' | 'unstaged' {
-    return ref === 'staged' || ref === 'unstaged';
+export function isStandaloneRef(ref: string): ref is '::staged' | '::unstaged' {
+    return ref === '::staged:' || ref === '::unstaged';
 }
