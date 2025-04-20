@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.14.0] (pre-release)
+- Avoid repetitive comments about the same type of problem.
+- Allow selecting gemini 2.5 pro, o4-mini, gpt-4.1 and gpt-4-turbo models, remove unavailable o1-mini and gemini-1.5-pro options.
+
 ## [0.13.5]
 - If token window exceedeed, truncate commit messages first. Fixes issues with larger changesets not being reviewable at all.
 - Allow choosing Claude 3.7 Sonnet preview models (may not be available to all users).
