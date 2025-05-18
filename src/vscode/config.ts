@@ -71,9 +71,9 @@ export async function getConfig(): Promise<Config> {
  * If the model is not available, shows an error toast with possible options.
  */
 async function updateChatModel(config: Config): Promise<void> {
-    const modelFamily = getOptions().chatModel;
+    const modelId = getOptions().chatModel; // Renamed modelFamily to modelId for clarity
     try {
-        config.model = await selectChatModel(modelFamily, config.logger);
+        config.model = await selectChatModel(modelId, config.logger);
     } catch (error) {
         const msg =
             error instanceof Error

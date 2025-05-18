@@ -19,7 +19,7 @@ const maxInputTokensFraction = 0.95;
 
 /** Select chat model (asks for permissions the first time) */
 export async function selectChatModel(
-    modelFamily: string,
+    modelId: string, // Changed parameter name from modelFamily to modelId
     logger: Logger
 ): Promise<Model> {
     if (logger.isDebugEnabled()) {
@@ -29,20 +29,21 @@ export async function selectChatModel(
             allModels
                 .map(
                     (m) =>
-                        `\n ${m.family}\t(Vendor: ${m.vendor}\tName: ${m.name}\t Max input tokens: ${m.maxInputTokens})`
+                        `\nID: ${m.id} Family: ${m.family}\t(Vendor: ${m.vendor}\tName: ${m.name}\t Max input tokens: ${m.maxInputTokens})`
                 )
                 .join('')
         );
     }
-    const models = await lm.selectChatModels({ family: modelFamily });
-    const model = models[0];
-    logger.debug('Selected model:', model);
+    // Use the modelId directly to select the specific model
+    const models = await lm.selectChatModels({ id: modelId });
 
-    if (model === undefined) {
+    if (!models || models.length == 0 || models[0] === undefined) {
         throw new Error(
-            `No model found for family "${modelFamily}". Please ensure the lgtm.chatModel setting is set to an available model.`
+            `No model found with ID "${modelId}". Please ensure the lgtm.chatModel setting is set to an available model ID. You can use the 'LGTM: Select Chat Model' command to pick one.`
         );
     }
+    const model = models[0];
+    logger.debug('Selected model:', model);
 
     return {
         name: model.name,
