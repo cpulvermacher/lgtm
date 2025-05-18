@@ -19,7 +19,7 @@ const maxInputTokensFraction = 0.95;
 
 /** Select chat model (asks for permissions the first time) */
 export async function selectChatModel(
-    modelId: string, // Changed parameter name from modelFamily to modelId
+    modelId: string,
     logger: Logger
 ): Promise<Model> {
     if (logger.isDebugEnabled()) {
