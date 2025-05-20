@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import { reviewDiff } from './review/review';
 import { Config } from './types/Config';
+import { UncommittedRef } from './types/Ref';
 import { ReviewRequest, ReviewScope } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
 import { isUncommitted } from './utils/git';
@@ -72,7 +73,9 @@ async function handleChat(
         );
     } else if (!reviewRequest.scope.isCommitted) {
         const targetLabel =
-            reviewRequest.scope.target === '::staged' ? 'staged' : 'unstaged';
+            reviewRequest.scope.target === UncommittedRef.Staged
+                ? 'staged'
+                : 'unstaged';
         stream.markdown(`Reviewing ${targetLabel} changes...\n\n`);
     } else {
         const { base, target } = reviewRequest.scope;
@@ -146,7 +149,8 @@ async function getReviewRequest(
         if (
             !refs ||
             !refs.target ||
-            (!isUncommitted(refs.target) && !refs.base)
+            (!isUncommitted(refs.target) && !refs.base) ||
+            (refs.base && isUncommitted(refs.base))
         ) {
             return;
         }

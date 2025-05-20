@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 
 import { Config } from '../types/Config';
+import { UncommittedRef, type Ref } from '../types/Ref';
 import { distributeItems } from '../utils/distributeItems';
 import { isUncommitted, RefList, shortHashLength } from '../utils/git';
 
 type RefQuickPickItem = vscode.QuickPickItem & {
-    ref?: string;
+    ref?: Ref;
 };
 
 /** Ask user to select a single ref. Returns undefined if aborted */
@@ -15,7 +16,7 @@ export async function pickRef(
     beforeRef?: string,
     type?: 'branch' | 'tag' | 'commit', // all types by default
     totalCount: number = 20 // total amount of refs to show in picker
-): Promise<string | undefined> {
+): Promise<Ref | undefined> {
     let uncommitted: RefList = [];
     let branches: RefList = [];
     let commits: RefList = [];
@@ -51,7 +52,8 @@ export async function pickRef(
         });
         for (const ref of uncommitted) {
             quickPickOptions.push({
-                label: ref.ref === '::staged' ? 'Staged' : 'Unstaged',
+                label:
+                    ref.ref === UncommittedRef.Staged ? 'Staged' : 'Unstaged',
                 ref: ref.ref,
                 description: ref.description,
                 iconPath: uncommittedIcon,
@@ -67,7 +69,7 @@ export async function pickRef(
         for (let i = 0; i < numBranches; i++) {
             const branch = branches[i];
             quickPickOptions.push({
-                label: branch.ref,
+                label: branch.ref as string,
                 ref: branch.ref,
                 description: branch.description,
                 detail: branch.extra,
@@ -92,7 +94,7 @@ export async function pickRef(
         for (let i = 0; i < numCommits; i++) {
             const ref = commits[i];
             quickPickOptions.push({
-                label: ref.ref.substring(0, shortHashLength),
+                label: (ref.ref as string).substring(0, shortHashLength),
                 ref: ref.ref,
                 description: ref.description,
                 iconPath: commitIcon,
@@ -116,7 +118,7 @@ export async function pickRef(
         for (let i = 0; i < numTags; i++) {
             const tag = tags[i];
             quickPickOptions.push({
-                label: tag.ref,
+                label: tag.ref as string,
                 ref: tag.ref,
                 description: tag.description,
                 iconPath: tagIcon,

@@ -9,8 +9,9 @@ import simpleGit, {
 } from 'simple-git';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { UncommittedRef } from '../../../types/Ref';
 import type { ReviewScope } from '../../../types/ReviewRequest';
-import { createGit, Git } from '../../../utils/git';
+import { createGit, type Git } from '../../../utils/git';
 
 const completeDiff = `diff --git a/index.html b/index.html
 index 44cbb3f..887431b 100644
@@ -109,7 +110,7 @@ describe('git', () => {
                 files: [],
             } as unknown as DiffResult);
 
-            const stagedScope = await git.getReviewScope('::staged');
+            const stagedScope = await git.getReviewScope(UncommittedRef.Staged);
             const result = await git.getChangedFiles(stagedScope);
 
             expect(mockSimpleGit.diffSummary).toHaveBeenCalledWith([
@@ -124,7 +125,9 @@ describe('git', () => {
                 files: [],
             } as unknown as DiffResult);
 
-            const unstagedScope = await git.getReviewScope('::unstaged');
+            const unstagedScope = await git.getReviewScope(
+                UncommittedRef.Unstaged
+            );
             const result = await git.getChangedFiles(unstagedScope);
 
             expect(mockSimpleGit.diffSummary).toHaveBeenCalledWith([
@@ -281,20 +284,20 @@ rename to index.html'
         });
 
         it('for staged changes', async () => {
-            const result = await git.getReviewScope('::staged', undefined);
+            const result = await git.getReviewScope(UncommittedRef.Staged);
 
             expect(result).toEqual({
-                target: '::staged',
+                target: UncommittedRef.Staged,
                 isTargetCheckedOut: true,
                 isCommitted: false,
             });
         });
 
         it('for unstaged changes', async () => {
-            const result = await git.getReviewScope('::unstaged', undefined);
+            const result = await git.getReviewScope(UncommittedRef.Unstaged);
 
             expect(result).toEqual({
-                target: '::unstaged',
+                target: UncommittedRef.Unstaged,
                 isTargetCheckedOut: true,
                 isCommitted: false,
             });
@@ -731,7 +734,10 @@ line3`;
             const result = await git.getUncommittedChanges();
 
             expect(result).toEqual([
-                { ref: '::staged', description: 'Staged changes in 2 files' },
+                {
+                    ref: UncommittedRef.Staged,
+                    description: 'Staged changes in 2 files',
+                },
             ]);
         });
 
@@ -745,7 +751,7 @@ line3`;
 
             expect(result).toEqual([
                 {
-                    ref: '::unstaged',
+                    ref: UncommittedRef.Unstaged,
                     description: 'Unstaged changes in 2 files',
                 },
             ]);

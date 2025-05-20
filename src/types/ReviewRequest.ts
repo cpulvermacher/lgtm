@@ -1,3 +1,5 @@
+import type { UncommittedRef } from './Ref';
+
 export type ReviewRequest = {
     scope: ReviewScope;
     userPrompt?: string; // optional replacement prompt for this review
@@ -17,7 +19,7 @@ export type RefReviewScope = {
 };
 
 export type UncommittedReviewScope = {
-    target: '::staged' | '::unstaged';
+    target: UncommittedRef;
     isCommitted: false;
     isTargetCheckedOut: true;
     changeDescription: undefined;

@@ -1,5 +1,6 @@
 import simpleGit, { SimpleGit } from 'simple-git';
 
+import { UncommittedRef, type Ref } from '../types/Ref';
 import { ReviewScope } from '../types/ReviewRequest';
 
 /** same as git's default length for short commit hashes */
@@ -59,9 +60,9 @@ export class Git {
     private getDiffArgs(scope: ReviewScope) {
         if (scope.isCommitted) {
             return [scope.revisionRangeDiff];
-        } else if (scope.target === '::staged') {
+        } else if (scope.target === UncommittedRef.Staged) {
             return ['--staged'];
-        } else if (scope.target === '::unstaged') {
+        } else if (scope.target === UncommittedRef.Unstaged) {
             return [];
         }
         throw new Error(`Invalid review scope: ${JSON.stringify(scope)}`);
@@ -126,7 +127,7 @@ export class Git {
 
     /** get review scope for the given refs (commits, branches, tags, ...). If baseRef is undefined will use the parent commit. */
     async getReviewScope(
-        targetRef: string,
+        targetRef: Ref,
         baseRef?: string
     ): Promise<ReviewScope> {
         if (isUncommitted(targetRef)) {
@@ -319,13 +320,13 @@ export class Git {
         const refs: RefList = [];
         if (status.staged.length > 0) {
             refs.push({
-                ref: '::staged',
+                ref: UncommittedRef.Staged,
                 description: `Staged changes in ${status.staged.length} files`,
             });
         }
         if (unstaged.length > 0) {
             refs.push({
-                ref: '::unstaged',
+                ref: UncommittedRef.Unstaged,
                 description: `Unstaged changes in ${unstaged.length} files`,
             });
         }
@@ -334,7 +335,7 @@ export class Git {
 }
 
 export type RefList = {
-    ref: string; // commit ref, '::staged' or '::unstaged'
+    ref: Ref; // commit ref, SpecialRef.Staged or SpecialRef.Unstaged
     description?: string; // e.g. commit message for a commit ref
     extra?: string; // e.g. additional branch names pointing to the same commit
 }[];
@@ -361,6 +362,6 @@ function getBranchPriority(ref: string, first?: RegExp) {
 }
 
 /** returns true iff this ref doesn't require a 2nd ref to compare to */
-export function isUncommitted(ref: string): ref is '::staged' | '::unstaged' {
-    return ref === '::staged' || ref === '::unstaged';
+export function isUncommitted(ref: Ref): ref is UncommittedRef {
+    return ref === UncommittedRef.Staged || ref === UncommittedRef.Unstaged;
 }
