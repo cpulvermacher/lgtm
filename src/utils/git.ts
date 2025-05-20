@@ -133,10 +133,10 @@ export class Git {
         if (!refs || !refs.target) {
             return false;
         }
-        if (isUncommitted(refs.target)) {
+        if (this.isUncommitted(refs.target)) {
             return true;
         }
-        if (!refs.base || isUncommitted(refs.base)) {
+        if (!refs.base || this.isUncommitted(refs.base)) {
             return false;
         }
 
@@ -148,7 +148,7 @@ export class Git {
         targetRef: Ref,
         baseRef?: string
     ): Promise<ReviewScope> {
-        if (isUncommitted(targetRef)) {
+        if (this.isUncommitted(targetRef)) {
             return {
                 target: targetRef,
                 isCommitted: false,
@@ -217,6 +217,11 @@ export class Git {
     /** returns true iff given ref refers to a branch */
     async isBranch(ref: string): Promise<boolean> {
         return (await this.git.branch(['--all'])).all.includes(ref);
+    }
+
+    /** returns true iff this ref doesn't require a 2nd ref to compare to */
+    isUncommitted(ref: Ref): ref is UncommittedRef {
+        return ref === UncommittedRef.Staged || ref === UncommittedRef.Unstaged;
     }
 
     /** returns up to `maxCount` branches. Branches are sorted by last commit date,
@@ -377,9 +382,4 @@ function getBranchPriority(ref: string, first?: RegExp) {
     }
     const index = ['develop', 'main', 'master', 'trunk'].indexOf(ref);
     return index >= 0 ? -4 + index : 0;
-}
-
-/** returns true iff this ref doesn't require a 2nd ref to compare to */
-export function isUncommitted(ref: Ref): ref is UncommittedRef {
-    return ref === UncommittedRef.Staged || ref === UncommittedRef.Unstaged;
 }

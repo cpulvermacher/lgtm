@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { Config } from '../types/Config';
 import { UncommittedRef, type Ref } from '../types/Ref';
 import { distributeItems } from '../utils/distributeItems';
-import { isUncommitted, RefList, shortHashLength } from '../utils/git';
+import { RefList, shortHashLength } from '../utils/git';
 
 type RefQuickPickItem = vscode.QuickPickItem & {
     ref?: Ref;
@@ -167,7 +167,7 @@ export async function pickRefs(config: Config, type?: 'branch') {
     if (!target) {
         return;
     }
-    if (isUncommitted(target)) {
+    if (config.git.isUncommitted(target)) {
         return { target };
     }
 
