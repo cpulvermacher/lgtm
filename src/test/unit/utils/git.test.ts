@@ -247,6 +247,22 @@ rename to index.html'
         });
     });
 
+    it('isValidRefPair', () => {
+        expect(git.isValidRefPair(undefined)).toBe(false);
+        expect(git.isValidRefPair({})).toBe(false);
+        expect(git.isValidRefPair({ target: 'ref' })).toBe(false);
+        expect(git.isValidRefPair({ target: 'ref', base: 'ref' })).toBe(true);
+        expect(git.isValidRefPair({ target: UncommittedRef.Staged })).toBe(
+            true
+        );
+        expect(git.isValidRefPair({ target: UncommittedRef.Unstaged })).toBe(
+            true
+        );
+        expect(
+            git.isValidRefPair({ target: 'ref', base: UncommittedRef.Staged })
+        ).toBe(false);
+    });
+
     describe('getReviewScope', () => {
         beforeEach(() => {
             vi.mocked(mockSimpleGit.revparse).mockResolvedValue('rev');

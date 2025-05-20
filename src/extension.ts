@@ -5,7 +5,6 @@ import { Config } from './types/Config';
 import { UncommittedRef } from './types/Ref';
 import { ReviewRequest, ReviewScope } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
-import { isUncommitted } from './utils/git';
 import { parseArguments } from './utils/parseArguments';
 import { getConfig, toUri } from './vscode/config';
 import { pickCommit, pickRef, pickRefs } from './vscode/ui';
@@ -146,12 +145,7 @@ async function getReviewRequest(
         } else if (command === 'branch') {
             refs = await pickRefs(config, 'branch');
         }
-        if (
-            !refs ||
-            !refs.target ||
-            (!isUncommitted(refs.target) && !refs.base) ||
-            (refs.base && isUncommitted(refs.base))
-        ) {
+        if (!config.git.isValidRefPair(refs)) {
             return;
         }
 

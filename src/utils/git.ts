@@ -125,6 +125,24 @@ export class Git {
             .join('\n');
     }
 
+    /** returns true iff the given refs are valid for a review request */
+    isValidRefPair(refs?: {
+        target?: Ref;
+        base?: Ref;
+    }): refs is { target: Ref; base: string | undefined } {
+        if (!refs || !refs.target) {
+            return false;
+        }
+        if (isUncommitted(refs.target)) {
+            return true;
+        }
+        if (!refs.base || isUncommitted(refs.base)) {
+            return false;
+        }
+
+        return true;
+    }
+
     /** get review scope for the given refs (commits, branches, tags, ...). If baseRef is undefined will use the parent commit. */
     async getReviewScope(
         targetRef: Ref,
