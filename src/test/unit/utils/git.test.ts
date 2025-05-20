@@ -5,9 +5,11 @@ import simpleGit, {
     TagResult,
     type BranchSummaryBranch,
     type DiffResult,
+    type StatusResult,
 } from 'simple-git';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ReviewScope } from '../../../types/ReviewRequest';
 import { createGit, Git } from '../../../utils/git';
 
 const completeDiff = `diff --git a/index.html b/index.html
@@ -48,7 +50,18 @@ describe('git', () => {
         branch: vi.fn(),
         tags: vi.fn(),
         firstCommit: vi.fn(),
+        status: vi.fn(),
     } as unknown as SimpleGit;
+
+    const scope: ReviewScope = {
+        target: 'target',
+        base: 'base',
+        isTargetCheckedOut: true,
+        isCommitted: true,
+        revisionRangeDiff: 'rev...rev',
+        revisionRangeLog: 'rev..rev',
+        changeDescription: 'message\nmessage2',
+    };
 
     let git: Git;
     beforeEach(async () => {
@@ -70,24 +83,55 @@ describe('git', () => {
         expect(git.getGitRoot()).toBe('/git/root');
     });
 
-    it('getChangedFiles', async () => {
-        vi.mocked(mockSimpleGit.diffSummary).mockResolvedValue({
-            files: [
+    describe('getChangedFiles', () => {
+        it('committed', async () => {
+            vi.mocked(mockSimpleGit.diffSummary).mockResolvedValue({
+                files: [
+                    { file: 'file1', status: 'M', from: 'othername' },
+                    { file: 'file2' },
+                ],
+            } as unknown as DiffResult);
+
+            const result = await git.getChangedFiles(scope);
+
+            expect(mockSimpleGit.diffSummary).toHaveBeenCalledWith([
+                '--name-status',
+                'rev...rev',
+            ]);
+            expect(result).toEqual([
                 { file: 'file1', status: 'M', from: 'othername' },
-                { file: 'file2' },
-            ],
-        } as unknown as DiffResult);
+                { file: 'file2', status: 'X', from: undefined },
+            ]);
+        });
 
-        const result = await git.getChangedFiles('rev...rev');
+        it('staged changes', async () => {
+            vi.mocked(mockSimpleGit.diffSummary).mockResolvedValue({
+                files: [],
+            } as unknown as DiffResult);
 
-        expect(mockSimpleGit.diffSummary).toHaveBeenCalledWith([
-            '--name-status',
-            'rev...rev',
-        ]);
-        expect(result).toEqual([
-            { file: 'file1', status: 'M', from: 'othername' },
-            { file: 'file2', status: 'X', from: undefined },
-        ]);
+            const stagedScope = await git.getReviewScope('::staged');
+            const result = await git.getChangedFiles(stagedScope);
+
+            expect(mockSimpleGit.diffSummary).toHaveBeenCalledWith([
+                '--name-status',
+                '--staged',
+            ]);
+            expect(result).toEqual([]);
+        });
+
+        it('unstaged changes', async () => {
+            vi.mocked(mockSimpleGit.diffSummary).mockResolvedValue({
+                files: [],
+            } as unknown as DiffResult);
+
+            const unstagedScope = await git.getReviewScope('::unstaged');
+            const result = await git.getChangedFiles(unstagedScope);
+
+            expect(mockSimpleGit.diffSummary).toHaveBeenCalledWith([
+                '--name-status',
+            ]);
+            expect(result).toEqual([]);
+        });
     });
 
     describe('getFileDiff', () => {
@@ -104,7 +148,7 @@ describe('git', () => {
         it('returns diff with line numbers', async () => {
             vi.mocked(mockSimpleGit.diff).mockResolvedValue('diff');
 
-            const result = await git.getFileDiff('rev...rev', file);
+            const result = await git.getFileDiff(scope, file);
 
             expect(mockSimpleGit.diff).toHaveBeenCalledWith([
                 '--no-prefix',
@@ -124,10 +168,7 @@ rename from main.html\n\
 rename to index.html'
             );
 
-            const result = await git.getFileDiff(
-                'rev...rev',
-                fileWithPreviousName
-            );
+            const result = await git.getFileDiff(scope, fileWithPreviousName);
 
             expect(mockSimpleGit.diff).toHaveBeenCalledWith([
                 '--no-prefix',
@@ -150,7 +191,7 @@ rename to index.html'
         it('passes contextLines to diff call', async () => {
             vi.mocked(mockSimpleGit.diff).mockResolvedValue('diff');
 
-            await git.getFileDiff('rev...rev', file, 99);
+            await git.getFileDiff(scope, file, 99);
 
             expect(mockSimpleGit.diff).toHaveBeenCalledWith([
                 '--no-prefix',
@@ -166,7 +207,7 @@ rename to index.html'
                 'diff\n\\ No newline at end of file'
             );
 
-            const result = await git.getFileDiff('rev...rev', file);
+            const result = await git.getFileDiff(scope, file);
 
             expect(result).toBe('0\tdiff');
         });
@@ -174,7 +215,7 @@ rename to index.html'
         it('adds line numbers for a complete diff', async () => {
             vi.mocked(mockSimpleGit.diff).mockResolvedValue(completeDiff);
 
-            const result = await git.getFileDiff('rev...rev', file);
+            const result = await git.getFileDiff(scope, file);
 
             expect(result).toMatchInlineSnapshot(`
               "0	diff --git a/index.html b/index.html
@@ -218,6 +259,7 @@ rename to index.html'
                 target: 'rev',
                 base: 'rev^',
                 isTargetCheckedOut: true,
+                isCommitted: true,
                 revisionRangeDiff: 'rev^...rev',
                 revisionRangeLog: 'rev^..rev',
                 changeDescription: 'message\nmessage2',
@@ -231,9 +273,30 @@ rename to index.html'
                 target: 'target',
                 base: 'base',
                 isTargetCheckedOut: true,
+                isCommitted: true,
                 revisionRangeDiff: 'base...target',
                 revisionRangeLog: 'base..target',
                 changeDescription: 'message\nmessage2',
+            });
+        });
+
+        it('for staged changes', async () => {
+            const result = await git.getReviewScope('::staged', undefined);
+
+            expect(result).toEqual({
+                target: '::staged',
+                isTargetCheckedOut: true,
+                isCommitted: false,
+            });
+        });
+
+        it('for unstaged changes', async () => {
+            const result = await git.getReviewScope('::unstaged', undefined);
+
+            expect(result).toEqual({
+                target: '::unstaged',
+                isTargetCheckedOut: true,
+                isCommitted: false,
             });
         });
     });
@@ -644,6 +707,48 @@ line3`;
                 'beforeRef^',
             ]);
             expect(result.map((ref) => ref.ref)).toEqual(['hash1', 'hash2']);
+        });
+    });
+
+    describe('getUncommittedChanges', () => {
+        it('returns nothing if clean', async () => {
+            vi.mocked(mockSimpleGit.status).mockResolvedValue({
+                files: [],
+                staged: [],
+            } as unknown as StatusResult);
+
+            const result = await git.getUncommittedChanges();
+
+            expect(result).toEqual([]);
+        });
+
+        it('returns staged changes', async () => {
+            vi.mocked(mockSimpleGit.status).mockResolvedValue({
+                files: [],
+                staged: [{}, {}],
+            } as unknown as StatusResult);
+
+            const result = await git.getUncommittedChanges();
+
+            expect(result).toEqual([
+                { ref: '::staged', description: 'Staged changes in 2 files' },
+            ]);
+        });
+
+        it('returns unstaged changes', async () => {
+            vi.mocked(mockSimpleGit.status).mockResolvedValue({
+                files: [{}, {}],
+                staged: [],
+            } as unknown as StatusResult);
+
+            const result = await git.getUncommittedChanges();
+
+            expect(result).toEqual([
+                {
+                    ref: '::unstaged',
+                    description: 'Unstaged changes in 2 files',
+                },
+            ]);
         });
     });
 });

@@ -308,6 +308,7 @@ export class Git {
         }));
     }
 
+    /** return pseudo-refs for staged/unstaged changes if any */
     async getUncommittedChanges(): Promise<RefList> {
         const status = await this.git.status();
         // get unstaged changes
