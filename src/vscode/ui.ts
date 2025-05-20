@@ -2,7 +2,11 @@ import * as vscode from 'vscode';
 
 import { Config } from '../types/Config';
 import { distributeItems } from '../utils/distributeItems';
-import { isStandaloneRef, RefList, shortHashLength } from '../utils/git';
+import { isUncommitted, RefList, shortHashLength } from '../utils/git';
+
+type RefQuickPickItem = vscode.QuickPickItem & {
+    ref?: string;
+};
 
 /** Ask user to select a single ref. Returns undefined if aborted */
 export async function pickRef(
@@ -37,17 +41,18 @@ export async function pickRef(
     let moreBranchesOption = undefined;
     let moreCommitsOption = undefined;
     let moreTagsOption = undefined;
-    const quickPickOptions: vscode.QuickPickItem[] = [];
+    const quickPickOptions: RefQuickPickItem[] = [];
 
     if (uncommitted && uncommitted.length > 0) {
         const uncommittedIcon = new vscode.ThemeIcon('request-changes');
         quickPickOptions.push({
-            label: 'Not comitted',
+            label: 'Not committed',
             kind: vscode.QuickPickItemKind.Separator,
         });
         for (const ref of uncommitted) {
             quickPickOptions.push({
-                label: ref.ref,
+                label: ref.ref === '::staged' ? 'Staged' : 'Unstaged',
+                ref: ref.ref,
                 description: ref.description,
                 iconPath: uncommittedIcon,
             });
@@ -63,6 +68,7 @@ export async function pickRef(
             const branch = branches[i];
             quickPickOptions.push({
                 label: branch.ref,
+                ref: branch.ref,
                 description: branch.description,
                 detail: branch.extra,
                 iconPath: branchIcon,
@@ -87,6 +93,7 @@ export async function pickRef(
             const ref = commits[i];
             quickPickOptions.push({
                 label: ref.ref.substring(0, shortHashLength),
+                ref: ref.ref,
                 description: ref.description,
                 iconPath: commitIcon,
             });
@@ -110,6 +117,7 @@ export async function pickRef(
             const tag = tags[i];
             quickPickOptions.push({
                 label: tag.ref,
+                ref: tag.ref,
                 description: tag.description,
                 iconPath: tagIcon,
             });
@@ -142,7 +150,7 @@ export async function pickRef(
     if (moreTagsOption && target === moreTagsOption) {
         return pickRef(config, title, beforeRef, 'tag', expandedCount);
     }
-    return target.label;
+    return target.ref;
 }
 
 /** Asks user to select base and target. If `type` is set, only shows this type of ref. Otherwise, all types are allowed. Returns undefined if aborted. */
@@ -157,9 +165,10 @@ export async function pickRefs(config: Config, type?: 'branch') {
     if (!target) {
         return;
     }
-    if (isStandaloneRef(target)) {
+    if (isUncommitted(target)) {
         return { target };
     }
+
     const base = await pickRef(
         config,
         `Select a ${typeDescription} to compare with (2/2)`,

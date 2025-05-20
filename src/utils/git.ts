@@ -34,10 +34,11 @@ export class Git {
     }
 
     /** Get list of files in the commit */
-    async getChangedFiles(diffRevisionRange: string): Promise<DiffFile[]> {
+    async getChangedFiles(scope: ReviewScope): Promise<DiffFile[]> {
+        const diffArgs = this.getDiffArgs(scope);
         const summary = await this.git.diffSummary([
             '--name-status',
-            diffRevisionRange,
+            ...diffArgs,
         ]);
         return summary.files.map((file) => {
             if ('status' in file) {
@@ -54,9 +55,21 @@ export class Git {
         });
     }
 
-    /** get diff of the given file between the two revisions */
+    /** get argument to git diff for given scope */
+    private getDiffArgs(scope: ReviewScope) {
+        if (scope.isCommitted) {
+            return [scope.revisionRangeDiff];
+        } else if (scope.target === '::staged') {
+            return ['--staged'];
+        } else if (scope.target === '::unstaged') {
+            return [];
+        }
+        throw new Error(`Invalid review scope: ${JSON.stringify(scope)}`);
+    }
+
+    /** get diff of the given file*/
     async getFileDiff(
-        diffRevisionRange: string,
+        scope: ReviewScope,
         file: DiffFile,
         contextLines: number = 3
     ): Promise<string> {
@@ -66,10 +79,11 @@ export class Git {
             fileArgs.unshift(file.from);
         }
 
+        const diffArgs = this.getDiffArgs(scope);
         const rawDiff = await this.git.diff([
             '--no-prefix',
             `-U${contextLines}`,
-            diffRevisionRange,
+            ...diffArgs,
             '--',
             ...fileArgs,
         ]);
@@ -115,6 +129,15 @@ export class Git {
         targetRef: string,
         baseRef?: string
     ): Promise<ReviewScope> {
+        if (isUncommitted(targetRef)) {
+            return {
+                target: targetRef,
+                isCommitted: false,
+                isTargetCheckedOut: true,
+                changeDescription: undefined,
+            };
+        }
+
         if (!baseRef) {
             baseRef = `${targetRef}^`;
         }
@@ -128,10 +151,11 @@ export class Git {
         return {
             target: targetRef,
             base: baseRef,
+            isCommitted: true,
+            isTargetCheckedOut,
             revisionRangeDiff,
             revisionRangeLog,
             changeDescription,
-            isTargetCheckedOut,
         };
     }
 
@@ -309,10 +333,9 @@ export class Git {
 }
 
 export type RefList = {
-    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-    ref: string | '::staged' | '::unstaged';
+    ref: string; // commit ref, '::staged' or '::unstaged'
     description?: string; // e.g. commit message for a commit ref
-    extra?: string; // e.g. additional branches names pointing to the same commit
+    extra?: string; // e.g. additional branch names pointing to the same commit
 }[];
 
 function formatExtraBranches(otherBranches: string[]) {
@@ -337,6 +360,6 @@ function getBranchPriority(ref: string, first?: RegExp) {
 }
 
 /** returns true iff this ref doesn't require a 2nd ref to compare to */
-export function isStandaloneRef(ref: string): ref is '::staged' | '::unstaged' {
-    return ref === '::staged:' || ref === '::unstaged';
+export function isUncommitted(ref: string): ref is '::staged' | '::unstaged' {
+    return ref === '::staged' || ref === '::unstaged';
 }

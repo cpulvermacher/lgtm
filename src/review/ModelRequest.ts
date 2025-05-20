@@ -9,7 +9,7 @@ export class ModelRequest {
 
     constructor(
         private readonly config: Config,
-        private changeDescription: string,
+        private changeDescription: string | undefined,
         private userPrompt?: string
     ) {
         this.customPrompt = config.getOptions().customPrompt;
@@ -73,7 +73,7 @@ export class ModelRequest {
             const numCharsToRemove = prompt.length - adjustedPromptLength;
 
             // try truncating changeDescription (better than truncating diff)
-            if (this.changeDescription.length > 0) {
+            if (this.changeDescription && this.changeDescription.length > 0) {
                 const newLength = Math.max(
                     0,
                     this.changeDescription.length - numCharsToRemove
@@ -119,7 +119,7 @@ export class ModelRequest {
 }
 
 export function createReviewPrompt(
-    changeDescription: string,
+    changeDescription: string | undefined,
     diff: string,
     customPrompt: string,
     userPrompt?: string

@@ -17,9 +17,7 @@ export async function reviewDiff(
     progress: Progress<{ message?: string; increment?: number }>,
     cancellationToken: CancellationToken
 ): Promise<ReviewResult> {
-    const diffFiles = await config.git.getChangedFiles(
-        request.scope.revisionRangeDiff
-    );
+    const diffFiles = await config.git.getChangedFiles(request.scope);
     const options = config.getOptions();
     const files = diffFiles.filter(
         (file) =>
@@ -79,10 +77,7 @@ async function aggregateFileDiffs(
             increment: 100 / files.length,
         });
 
-        const diff = await config.git.getFileDiff(
-            request.scope.revisionRangeDiff,
-            file
-        );
+        const diff = await config.git.getFileDiff(request.scope, file);
         if (diff.length === 0) {
             config.logger.debug('No changes in file:', file);
             continue;

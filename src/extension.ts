@@ -4,6 +4,7 @@ import { reviewDiff } from './review/review';
 import { Config } from './types/Config';
 import { ReviewRequest, ReviewScope } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
+import { isUncommitted } from './utils/git';
 import { parseArguments } from './utils/parseArguments';
 import { getConfig, toUri } from './vscode/config';
 import { pickCommit, pickRef, pickRefs } from './vscode/ui';
@@ -69,6 +70,10 @@ async function handleChat(
         stream.markdown(
             `Reviewing changes in commit \`${reviewRequest.scope.target}\`...\n\n`
         );
+    } else if (!reviewRequest.scope.isCommitted) {
+        const targetLabel =
+            reviewRequest.scope.target === '::staged' ? 'staged' : 'unstaged';
+        stream.markdown(`Reviewing ${targetLabel} changes...\n\n`);
     } else {
         const { base, target } = reviewRequest.scope;
         const targetIsBranch = await config.git.isBranch(target);
@@ -138,7 +143,11 @@ async function getReviewRequest(
         } else if (command === 'branch') {
             refs = await pickRefs(config, 'branch');
         }
-        if (!refs || !refs.target || !refs.base) {
+        if (
+            !refs ||
+            !refs.target ||
+            (!isUncommitted(refs.target) && !refs.base)
+        ) {
             return;
         }
 
