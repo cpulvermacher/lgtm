@@ -71,33 +71,41 @@ export async function getConfig(): Promise<Config> {
  * If the model is not available, shows an error toast with possible options.
  */
 async function updateChatModel(config: Config): Promise<void> {
-    const modelFamily = getOptions().chatModel;
+    const modelId = getOptions().chatModel;
     try {
-        config.model = await selectChatModel(modelFamily, config.logger);
+        config.model = await selectChatModel(modelId, config.logger);
     } catch (error) {
-        const msg =
-            error instanceof Error
-                ? error.message
-                : 'Error updating chat model';
+        const errorMessage = error instanceof Error ? error.message : 'Error updating chat model';
+        config.logger.info(`[Error] Failed to update chat model (was trying ${modelId}): ${errorMessage}`);
+        
+        // Always reset to "gpt-4o" on any error
+        await vscode.workspace
+            .getConfiguration('lgtm')
+            .update(
+                'chatModel',
+                'gpt-4o', // Explicitly set to "gpt-4o"
+                vscode.ConfigurationTarget.Global
+            );
+        
+        // Notify the user
         const option = await vscode.window.showErrorMessage(
-            msg,
-            'Reset to Default',
+            `Failed to load chat model '${modelId}'. Resetting to default 'gpt-4o'. Reason: ${errorMessage}`,
             'Open Settings'
         );
-        if (option === 'Reset to Default') {
-            await vscode.workspace
-                .getConfiguration('lgtm')
-                .update(
-                    'chatModel',
-                    undefined,
-                    vscode.ConfigurationTarget.Global
-                );
-            //note: resetting to default will trigger the `onDidChangeConfiguration` event again
-        } else if (option === 'Open Settings') {
+
+        if (option === 'Open Settings') {
             await vscode.commands.executeCommand(
                 'workbench.action.openSettings',
                 'lgtm.chatModel'
             );
+        }
+        // Attempt to load the default model immediately after resetting
+        try {
+            config.model = await selectChatModel('gpt-4o', config.logger);
+        } catch (defaultModelError) {
+            const defaultModelErrorMessage = defaultModelError instanceof Error ? defaultModelError.message : 'Unknown error';
+            config.logger.info(`[Error] Failed to load default chat model (gpt-4o): ${defaultModelErrorMessage}`);
+            vscode.window.showErrorMessage(`Critical: Failed to load default chat model 'gpt-4o'. Please check your setup. Reason: ${defaultModelErrorMessage}`);
         }
     }
 }
