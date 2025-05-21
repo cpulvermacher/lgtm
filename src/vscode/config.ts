@@ -75,18 +75,21 @@ async function updateChatModel(config: Config): Promise<void> {
     try {
         config.model = await selectChatModel(modelId, config.logger);
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Error updating chat model';
-        config.logger.info(`[Error] Failed to update chat model (was trying ${modelId}): ${errorMessage}`);
-        
+        const errorMessage =
+            error instanceof Error
+                ? error.message
+                : 'Error updating chat model';
+        config.logger.info(
+            `[Error] Failed to update chat model (was trying ${modelId}): ${errorMessage}`
+        );
+
         // Always reset to "gpt-4o" on any error
-        await vscode.workspace
-            .getConfiguration('lgtm')
-            .update(
-                'chatModel',
-                'gpt-4o', // Explicitly set to "gpt-4o"
-                vscode.ConfigurationTarget.Global
-            );
-        
+        await vscode.workspace.getConfiguration('lgtm').update(
+            'chatModel',
+            'gpt-4o', // Explicitly set to "gpt-4o"
+            vscode.ConfigurationTarget.Global
+        );
+
         // Notify the user
         const option = await vscode.window.showErrorMessage(
             `Failed to load chat model '${modelId}'. Resetting to default 'gpt-4o'. Reason: ${errorMessage}`,
@@ -103,9 +106,16 @@ async function updateChatModel(config: Config): Promise<void> {
         try {
             config.model = await selectChatModel('gpt-4o', config.logger);
         } catch (defaultModelError) {
-            const defaultModelErrorMessage = defaultModelError instanceof Error ? defaultModelError.message : 'Unknown error';
-            config.logger.info(`[Error] Failed to load default chat model (gpt-4o): ${defaultModelErrorMessage}`);
-            vscode.window.showErrorMessage(`Critical: Failed to load default chat model 'gpt-4o'. Please check your setup. Reason: ${defaultModelErrorMessage}`);
+            const defaultModelErrorMessage =
+                defaultModelError instanceof Error
+                    ? defaultModelError.message
+                    : 'Unknown error';
+            config.logger.info(
+                `[Error] Failed to load default chat model (gpt-4o): ${defaultModelErrorMessage}`
+            );
+            vscode.window.showErrorMessage(
+                `Critical: Failed to load default chat model 'gpt-4o'. Please check your setup. Reason: ${defaultModelErrorMessage}`
+            );
         }
     }
 }

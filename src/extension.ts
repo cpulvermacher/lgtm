@@ -26,21 +26,31 @@ export function activate(context: vscode.ExtensionContext) {
             }
             const models = await vscode.lm.selectChatModels();
             if (models && models.length > 0) {
-                const quickPickItems = models.map(model => ({
+                const quickPickItems = models.map((model) => ({
                     label: model.name ?? model.id, // Use model.name for display, fallback to id
                     description: model.vendor,
-                    id: model.id // Store the actual model.id
+                    id: model.id, // Store the actual model.id
                 }));
                 const selectedQuickPickItem = await vscode.window.showQuickPick(
                     quickPickItems,
                     { placeHolder: 'Select a chat model for LGTM reviews' }
                 );
                 if (selectedQuickPickItem) {
-                    await vscode.workspace.getConfiguration('lgtm').update('chatModel', selectedQuickPickItem.id, vscode.ConfigurationTarget.Global);
-                    vscode.window.showInformationMessage(`LGTM chat model set to: ${selectedQuickPickItem.label}`);
+                    await vscode.workspace
+                        .getConfiguration('lgtm')
+                        .update(
+                            'chatModel',
+                            selectedQuickPickItem.id,
+                            vscode.ConfigurationTarget.Global
+                        );
+                    vscode.window.showInformationMessage(
+                        `LGTM chat model set to: ${selectedQuickPickItem.label}`
+                    );
                 }
             } else {
-                vscode.window.showWarningMessage('No Copilot chat models available.');
+                vscode.window.showWarningMessage(
+                    'No Copilot chat models available.'
+                );
             }
         })
     );
