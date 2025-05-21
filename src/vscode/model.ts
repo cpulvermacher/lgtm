@@ -37,7 +37,7 @@ export async function selectChatModel(
     // Use the modelId directly to select the specific model
     const models = await lm.selectChatModels({ id: modelId });
 
-    if (!models || models.length == 0 || models[0] === undefined) {
+    if (!models || models.length === 0 || models[0] === undefined) {
         throw new Error(
             `No model found with ID "${modelId}". Please ensure the lgtm.chatModel setting is set to an available model ID. You can use the 'LGTM: Select Chat Model' command to pick one.`
         );
