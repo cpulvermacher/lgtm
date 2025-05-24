@@ -8,11 +8,12 @@
 Review source code changes in Git using GitHub Copilot Chat.
 
 To start, open the Chat sidebar in `Ask` mode and send one of the following messages:
-- `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively.
-- `@lgtm /branch` to review changes between two branches.
-- `@lgtm /commit` to review changes in a single commit.
+- `/review` to review uncommitted changes, or changes between two branches, commits, or tags.
+- You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively.
+- `/branch` to review changes between two branches.
+- `/commit` to review changes in a single commit.
 
-You'll receive review comments grouped by file after selecting the desired revisions in the quick select.
+After selecting the changes to review, `@lgtm` will answer with review comments grouped by file, and sorted by severity.
 
 ![Demo](./images/demo.gif)
 
