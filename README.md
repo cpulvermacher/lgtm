@@ -19,16 +19,11 @@ You'll receive review comments grouped by file after selecting the desired revis
 ## Features
 - Uses Copilot Chat for reviewing changes, so only a GitHub Copilot subscription is required. Source code data is sent only to Copilot, which you presumably trust already.
 - Allows adding custom instructions via the Lgtm: Custom Prompt setting to e.g. change the language of review comments.
-- Allows choosing other language models via the `lgtm.chatModel` setting.
-  - By default, this is set to `gpt-4o`.
-  - You can change this to the ID of any language model available to VS Code.
-  - Use the command **LGTM: Select Chat Model** (accessible via the Command Palette - `Cmd+Shift+P` or `Ctrl+Shift+P`) to see a list of all available models and update the setting.
-  - If an invalid model ID is set or the selected model fails to load, LGTM will automatically revert to `gpt-4o` to ensure continued functionality.
+- Allows choosing any language model available to VSCode via the **LGTM: Select Chat Model** command (accessible via the Command Palette - `Cmd+Shift+P` or `Ctrl+Shift+P`). By default, GPT-4o is used.
 - Review content remains in chat history, so you can ask follow-up questions to Copilot (without `@lgtm`).
 
 ## Limitations
 - Since this project is still work in progress, quality of comments may be mixed. This should improve in future versions.
-- For now, only language models provided by GitHub Copilot Chat can be used via the `vscode.lm` API.
 - For larger change sets you may encounter rate-limiting errors from Copilot. Please wait for the indicated time before retrying.
 
 ## Data Usage
