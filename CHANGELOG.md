@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.15.1]
+- Same as 0.15.0
+- Many thanks to @dflatline for contributing the 'Select Chat Model' feature!
+
 ## [0.15.0] (pre-release)
 - Add `LGTM: Select Chat Model` command to interactively choose model.
 
