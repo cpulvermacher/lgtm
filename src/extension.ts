@@ -13,54 +13,17 @@ let chatParticipant: vscode.ChatParticipant;
 
 // called the first time a command is executed
 export function activate(context: vscode.ExtensionContext) {
-    chatParticipant = vscode.chat.createChatParticipant('lgtm', handler);
+    chatParticipant = vscode.chat.createChatParticipant('lgtm', handleChat);
     chatParticipant.iconPath = vscode.Uri.joinPath(
         context.extensionUri,
         'images/chat_icon.png'
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('lgtm.selectChatModel', async () => {
-            if (!config) {
-                config = await getConfig();
-            }
-            const models = await vscode.lm.selectChatModels();
-            if (models && models.length > 0) {
-                const currentModelId = config.getOptions().chatModel;
-
-                const quickPickItems = models.map((model) => {
-                    const prefix =
-                        model.id === currentModelId ? '$(check)' : '\u2003 '; // em space
-                    const modelName = model.name ?? model.id;
-                    return {
-                        label: prefix + modelName,
-                        description: model.vendor,
-                        id: model.id, // Store the actual model.id
-                        name: modelName,
-                    };
-                });
-                const selectedQuickPickItem = await vscode.window.showQuickPick(
-                    quickPickItems,
-                    { placeHolder: 'Select a chat model for LGTM reviews' }
-                );
-                if (selectedQuickPickItem) {
-                    await vscode.workspace
-                        .getConfiguration('lgtm')
-                        .update(
-                            'chatModel',
-                            selectedQuickPickItem.id,
-                            vscode.ConfigurationTarget.Global
-                        );
-                    vscode.window.showInformationMessage(
-                        `LGTM chat model set to: ${selectedQuickPickItem.name}`
-                    );
-                }
-            } else {
-                vscode.window.showWarningMessage(
-                    'No Copilot chat models available.'
-                );
-            }
-        })
+        vscode.commands.registerCommand(
+            'lgtm.selectChatModel',
+            handleSelectChatModel
+        )
     );
 }
 
@@ -70,7 +33,7 @@ export function deactivate() {
     }
 }
 
-async function handler(
+async function handleChat(
     chatRequest: vscode.ChatRequest,
     _context: vscode.ChatContext,
     stream: vscode.ChatResponseStream,
@@ -292,5 +255,44 @@ function showReviewResults(
         throw new Error(
             `${result.errors.length} error(s) occurred during review:\n${errorString}`
         );
+    }
+}
+
+async function handleSelectChatModel() {
+    if (!config) {
+        config = await getConfig();
+    }
+    const models = await vscode.lm.selectChatModels();
+    if (models && models.length > 0) {
+        const currentModelId = config.getOptions().chatModel;
+
+        const quickPickItems = models.map((model) => {
+            const prefix = model.id === currentModelId ? '$(check)' : '\u2003 '; // em space
+            const modelName = model.name ?? model.id;
+            return {
+                label: prefix + modelName,
+                description: model.vendor,
+                id: model.id, // Store the actual model.id
+                name: modelName,
+            };
+        });
+        const selectedQuickPickItem = await vscode.window.showQuickPick(
+            quickPickItems,
+            { placeHolder: 'Select a chat model for LGTM reviews' }
+        );
+        if (selectedQuickPickItem) {
+            await vscode.workspace
+                .getConfiguration('lgtm')
+                .update(
+                    'chatModel',
+                    selectedQuickPickItem.id,
+                    vscode.ConfigurationTarget.Global
+                );
+            vscode.window.showInformationMessage(
+                `LGTM chat model set to: ${selectedQuickPickItem.name}`
+            );
+        }
+    } else {
+        vscode.window.showWarningMessage('No Copilot chat models available.');
     }
 }
