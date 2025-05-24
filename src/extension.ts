@@ -26,11 +26,19 @@ export function activate(context: vscode.ExtensionContext) {
             }
             const models = await vscode.lm.selectChatModels();
             if (models && models.length > 0) {
-                const quickPickItems = models.map((model) => ({
-                    label: model.name ?? model.id, // Use model.name for display, fallback to id
-                    description: model.vendor,
-                    id: model.id, // Store the actual model.id
-                }));
+                const currentModelId = config.getOptions().chatModel;
+
+                const quickPickItems = models.map((model) => {
+                    const prefix =
+                        model.id === currentModelId ? '$(check)' : '\u2003 '; // em space
+                    const modelName = model.name ?? model.id;
+                    return {
+                        label: prefix + modelName,
+                        description: model.vendor,
+                        id: model.id, // Store the actual model.id
+                        name: modelName,
+                    };
+                });
                 const selectedQuickPickItem = await vscode.window.showQuickPick(
                     quickPickItems,
                     { placeHolder: 'Select a chat model for LGTM reviews' }
@@ -44,7 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
                             vscode.ConfigurationTarget.Global
                         );
                     vscode.window.showInformationMessage(
-                        `LGTM chat model set to: ${selectedQuickPickItem.label}`
+                        `LGTM chat model set to: ${selectedQuickPickItem.name}`
                     );
                 }
             } else {
