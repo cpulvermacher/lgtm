@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import { reviewDiff } from './review/review';
 import { Config } from './types/Config';
+import { UncommittedRef } from './types/Ref';
 import { ReviewRequest, ReviewScope } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
 import { parseArguments } from './utils/parseArguments';
@@ -69,6 +70,12 @@ async function handleChat(
         stream.markdown(
             `Reviewing changes in commit \`${reviewRequest.scope.target}\`...\n\n`
         );
+    } else if (!reviewRequest.scope.isCommitted) {
+        const targetLabel =
+            reviewRequest.scope.target === UncommittedRef.Staged
+                ? 'staged'
+                : 'unstaged';
+        stream.markdown(`Reviewing ${targetLabel} changes...\n\n`);
     } else {
         const { base, target } = reviewRequest.scope;
         const targetIsBranch = await config.git.isBranch(target);
@@ -138,7 +145,7 @@ async function getReviewRequest(
         } else if (command === 'branch') {
             refs = await pickRefs(config, 'branch');
         }
-        if (!refs || !refs.target || !refs.base) {
+        if (!config.git.isValidRefPair(refs)) {
             return;
         }
 

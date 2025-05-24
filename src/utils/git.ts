@@ -1,5 +1,6 @@
 import simpleGit, { SimpleGit } from 'simple-git';
 
+import { UncommittedRef, type Ref } from '../types/Ref';
 import { ReviewScope } from '../types/ReviewRequest';
 
 /** same as git's default length for short commit hashes */
@@ -34,10 +35,11 @@ export class Git {
     }
 
     /** Get list of files in the commit */
-    async getChangedFiles(diffRevisionRange: string): Promise<DiffFile[]> {
+    async getChangedFiles(scope: ReviewScope): Promise<DiffFile[]> {
+        const diffArgs = this.getDiffArgs(scope);
         const summary = await this.git.diffSummary([
             '--name-status',
-            diffRevisionRange,
+            ...diffArgs,
         ]);
         return summary.files.map((file) => {
             if ('status' in file) {
@@ -54,9 +56,21 @@ export class Git {
         });
     }
 
-    /** get diff of the given file between the two revisions */
+    /** get argument to git diff for given scope */
+    private getDiffArgs(scope: ReviewScope) {
+        if (scope.isCommitted) {
+            return [scope.revisionRangeDiff];
+        } else if (scope.target === UncommittedRef.Staged) {
+            return ['--staged'];
+        } else if (scope.target === UncommittedRef.Unstaged) {
+            return [];
+        }
+        throw new Error(`Invalid review scope: ${JSON.stringify(scope)}`);
+    }
+
+    /** get diff of the given file*/
     async getFileDiff(
-        diffRevisionRange: string,
+        scope: ReviewScope,
         file: DiffFile,
         contextLines: number = 3
     ): Promise<string> {
@@ -66,10 +80,11 @@ export class Git {
             fileArgs.unshift(file.from);
         }
 
+        const diffArgs = this.getDiffArgs(scope);
         const rawDiff = await this.git.diff([
             '--no-prefix',
             `-U${contextLines}`,
-            diffRevisionRange,
+            ...diffArgs,
             '--',
             ...fileArgs,
         ]);
@@ -110,11 +125,38 @@ export class Git {
             .join('\n');
     }
 
+    /** returns true iff the given refs are valid for a review request */
+    isValidRefPair(refs?: {
+        target?: Ref;
+        base?: Ref;
+    }): refs is { target: Ref; base: string | undefined } {
+        if (!refs || !refs.target) {
+            return false;
+        }
+        if (this.isUncommitted(refs.target)) {
+            return true;
+        }
+        if (!refs.base || this.isUncommitted(refs.base)) {
+            return false;
+        }
+
+        return true;
+    }
+
     /** get review scope for the given refs (commits, branches, tags, ...). If baseRef is undefined will use the parent commit. */
     async getReviewScope(
-        targetRef: string,
+        targetRef: Ref,
         baseRef?: string
     ): Promise<ReviewScope> {
+        if (this.isUncommitted(targetRef)) {
+            return {
+                target: targetRef,
+                isCommitted: false,
+                isTargetCheckedOut: true,
+                changeDescription: undefined,
+            };
+        }
+
         if (!baseRef) {
             baseRef = `${targetRef}^`;
         }
@@ -128,10 +170,11 @@ export class Git {
         return {
             target: targetRef,
             base: baseRef,
+            isCommitted: true,
+            isTargetCheckedOut,
             revisionRangeDiff,
             revisionRangeLog,
             changeDescription,
-            isTargetCheckedOut,
         };
     }
 
@@ -174,6 +217,11 @@ export class Git {
     /** returns true iff given ref refers to a branch */
     async isBranch(ref: string): Promise<boolean> {
         return (await this.git.branch(['--all'])).all.includes(ref);
+    }
+
+    /** returns true iff this ref doesn't require a 2nd ref to compare to */
+    isUncommitted(ref: Ref): ref is UncommittedRef {
+        return ref === UncommittedRef.Staged || ref === UncommittedRef.Unstaged;
     }
 
     /** returns up to `maxCount` branches. Branches are sorted by last commit date,
@@ -283,12 +331,36 @@ export class Git {
             description: commit.message,
         }));
     }
+
+    /** return pseudo-refs for staged/unstaged changes if any */
+    async getUncommittedChanges(): Promise<RefList> {
+        const status = await this.git.status();
+        // get unstaged changes
+        const unstaged = status.files.filter(
+            (file) => file.working_dir !== ' ' && file.working_dir !== '?'
+        );
+
+        const refs: RefList = [];
+        if (status.staged.length > 0) {
+            refs.push({
+                ref: UncommittedRef.Staged,
+                description: `Staged changes in ${status.staged.length} files`,
+            });
+        }
+        if (unstaged.length > 0) {
+            refs.push({
+                ref: UncommittedRef.Unstaged,
+                description: `Unstaged changes in ${unstaged.length} files`,
+            });
+        }
+        return refs;
+    }
 }
 
 export type RefList = {
-    ref: string;
+    ref: Ref; // commit ref, SpecialRef.Staged or SpecialRef.Unstaged
     description?: string; // e.g. commit message for a commit ref
-    extra?: string; // e.g. additional branches names pointing to the same commit
+    extra?: string; // e.g. additional branch names pointing to the same commit
 }[];
 
 function formatExtraBranches(otherBranches: string[]) {
