@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.16.0] (pre-release)
+- Allow reviewing staged/unchanged changes.
+
 ## [0.15.1]
 - Same as 0.15.0
 - Many thanks to @dflatline for contributing the 'Select Chat Model' feature!
