@@ -32,7 +32,7 @@
     "commands": [
       {
         "command": "lgtm.selectChatModel",
-        "title": "LGTM: Select Chat Model",
+        "title": "Select Chat Model",
         "category": "LGTM"
       }
     ],
