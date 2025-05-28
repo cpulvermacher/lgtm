@@ -14,8 +14,8 @@ import { ModelRequest } from './ModelRequest';
 export async function reviewDiff(
     config: Config,
     request: ReviewRequest,
-    progress: Progress<{ message?: string; increment?: number }>,
-    cancellationToken: CancellationToken
+    progress?: Progress<{ message?: string; increment?: number }>,
+    cancellationToken?: CancellationToken
 ): Promise<ReviewResult> {
     const diffFiles = await config.git.getChangedFiles(request.scope);
     const options = config.getOptions();
@@ -62,17 +62,17 @@ async function aggregateFileDiffs(
     config: Config,
     request: ReviewRequest,
     files: DiffFile[],
-    progress: Progress<{ message?: string; increment?: number }>,
-    cancellationToken: CancellationToken
+    progress?: Progress<{ message?: string; increment?: number }>,
+    cancellationToken?: CancellationToken
 ) {
     const options = config.getOptions();
     const modelRequests: ModelRequest[] = [];
     for (const file of files) {
-        if (cancellationToken.isCancellationRequested) {
+        if (cancellationToken?.isCancellationRequested) {
             break;
         }
 
-        progress.report({
+        progress?.report({
             message: `Gathering changes for ${files.length} files...`,
             increment: 100 / files.length,
         });
@@ -117,22 +117,22 @@ async function aggregateFileDiffs(
 async function generateReviewComments(
     config: Config,
     modelRequests: ModelRequest[],
-    progress: Progress<{ message?: string; increment?: number }>,
-    cancellationToken: CancellationToken
+    progress?: Progress<{ message?: string; increment?: number }>,
+    cancellationToken?: CancellationToken
 ) {
     // reset to  an indeterminate progress bar for the review
-    progress.report({ message: 'Reviewing...', increment: -100 });
+    progress?.report({ message: 'Reviewing...', increment: -100 });
 
     const errors = [];
     const commentsPerFile = new Map<string, ReviewComment[]>();
     for (let i = 0; i < modelRequests.length; i++) {
-        if (cancellationToken.isCancellationRequested) {
+        if (cancellationToken?.isCancellationRequested) {
             break;
         }
 
         const modelRequest = modelRequests[i];
         if (modelRequests.length > 1) {
-            progress.report({
+            progress?.report({
                 message: `Reviewing (${i + 1}/${modelRequests.length})...`,
                 increment: 100 / modelRequests.length,
             });

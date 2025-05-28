@@ -10,6 +10,6 @@ export interface Model {
     countTokens: (text: string) => Promise<number>;
     sendRequest: (
         prompt: string,
-        cancellationToken: CancellationToken
+        cancellationToken?: CancellationToken
     ) => Promise<string>;
 }

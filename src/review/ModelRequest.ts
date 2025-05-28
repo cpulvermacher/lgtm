@@ -44,7 +44,7 @@ export class ModelRequest {
         return this.buildPrompt(this.diffs);
     }
 
-    async getReviewResponse(cancellationToken: CancellationToken) {
+    async getReviewResponse(cancellationToken?: CancellationToken) {
         const prompt = this.getPrompt();
         const model = this.config.model;
         const response = await model.sendRequest(prompt, cancellationToken);
