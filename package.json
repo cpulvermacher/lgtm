@@ -127,14 +127,14 @@
     "@types/vscode": "^1.99.1",
     "@vitest/coverage-v8": "^3.1.4",
     "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.4.1",
-    "esbuild": "^0.25.4",
+    "@vscode/vsce": "^3.4.2",
+    "esbuild": "^0.25.5",
     "eslint": "^9.27.0",
     "glob": "^11.0.2",
-    "mocha": "^11.4.0",
+    "mocha": "^11.5.0",
     "prettier": "^3.5.3",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.32.1",
+    "typescript-eslint": "^8.33.0",
     "vitest": "^3.1.4"
   },
   "dependencies": {
