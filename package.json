@@ -9,7 +9,7 @@
     "url": "https://github.com/cpulvermacher/lgtm.git"
   },
   "engines": {
-    "vscode": "^1.99.1"
+    "vscode": "^1.100.0"
   },
   "categories": [
     "AI",
@@ -28,6 +28,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "activationEvents": [],
   "main": "./out/extension.js",
+  "enabledApiProposals": [],
   "contributes": {
     "commands": [
       {
@@ -57,6 +58,33 @@
             "description": "Review changes in a single commit."
           }
         ]
+      }
+    ],
+    "languageModelTools": [
+      {
+        "name": "review",
+        "displayName": "Review source code changes in Git using AI",
+        "modelDescription": "Review source code changes in Git using AI. Specify target and base refs to compare. Returns a list of review comments with file names, line numbers, and severity.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "review",
+        "icon": "images/icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "target": {
+              "type": "string",
+              "description": "Target git ref (branch, commit, or tag) to review."
+            },
+            "base": {
+              "type": "string",
+              "description": "Base git ref (branch, commit, or tag) to compare against."
+            }
+          },
+          "required": [
+            "target",
+            "base"
+          ]
+        }
       }
     ],
     "configuration": {
@@ -124,7 +152,7 @@
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
-    "@types/vscode": "^1.99.1",
+    "@types/vscode": "^1.100.0",
     "@vitest/coverage-v8": "^3.1.4",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.4.2",

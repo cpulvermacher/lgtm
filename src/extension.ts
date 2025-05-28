@@ -7,6 +7,7 @@ import { ReviewRequest, ReviewScope } from './types/ReviewRequest';
 import { ReviewResult } from './types/ReviewResult';
 import { parseArguments } from './utils/parseArguments';
 import { getConfig, toUri } from './vscode/config';
+import { ReviewTool } from './vscode/ReviewTool';
 import { pickCommit, pickRef, pickRefs } from './vscode/ui';
 
 let chatParticipant: vscode.ChatParticipant;
@@ -24,6 +25,10 @@ export function activate(context: vscode.ExtensionContext) {
             'lgtm.selectChatModel',
             handleSelectChatModel
         )
+    );
+
+    context.subscriptions.push(
+        vscode.lm.registerTool('review', new ReviewTool())
     );
 }
 

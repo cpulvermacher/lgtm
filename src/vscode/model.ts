@@ -54,7 +54,7 @@ export async function selectChatModel(
         countTokens: async (text: string) => model.countTokens(text),
         sendRequest: async (
             prompt: string,
-            cancellationToken: CancellationToken
+            cancellationToken?: CancellationToken
         ) => sendRequest(model, prompt, cancellationToken),
     };
 }
@@ -62,7 +62,7 @@ export async function selectChatModel(
 async function sendRequest(
     model: LanguageModelChat,
     prompt: string,
-    cancellationToken: CancellationToken
+    cancellationToken?: CancellationToken
 ): Promise<string> {
     try {
         const response = await model.sendRequest(
