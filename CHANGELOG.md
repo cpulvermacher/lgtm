@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.16.1]
+- Same as 0.16.0 with minor fixes.
+
 ## [0.16.0] (pre-release)
 - Allow reviewing staged/unchanged changes.
 
