@@ -129,7 +129,9 @@ export class Git {
     isValidRefPair(refs?: {
         target?: Ref;
         base?: Ref;
-    }): refs is { target: Ref; base: string | undefined } {
+    }): refs is
+        | { target: string; base: string }
+        | { target: UncommittedRef; base: undefined } {
         if (!refs || !refs.target) {
             return false;
         }
