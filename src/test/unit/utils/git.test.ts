@@ -97,6 +97,7 @@ describe('git', () => {
 
             expect(mockSimpleGit.diffSummary).toHaveBeenCalledWith([
                 '--name-status',
+                '--end-of-options',
                 'rev...rev',
             ]);
             expect(result).toEqual([
@@ -156,6 +157,7 @@ describe('git', () => {
             expect(mockSimpleGit.diff).toHaveBeenCalledWith([
                 '--no-prefix',
                 '-U3',
+                '--end-of-options',
                 'rev...rev',
                 '--',
                 'file',
@@ -176,6 +178,7 @@ rename to index.html'
             expect(mockSimpleGit.diff).toHaveBeenCalledWith([
                 '--no-prefix',
                 '-U3',
+                '--end-of-options',
                 'rev...rev',
                 '--',
                 'othername',
@@ -199,6 +202,7 @@ rename to index.html'
             expect(mockSimpleGit.diff).toHaveBeenCalledWith([
                 '--no-prefix',
                 '-U99',
+                '--end-of-options',
                 'rev...rev',
                 '--',
                 'file',

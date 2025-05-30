@@ -59,7 +59,7 @@ export class Git {
     /** get argument to git diff for given scope */
     private getDiffArgs(scope: ReviewScope) {
         if (scope.isCommitted) {
-            return [scope.revisionRangeDiff];
+            return ['--end-of-options', scope.revisionRangeDiff];
         } else if (scope.target === UncommittedRef.Staged) {
             return ['--staged'];
         } else if (scope.target === UncommittedRef.Unstaged) {
@@ -194,7 +194,7 @@ export class Git {
 
     /** return all commit messages in a newline-separated string*/
     async getCommitMessages(revisionRangeLog: string): Promise<string> {
-        const logs = await this.git.log([revisionRangeLog]);
+        const logs = await this.git.log(['--end-of-options', revisionRangeLog]);
         return logs.all.map((log) => log.message).join('\n');
     }
 
