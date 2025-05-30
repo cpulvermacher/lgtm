@@ -404,6 +404,22 @@ line3`;
         });
     });
 
+    describe('getCommitRef', () => {
+        it('returns commit ref', async () => {
+            const ref = await git.getCommitRef('hash');
+            expect(ref).toBe('rev');
+        });
+
+        it('throws on invalid ref', async () => {
+            vi.mocked(mockSimpleGit.revparse).mockRejectedValue(
+                new Error('Invalid ref')
+            );
+            await expect(git.getCommitRef('invalid')).rejects.toThrow(
+                `Invalid ref "invalid". Please provide a valid commit, branch, tag, or HEAD.`
+            );
+        });
+    });
+
     describe('isBranch', () => {
         vi.mocked(mockSimpleGit.branch).mockResolvedValue({
             all: ['branch1', 'branch2'],

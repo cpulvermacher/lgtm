@@ -212,8 +212,18 @@ export class Git {
      * Throws an error if the ref is not valid.
      */
     async getCommitRef(ref: string): Promise<string> {
-        //^{} is needed to dereference tags (no effect on other types of refs)
-        return this.git.revparse(['--verify', '--end-of-options', ref + '^{}']);
+        try {
+            //^{} is needed to dereference tags (no effect on other types of refs)
+            return await this.git.revparse([
+                '--verify',
+                '--end-of-options',
+                ref + '^{}',
+            ]);
+        } catch {
+            throw new Error(
+                `Invalid ref "${ref}". Please provide a valid commit, branch, tag, or HEAD.`
+            );
+        }
     }
 
     /** returns true iff given ref refers to a branch */
