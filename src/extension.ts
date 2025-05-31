@@ -10,7 +10,6 @@ import { getConfig, toUri } from './vscode/config';
 import { ReviewTool } from './vscode/ReviewTool';
 import { pickCommit, pickRef, pickRefs } from './vscode/ui';
 
-let config: Config | undefined;
 let chatParticipant: vscode.ChatParticipant;
 
 // called the first time a command is executed
@@ -45,9 +44,7 @@ async function handleChat(
     stream: vscode.ChatResponseStream,
     token: vscode.CancellationToken
 ): Promise<void> {
-    if (!config) {
-        config = await getConfig();
-    }
+    const config = await getConfig();
 
     if (
         !chatRequest.command ||
@@ -271,9 +268,7 @@ function showReviewResults(
 }
 
 async function handleSelectChatModel() {
-    if (!config) {
-        config = await getConfig();
-    }
+    const config = await getConfig();
     const models = await vscode.lm.selectChatModels();
     if (models && models.length > 0) {
         const currentModelId = config.getOptions().chatModel;

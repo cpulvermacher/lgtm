@@ -8,8 +8,17 @@ import { selectChatModel } from './model';
 // defined when built via `npm run dev`
 declare const __GIT_VERSION__: string | undefined;
 
+let config: Config | undefined;
+
 /** Return config */
 export async function getConfig(): Promise<Config> {
+    if (!config) {
+        config = await initializeConfig();
+    }
+    return config;
+}
+
+async function initializeConfig(): Promise<Config> {
     const logger = new LgtmLogger(getOptions().enableDebugOutput);
     if (__GIT_VERSION__) {
         logger.info(`**LGTM dev build**: ${__GIT_VERSION__}`);
