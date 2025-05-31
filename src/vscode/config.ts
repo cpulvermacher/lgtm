@@ -8,6 +8,8 @@ import { selectChatModel } from './model';
 // defined when built via `npm run dev`
 declare const __GIT_VERSION__: string | undefined;
 
+const defaultModelId = 'gpt-4o';
+
 let config: Config | undefined;
 
 /** Return config */
@@ -92,16 +94,18 @@ async function updateChatModel(config: Config): Promise<void> {
             `[Error] Failed to update chat model (was trying ${modelId}): ${errorMessage}`
         );
 
-        // Always reset to "gpt-4o" on any error
-        await vscode.workspace.getConfiguration('lgtm').update(
-            'chatModel',
-            'gpt-4o', // Explicitly set to "gpt-4o"
-            vscode.ConfigurationTarget.Global
-        );
+        // Always reset to default model on any error
+        await vscode.workspace
+            .getConfiguration('lgtm')
+            .update(
+                'chatModel',
+                defaultModelId,
+                vscode.ConfigurationTarget.Global
+            );
 
         // Notify the user
         const option = await vscode.window.showErrorMessage(
-            `Failed to load chat model '${modelId}'. Resetting to default 'gpt-4o'. Reason: ${errorMessage}`,
+            `Failed to load chat model '${modelId}'. Resetting to default '${defaultModelId}'. Reason: ${errorMessage}`,
             'Open Settings'
         );
 
@@ -113,17 +117,17 @@ async function updateChatModel(config: Config): Promise<void> {
         }
         // Attempt to load the default model immediately after resetting
         try {
-            config.model = await selectChatModel('gpt-4o', config.logger);
+            config.model = await selectChatModel(defaultModelId, config.logger);
         } catch (defaultModelError) {
             const defaultModelErrorMessage =
                 defaultModelError instanceof Error
                     ? defaultModelError.message
                     : 'Unknown error';
             config.logger.info(
-                `[Error] Failed to load default chat model (gpt-4o): ${defaultModelErrorMessage}`
+                `[Error] Failed to load default chat model (${defaultModelId}): ${defaultModelErrorMessage}`
             );
             vscode.window.showErrorMessage(
-                `Critical: Failed to load default chat model 'gpt-4o'. Please check your setup. Reason: ${defaultModelErrorMessage}`
+                `Critical: Failed to load default chat model '${defaultModelId}'. Please check your setup. Reason: ${defaultModelErrorMessage}`
             );
         }
     }
@@ -151,7 +155,7 @@ function getOptions(): Options {
         customPrompt: customPrompt ?? '',
         excludeGlobs: exclude ?? [],
         enableDebugOutput: enableDebugOutput ?? false,
-        chatModel: chatModel ?? 'gpt-4o',
+        chatModel: chatModel ?? defaultModelId,
         mergeFileReviewRequests: mergeFileReviewRequests ?? true,
     };
 }
