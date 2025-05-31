@@ -106,14 +106,12 @@ async function updateChatModel(config: Config): Promise<void> {
         // Notify the user
         const option = await vscode.window.showErrorMessage(
             `Failed to load chat model '${modelId}'. Resetting to default '${defaultModelId}'. Reason: ${errorMessage}`,
-            'Open Settings'
+            'Select Chat Model'
         );
 
-        if (option === 'Open Settings') {
-            await vscode.commands.executeCommand(
-                'workbench.action.openSettings',
-                'lgtm.chatModel'
-            );
+        if (option === 'Select Chat Model') {
+            await vscode.commands.executeCommand('lgtm.selectChatModel');
+            return;
         }
         // Attempt to load the default model immediately after resetting
         try {
