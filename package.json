@@ -64,7 +64,7 @@
       {
         "name": "review",
         "displayName": "Review source code changes in Git using AI",
-        "modelDescription": "Review source code changes in Git using AI. Specify target and base refs to compare. Returns a list of review comments with file names, line numbers, and severity.",
+        "modelDescription": "Reviews source code changes in Git using AI. Use this tool to review any changes on the `target` ref (compared to `base`) to discover potential issues. Returns a list of review comments with file names, line numbers, and severity.",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "review",
         "icon": "images/icon.png",
@@ -73,11 +73,11 @@
           "properties": {
             "target": {
               "type": "string",
-              "description": "Target git ref (branch, commit, or tag) to review."
+              "description": "Target git ref (branch, commit, or tag) to review. (e.g. 'main', 'abc1234', 'v0.1.0', 'HEAD')"
             },
             "base": {
               "type": "string",
-              "description": "Base git ref (branch, commit, or tag) to compare against."
+              "description": "Base git ref (branch, commit, or tag) to compare against. (e.g. 'origin/main', 'abc1235', 'v0.0.9', 'HEAD~1')"
             }
           },
           "required": [
