@@ -22,6 +22,7 @@ After selecting the changes to review, `@lgtm` will answer with review comments 
 - Allows adding custom instructions via the Lgtm: Custom Prompt setting to e.g. change the language of review comments.
 - Allows choosing any language model available to VSCode via the **LGTM: Select Chat Model** command (accessible via the Command Palette - `Cmd+Shift+P` or `Ctrl+Shift+P`). By default, GPT-4o is used.
 - Review content remains in chat history, so you can ask follow-up questions to Copilot (without `@lgtm`).
+- Adds a review tool that can be used in agent mode (mention `#review` to encourage its use).
 
 ## Limitations
 - Since this project is still work in progress, quality of comments may be mixed. This should improve in future versions.
