@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.17.0] (pre-release)
+- add #review tool to allow usage in agent mode. E.g. "Use the review tool to review a PR of the current branch against master and fix any severe issues."
+
 ## [0.16.1]
 - Same as 0.16.0 with minor fixes.
 
