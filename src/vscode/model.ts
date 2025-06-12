@@ -17,8 +17,8 @@ import { ModelError } from '../types/ModelError';
  */
 const maxInputTokensFraction = 0.95;
 
-/** Select chat model (asks for permissions the first time) */
-export async function selectChatModel(
+/** Get given chat model (asks for permissions the first time) */
+export async function getChatModel(
     modelId: string,
     logger: Logger
 ): Promise<Model> {

@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { Config, Options } from '../types/Config';
 import { createGit } from '../utils/git';
 import { LgtmLogger } from './logger';
-import { selectChatModel } from './model';
+import { getChatModel } from './model';
 
 // defined when built via `npm run dev`
 declare const __GIT_VERSION__: string | undefined;
@@ -50,7 +50,7 @@ async function initializeConfig(): Promise<Config> {
                 message
         );
     }
-    const model = await selectChatModel(getOptions().chatModel, logger);
+    const model = await getChatModel(getOptions().chatModel, logger);
 
     const config = {
         git,
@@ -84,7 +84,7 @@ async function initializeConfig(): Promise<Config> {
 async function updateChatModel(config: Config): Promise<void> {
     const modelId = getOptions().chatModel;
     try {
-        config.model = await selectChatModel(modelId, config.logger);
+        config.model = await getChatModel(modelId, config.logger);
     } catch (error) {
         const errorMessage =
             error instanceof Error
@@ -115,7 +115,7 @@ async function updateChatModel(config: Config): Promise<void> {
         }
         // Attempt to load the default model immediately after resetting
         try {
-            config.model = await selectChatModel(defaultModelId, config.logger);
+            config.model = await getChatModel(defaultModelId, config.logger);
         } catch (defaultModelError) {
             const defaultModelErrorMessage =
                 defaultModelError instanceof Error
