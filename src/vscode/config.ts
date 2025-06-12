@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 
 import { Config, Options } from '../types/Config';
+import type { Logger } from '../types/Logger';
+import type { Model } from '../types/Model';
 import { createGit } from '../utils/git';
 import { LgtmLogger } from './logger';
 import { getChatModel } from './model';
@@ -50,47 +52,40 @@ async function initializeConfig(): Promise<Config> {
                 message
         );
     }
-    const model = await getChatModel(getOptions().chatModel, logger);
-
     const config = {
         git,
         workspaceRoot,
         gitRoot: git.getGitRoot(),
-        model,
+        getModel: () => loadModel(getOptions().chatModel, logger),
         getOptions,
         logger,
     };
 
-    vscode.lm.onDidChangeChatModels(async () => {
-        config.logger.debug('Chat models were updated, rechecking...');
-        await updateChatModel(config);
-    });
-    vscode.workspace.onDidChangeConfiguration(async (ev) => {
+    vscode.workspace.onDidChangeConfiguration((ev) => {
         if (!ev.affectsConfiguration('lgtm')) {
             return;
         }
         config.logger.debug('Updating config...');
         config.logger.setEnableDebug(getOptions().enableDebugOutput);
-        await updateChatModel(config);
     });
 
     return config;
 }
 
-/** get desired chat model and update `config`.
+/** get desired chat model from config.
  *
  * If the model is not available, shows an error toast with possible options.
  */
-async function updateChatModel(config: Config): Promise<void> {
-    const modelId = getOptions().chatModel;
+async function loadModel(modelId: string, logger: Logger): Promise<Model> {
+    logger.debug(`Loading chat model: ${modelId}`);
     try {
-        config.model = await getChatModel(modelId, config.logger);
+        return await getChatModel(modelId, logger);
     } catch (error) {
         const errorMessage =
             error instanceof Error
                 ? error.message
                 : 'Error updating chat model';
-        config.logger.info(
+        logger.info(
             `[Error] Failed to update chat model (was trying ${modelId}): ${errorMessage}`
         );
 
@@ -111,22 +106,23 @@ async function updateChatModel(config: Config): Promise<void> {
 
         if (option === 'Select Chat Model') {
             await vscode.commands.executeCommand('lgtm.selectChatModel');
-            return;
+            return await loadModel(getOptions().chatModel, logger);
         }
         // Attempt to load the default model immediately after resetting
         try {
-            config.model = await getChatModel(defaultModelId, config.logger);
+            return await getChatModel(defaultModelId, logger);
         } catch (defaultModelError) {
             const defaultModelErrorMessage =
                 defaultModelError instanceof Error
                     ? defaultModelError.message
                     : 'Unknown error';
-            config.logger.info(
+            logger.info(
                 `[Error] Failed to load default chat model (${defaultModelId}): ${defaultModelErrorMessage}`
             );
             vscode.window.showErrorMessage(
                 `Critical: Failed to load default chat model '${defaultModelId}'. Please check your setup. Reason: ${defaultModelErrorMessage}`
             );
+            throw defaultModelError;
         }
     }
 }

@@ -6,7 +6,7 @@ export type Config = {
     workspaceRoot: string;
     gitRoot: string;
     git: Git;
-    model: Model;
+    getModel: () => Promise<Model>;
     getOptions: () => Options;
     logger: Logger;
 };
