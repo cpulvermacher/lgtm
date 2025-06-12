@@ -268,9 +268,9 @@ function showReviewResults(
 }
 
 async function handleSelectChatModel() {
-    const config = await getConfig();
     const models = await vscode.lm.selectChatModels();
     if (models && models.length > 0) {
+        const config = await getConfig();
         const currentModelId = config.getOptions().chatModel;
 
         const quickPickItems = models.map((model) => {
