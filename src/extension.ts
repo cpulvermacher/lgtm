@@ -269,37 +269,38 @@ function showReviewResults(
 
 async function handleSelectChatModel() {
     const models = await vscode.lm.selectChatModels();
-    if (models && models.length > 0) {
-        const config = await getConfig();
-        const currentModelId = config.getOptions().chatModel;
-
-        const quickPickItems = models.map((model) => {
-            const prefix = model.id === currentModelId ? '$(check)' : '\u2003 '; // em space
-            const modelName = model.name ?? model.id;
-            return {
-                label: prefix + modelName,
-                description: model.vendor,
-                id: model.id, // Store the actual model.id
-                name: modelName,
-            };
-        });
-        const selectedQuickPickItem = await vscode.window.showQuickPick(
-            quickPickItems,
-            { placeHolder: 'Select a chat model for LGTM reviews' }
-        );
-        if (selectedQuickPickItem) {
-            await vscode.workspace
-                .getConfiguration('lgtm')
-                .update(
-                    'chatModel',
-                    selectedQuickPickItem.id,
-                    vscode.ConfigurationTarget.Global
-                );
-            vscode.window.showInformationMessage(
-                `LGTM chat model set to: ${selectedQuickPickItem.name}`
-            );
-        }
-    } else {
+    if (!models || models.length === 0) {
         vscode.window.showWarningMessage('No Copilot chat models available.');
+        return;
+    }
+
+    const config = await getConfig();
+    const currentModelId = config.getOptions().chatModel;
+
+    const quickPickItems = models.map((model) => {
+        const prefix = model.id === currentModelId ? '$(check)' : '\u2003 '; // em space
+        const modelName = model.name ?? model.id;
+        return {
+            label: prefix + modelName,
+            description: model.vendor,
+            id: model.id, // Store the actual model.id
+            name: modelName,
+        };
+    });
+    const selectedQuickPickItem = await vscode.window.showQuickPick(
+        quickPickItems,
+        { placeHolder: 'Select a chat model for LGTM reviews' }
+    );
+    if (selectedQuickPickItem) {
+        await vscode.workspace
+            .getConfiguration('lgtm')
+            .update(
+                'chatModel',
+                selectedQuickPickItem.id,
+                vscode.ConfigurationTarget.Global
+            );
+        vscode.window.showInformationMessage(
+            `LGTM chat model set to: ${selectedQuickPickItem.name}`
+        );
     }
 }
