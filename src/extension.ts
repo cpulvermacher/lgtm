@@ -245,7 +245,7 @@ function showReviewResults(
         }
     }
 
-    if (noProblemsFound) {
+    if (noProblemsFound && result.errors.length === 0) {
         stream.markdown('\nNo problems found.');
     } else if (!isTargetCheckedOut) {
         stream.markdown(
