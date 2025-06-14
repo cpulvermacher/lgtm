@@ -11,6 +11,9 @@ importers:
       fastest-levenshtein:
         specifier: ^1.0.16
         version: 1.0.16
+      jsonc-parser:
+        specifier: ^3.3.1
+        version: 3.3.1
       minimatch:
         specifier: ^10.0.2
         version: 10.0.2
@@ -1482,8 +1485,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  jsonc-parser@3.2.0:
-    resolution: {integrity: sha512-gfFQZrcTc8CnKXp6Y4/CBT3fTc0OVuDofpre4aEeEpSBPV5X5v4+Vmx+8snU7RLPrNHPKSgLxGo9YuQzz20o+w==}
+  jsonc-parser@3.3.1:
+    resolution: {integrity: sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ==}
 
   jsonfile@6.1.0:
     resolution: {integrity: sha512-5dgndWOriYSm5cnYaJNhalLNDKOqFwyDB/rr1E9ZsGciGvKPs8R2xYGCacuf3z6K1YKDz182fd+fY3cn3pMqXQ==}
@@ -3042,7 +3045,7 @@ snapshots:
       form-data: 4.0.0
       glob: 11.0.2
       hosted-git-info: 4.1.0
-      jsonc-parser: 3.2.0
+      jsonc-parser: 3.3.1
       leven: 3.1.0
       markdown-it: 14.1.0
       mime: 1.6.0
@@ -3799,7 +3802,7 @@ snapshots:
 
   json5@2.2.3: {}
 
-  jsonc-parser@3.2.0: {}
+  jsonc-parser@3.3.1: {}
 
   jsonfile@6.1.0:
     dependencies:
