@@ -31,9 +31,7 @@ export async function getChatModel(
     const models = await vscode.lm.selectChatModels({ id: modelId });
 
     if (!models || models.length === 0 || models[0] === undefined) {
-        throw new Error(
-            `No model found with ID "${modelId}". Please ensure the lgtm.chatModel setting is set to an available model ID. You can use the 'LGTM: Select Chat Model' command to pick one.`
-        );
+        throw new Error(`No model found with ID "${modelId}".`);
     }
     const model = models[0];
     logger.debug('Selected model:', model);
