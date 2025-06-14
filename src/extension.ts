@@ -270,7 +270,7 @@ function showReviewResults(
 async function handleSelectChatModel() {
     const models = await vscode.lm.selectChatModels();
     if (!models || models.length === 0) {
-        vscode.window.showWarningMessage('No Copilot chat models available.');
+        vscode.window.showWarningMessage('No chat models available.');
         return;
     }
 
