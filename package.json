@@ -129,7 +129,7 @@
         "lgtm.mergeFileReviewRequests": {
           "type": "boolean",
           "default": true,
-          "description": "Combine changes for multiple files into a single review request sent to the model."
+          "description": "Review changes for multiple files in one request. This improves the model's understanding of the context of individual changes and speeds up reviews. Disabling this will lose these advantages, but can be useful for a very detailed line-by-line review."
         },
         "lgtm.maxInputTokensFraction": {
           "type": "number",
