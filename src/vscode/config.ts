@@ -129,13 +129,14 @@ export function toUri(config: Config, file: string): vscode.Uri {
 function getOptions(): Options {
     const config = vscode.workspace.getConfiguration('lgtm');
 
-    const minSeverity = config.get<number>('minSeverity');
-    const customPrompt = config.get<string>('customPrompt');
-    const exclude = config.get<string[]>('exclude');
-    const enableDebugOutput = config.get<boolean>('enableDebugOutput');
-    const chatModel = config.get<string>('chatModel');
+    const minSeverity = config.get<number>('minSeverity', 1);
+    const customPrompt = config.get<string>('customPrompt', '');
+    const excludeGlobs = config.get<string[]>('exclude', []);
+    const enableDebugOutput = config.get<boolean>('enableDebugOutput', false);
+    const chatModel = config.get<string>('chatModel', defaultModelId);
     const mergeFileReviewRequests = config.get<boolean>(
-        'mergeFileReviewRequests'
+        'mergeFileReviewRequests',
+        true
     );
     let maxInputTokensFraction = config.get<number>(
         'maxInputTokensFraction',
@@ -148,12 +149,12 @@ function getOptions(): Options {
     }
 
     return {
-        minSeverity: minSeverity ?? 1,
-        customPrompt: customPrompt ?? '',
-        excludeGlobs: exclude ?? [],
-        enableDebugOutput: enableDebugOutput ?? false,
-        chatModel: chatModel ?? defaultModelId,
-        mergeFileReviewRequests: mergeFileReviewRequests ?? true,
-        maxInputTokensFraction: maxInputTokensFraction,
+        minSeverity,
+        customPrompt,
+        excludeGlobs,
+        enableDebugOutput,
+        chatModel,
+        mergeFileReviewRequests,
+        maxInputTokensFraction,
     };
 }
