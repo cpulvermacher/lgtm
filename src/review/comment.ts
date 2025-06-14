@@ -4,7 +4,19 @@ import { parseAsJsonArray } from '../utils/json';
 
 /** Parse model response into individual comments  */
 export function parseResponse(response: string): ReviewComment[] {
-    return parseAsJsonArray(response).map(parseComment);
+    const parsedArray = parseAsJsonArray(response);
+    const comments: ReviewComment[] = [];
+    for (const item of parsedArray) {
+        try {
+            comments.push(parseComment(item));
+        } catch (error) {
+            console.warn(
+                'Failed to parse comment:',
+                error instanceof Error ? error.message : error
+            );
+        }
+    }
+    return comments;
 }
 
 /** Hopefully parse an object into a ReviewComment; throws if it's badly wrong */
@@ -17,7 +29,7 @@ export function parseComment(comment: unknown): ReviewComment {
         typeof comment.file !== 'string' ||
         !comment.file
     ) {
-        throw new Error('Missing `file` field');
+        throw new Error('Missing `file` field in ' + JSON.stringify(comment));
     }
     if (!('comment' in comment) || typeof comment.comment !== 'string') {
         throw new Error('Missing `comment` field');
