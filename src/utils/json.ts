@@ -1,4 +1,5 @@
-import * as jsoncParser from 'jsonc-parser';
+// esbuild by default uses the UMD build, which will miss some dependencies, see https://github.com/microsoft/node-jsonc-parser/issues/57
+import * as jsoncParser from 'jsonc-parser/lib/esm/main.js';
 
 /** Parse JSON string from model into array */
 export function parseAsJsonArray(response: string): unknown[] {
