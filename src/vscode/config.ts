@@ -89,11 +89,15 @@ async function loadModel(modelId: string, logger: Logger): Promise<Model> {
 
         const resetToDefaultOption = `Reset to Default (${defaultModelId})`;
         const selectChatModelOption = 'Select Chat Model';
+        const options = [selectChatModelOption];
+        if (modelId !== defaultModelId) {
+            options.unshift(resetToDefaultOption);
+        }
+
         // Notify the user
         const option = await vscode.window.showErrorMessage(
             `Failed to load chat model '${modelId}'. Reason: ${errorMessage}\nDo you want to reset to the default model or select a different one?`,
-            resetToDefaultOption,
-            selectChatModelOption
+            ...options
         );
 
         if (option === resetToDefaultOption) {
