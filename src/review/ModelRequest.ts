@@ -1,11 +1,13 @@
 import type { CancellationToken } from 'vscode';
 
 import type { Config } from '../types/Config';
+import type { Model } from '../types/Model';
 
 export class ModelRequest {
     public files: string[] = [];
     private diffs: string[] = [];
     private customPrompt: string;
+    private model?: Model;
 
     constructor(
         private readonly config: Config,
@@ -14,6 +16,14 @@ export class ModelRequest {
     ) {
         this.customPrompt = config.getOptions().customPrompt;
     }
+
+    /** get model on first use, fixed for this request */
+    private getModel = async () => {
+        if (!this.model) {
+            this.model = await this.config.getModel();
+        }
+        return this.model;
+    };
 
     /** add diff for one file, throw if we cannot fit this into the current request (caller should create new ModelRequest) */
     async addDiff(fileName: string, diff: string) {
@@ -28,8 +38,9 @@ export class ModelRequest {
 
         // build prompt with the new diff set
         const prompt = this.buildPrompt(newDiffs);
-        const numTokens = await this.config.model.countTokens(prompt);
-        if (numTokens > this.config.model.maxInputTokens) {
+        const model = await this.getModel();
+        const numTokens = await model.countTokens(prompt);
+        if (numTokens > model.maxInputTokens) {
             throw new Error(
                 `Cannot add diff to request, prompt size ${numTokens} exceeds limit`
             );
@@ -46,7 +57,7 @@ export class ModelRequest {
 
     async getReviewResponse(cancellationToken?: CancellationToken) {
         const prompt = this.getPrompt();
-        const model = this.config.model;
+        const model = await this.getModel();
         const response = await model.sendRequest(prompt, cancellationToken);
 
         return {
@@ -60,10 +71,11 @@ export class ModelRequest {
     private async setFirstDiff(fileName: string, diff: string) {
         const originalSize = diff.length;
 
-        const maxTokens = this.config.model.maxInputTokens;
+        const model = await this.getModel();
+        const maxTokens = model.maxInputTokens;
         while (true) {
             const prompt = this.buildPrompt([diff]);
-            const tokenCount = await this.config.model.countTokens(prompt);
+            const tokenCount = await model.countTokens(prompt);
             if (tokenCount <= maxTokens) {
                 break;
             }

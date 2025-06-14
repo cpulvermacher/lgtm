@@ -21,14 +21,14 @@ describe('createReviewPrompt', () => {
 describe('ModelRequest', () => {
     let model: Model;
     let request: ModelRequest;
-    beforeEach(() => {
+    beforeEach(async () => {
         const { config } = createMockConfig();
         request = new ModelRequest(
             config,
             'Various refactorings',
             'user prompt'
         );
-        model = config.model;
+        model = await config.getModel();
     });
 
     it('constructs empty request', () => {
@@ -156,7 +156,8 @@ function createMockConfig() {
     } as Logger;
 
     const config = {
-        model,
+        // eslint-disable-next-line @typescript-eslint/require-await
+        getModel: async () => model,
         getOptions: () => ({
             customPrompt: 'custom prompt',
             minSeverity: 3,

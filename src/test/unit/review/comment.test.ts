@@ -129,6 +129,18 @@ describe('parseResponse', () => {
 
     it('returns empty list on invalid JSON inside JSON array', () => {
         expect(parseResponse('[abc]')).toEqual([]);
+        expect(parseResponse('[{abc}]')).toEqual([]);
+    });
+
+    it('returns partial results if part of the JSON array is invalid', () => {
+        const json = `[
+            ${JSON.stringify(responseExample[0])},
+            {"something that's not a comment"}
+    ]`;
+
+        const result = parseResponse(json);
+
+        expect(result).toEqual([responseExample[0]]);
     });
 });
 
