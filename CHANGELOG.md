@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.17.2]
+Includes changes from 0.17.0 and 0.17.1.
+Highlight: #review tool to allow usage in agent mode.
+Other changes:
+- Add "Max Input Tokens Fraction" setting to customize how much of the model's token window may be used.
+
 ## [0.17.1] (pre-release)
 - Avoid potential initialization errors by loading chat model only on demand and offering fallback options. The configured model will no longer be reset without user interaction.
 - Make parsing of JSON responses from LLM more robust. Parsing was overly strict, and would silently ignore all review comments in case of a trailing comma or unnecessary escape.
