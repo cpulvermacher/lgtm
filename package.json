@@ -144,7 +144,8 @@
     "dev": "GIT_VERSION=$(git describe  --tags --long) pnpm build",
     "build": "npx vsce package --no-dependencies",
     "lint": "tsc --noEmit && eslint src && prettier src --check",
-    "test": "vitest run ./src/test/unit/**/*.test.ts",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
     "checkall": "pnpm test && pnpm lint && pnpm build"
   },
   "devDependencies": {
