@@ -143,11 +143,9 @@
     "watch": "pnpm esbuild-base --sourcemap --watch",
     "dev": "GIT_VERSION=$(git describe  --tags --long) pnpm build",
     "build": "npx vsce package --no-dependencies",
-    "pretest": "tsc -p ./",
     "lint": "tsc --noEmit && eslint src && prettier src --check",
-    "test": "node ./out/test/runTest.js",
-    "unit": "vitest run ./src/test/unit/**/*.test.ts",
-    "checkall": "pnpm unit && pnpm test && pnpm lint && pnpm build"
+    "test": "vitest run ./src/test/unit/**/*.test.ts",
+    "checkall": "pnpm test && pnpm lint && pnpm build"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

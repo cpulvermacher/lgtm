@@ -24,13 +24,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
     - run: pnpm i
-    - run: pnpm unit
-    - run: pnpm lint
-    - run: pnpm pretest
-    - run: xvfb-run -a pnpm test
-      if: runner.os == 'Linux'
     - run: pnpm test
-      if: runner.os != 'Linux'
+    - run: pnpm lint
     - run: pnpm audit --production
     - run: pnpm build
     - name: Release

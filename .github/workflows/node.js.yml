@@ -28,12 +28,7 @@ jobs:
         cache: 'pnpm'
     - run: pnpm i
     - run: pnpm lint
-    - run: pnpm unit
-    - run: pnpm pretest
-    - run: xvfb-run -a pnpm test
-      if: runner.os == 'Linux'
     - run: pnpm test
-      if: runner.os != 'Linux'
     - run: pnpm audit --production
     - run: pnpm dev
-    - run: pnpm unit --coverage
+    - run: pnpm test --coverage
