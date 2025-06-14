@@ -89,4 +89,13 @@ describe('parseAsJsonArray', () => {
         expect(result).toHaveLength(2);
         expect(result[0]).toEqual({ valid: true });
     });
+
+    it('handles JSON with invalid escapes', () => {
+        // ` does not need to be escaped in JSON
+        const input = '[{"name": "test\\`", "value": 123}]';
+
+        const result = parseAsJsonArray(input);
+
+        expect(result).toEqual([{ name: 'test', value: 123 }]);
+    });
 });
