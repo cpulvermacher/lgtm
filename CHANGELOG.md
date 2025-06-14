@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.17.1] (pre-release)
+- Avoid potential initialization errors by loading chat model only on demand and offering fallback options. The configured model will no longer be reset without user interaction.
+- Make parsing of JSON responses from LLM more robust. Parsing was overly strict, and would silently ignore all review comments in case of a trailing comma or unnecessary escape.
+
 ## [0.17.0] (pre-release)
 - add #review tool to allow usage in agent mode. E.g. "Use the review tool to review a PR of the current branch against master and fix any severe issues."
 
