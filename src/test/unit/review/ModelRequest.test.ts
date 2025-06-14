@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CancellationToken } from 'vscode';
 
 import { createReviewPrompt, ModelRequest } from '../../../review/ModelRequest';
-import type { Config } from '../../../types/Config';
+import type { Config, Options } from '../../../types/Config';
 import type { Logger } from '../../../types/Logger';
 import type { Model } from '../../../types/Model';
 
@@ -158,12 +158,16 @@ function createMockConfig() {
     const config = {
         // eslint-disable-next-line @typescript-eslint/require-await
         getModel: async () => model,
-        getOptions: () => ({
-            customPrompt: 'custom prompt',
-            minSeverity: 3,
-            excludeGlobs: [] as string[],
-            enableDebugOutput: false,
-        }),
+        getOptions: () =>
+            ({
+                minSeverity: 3,
+                customPrompt: 'custom prompt',
+                excludeGlobs: [] as string[],
+                enableDebugOutput: false,
+                chatModel: 'test-model',
+                mergeFileReviewRequests: true,
+                maxInputTokensFraction: 0.8,
+            }) as Options,
         logger,
     } as Config;
     return { config, model, logger };

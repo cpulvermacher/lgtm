@@ -1,20 +1,20 @@
 import type { CancellationToken } from 'vscode';
 
-import type { Config } from '../types/Config';
+import type { Config, Options } from '../types/Config';
 import type { Model } from '../types/Model';
 
 export class ModelRequest {
     public files: string[] = [];
     private diffs: string[] = [];
-    private customPrompt: string;
     private model?: Model;
+    private options: Options;
 
     constructor(
         private readonly config: Config,
         private changeDescription: string | undefined,
         private userPrompt?: string
     ) {
-        this.customPrompt = config.getOptions().customPrompt;
+        this.options = config.getOptions();
     }
 
     /** get model on first use, fixed for this request */
@@ -40,7 +40,7 @@ export class ModelRequest {
         const prompt = this.buildPrompt(newDiffs);
         const model = await this.getModel();
         const numTokens = await model.countTokens(prompt);
-        if (numTokens > model.maxInputTokens) {
+        if (numTokens > this.getMaxInputTokens(model)) {
             throw new Error(
                 `Cannot add diff to request, prompt size ${numTokens} exceeds limit`
             );
@@ -72,7 +72,8 @@ export class ModelRequest {
         const originalSize = diff.length;
 
         const model = await this.getModel();
-        const maxTokens = model.maxInputTokens;
+        const maxTokens = this.getMaxInputTokens(model);
+
         while (true) {
             const prompt = this.buildPrompt([diff]);
             const tokenCount = await model.countTokens(prompt);
@@ -119,12 +120,18 @@ export class ModelRequest {
         this.diffs.push(diff);
     }
 
+    private getMaxInputTokens(model: Model) {
+        return Math.floor(
+            model.maxInputTokens * this.options.maxInputTokensFraction
+        );
+    }
+
     private buildPrompt(diffs: string[]): string {
         const diff = diffs.join('\n');
         return createReviewPrompt(
             this.changeDescription,
             diff,
-            this.customPrompt,
+            this.options.customPrompt,
             this.userPrompt
         );
     }

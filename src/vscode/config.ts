@@ -137,6 +137,15 @@ function getOptions(): Options {
     const mergeFileReviewRequests = config.get<boolean>(
         'mergeFileReviewRequests'
     );
+    let maxInputTokensFraction = config.get<number>(
+        'maxInputTokensFraction',
+        0.95
+    );
+    if (maxInputTokensFraction > 0.95) {
+        maxInputTokensFraction = 0.95;
+    } else if (maxInputTokensFraction < 0.05) {
+        maxInputTokensFraction = 0.05;
+    }
 
     return {
         minSeverity: minSeverity ?? 1,
@@ -145,5 +154,6 @@ function getOptions(): Options {
         enableDebugOutput: enableDebugOutput ?? false,
         chatModel: chatModel ?? defaultModelId,
         mergeFileReviewRequests: mergeFileReviewRequests ?? true,
+        maxInputTokensFraction: maxInputTokensFraction,
     };
 }

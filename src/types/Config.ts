@@ -18,4 +18,5 @@ export type Options = {
     enableDebugOutput: boolean;
     chatModel: string;
     mergeFileReviewRequests: boolean;
+    maxInputTokensFraction: number;
 };

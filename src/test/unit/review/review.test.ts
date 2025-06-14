@@ -201,6 +201,7 @@ describe('reviewDiff', () => {
             enableDebugOutput: false,
             chatModel: 'gpt-4o',
             mergeFileReviewRequests: false,
+            maxInputTokensFraction: 0.95,
         });
 
         const result = await reviewDiff(
