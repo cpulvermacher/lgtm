@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.18.0]
+- Add #reviewStaged and #reviewUnstaged tools for use in agent mode.
+
 ## [0.17.2]
 Includes changes from 0.17.0 and 0.17.1.
 Highlight: #review tool to allow usage in agent mode.
