@@ -28,7 +28,15 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
-        vscode.lm.registerTool('review', new ReviewTool())
+        vscode.lm.registerTool('review', new ReviewTool()),
+        vscode.lm.registerTool(
+            'reviewStaged',
+            new ReviewTool({ defaultTarget: UncommittedRef.Staged })
+        ),
+        vscode.lm.registerTool(
+            'reviewUnstaged',
+            new ReviewTool({ defaultTarget: UncommittedRef.Unstaged })
+        )
     );
 }
 
