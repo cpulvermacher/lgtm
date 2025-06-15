@@ -42,7 +42,8 @@ LGTM will respond with review comments grouped by file and sorted by severity.
 ## Limitations
 
 - This project is a work in progress; comment quality may vary.
-- Large change sets may trigger Copilot rate limits. Please wait before retrying.
+- Large change sets may trigger chat model rate limits. Please wait before retrying.
+- Some non-Copilot models require setting a system prompt which is not possible just yet.
 
 
 ## Data Usage
