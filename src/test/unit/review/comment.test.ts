@@ -4,9 +4,9 @@ import {
     parseComment,
     parseResponse,
     sortFileCommentsBySeverity,
-} from '../../../review/comment';
-import { responseExample } from '../../../review/ModelRequest';
-import type { FileComments } from '../../../types/FileComments';
+} from '@/review/comment';
+import { responseExample } from '@/review/ModelRequest';
+import type { FileComments } from '@/types/FileComments';
 
 describe('parseComment', () => {
     it('normal', () => {

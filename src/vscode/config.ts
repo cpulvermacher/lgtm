@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 
-import { Config, Options } from '../types/Config';
-import type { Logger } from '../types/Logger';
-import type { Model } from '../types/Model';
-import { createGit } from '../utils/git';
+import { Config, Options } from '@/types/Config';
+import type { Logger } from '@/types/Logger';
+import type { Model } from '@/types/Model';
+import { createGit } from '@/utils/git';
 import { LgtmLogger } from './logger';
 import { getChatModel } from './model';
 

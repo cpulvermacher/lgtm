@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
-import { reviewDiff } from '../review/review';
-import { UncommittedRef, type Ref } from '../types/Ref';
+import { reviewDiff } from '@/review/review';
+import { UncommittedRef, type Ref } from '@/types/Ref';
 import { getConfig } from './config';
 
 // Input for #review

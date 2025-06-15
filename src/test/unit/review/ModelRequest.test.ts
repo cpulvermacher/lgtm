@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CancellationToken } from 'vscode';
 
-import { createReviewPrompt, ModelRequest } from '../../../review/ModelRequest';
-import type { Config, Options } from '../../../types/Config';
-import type { Logger } from '../../../types/Logger';
-import type { Model } from '../../../types/Model';
+import { createReviewPrompt, ModelRequest } from '@/review/ModelRequest';
+import type { Config, Options } from '@/types/Config';
+import type { Logger } from '@/types/Logger';
+import type { Model } from '@/types/Model';
 
 describe('createReviewPrompt', () => {
     it('creates prompt with custom prompt', async () => {

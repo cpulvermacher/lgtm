@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isPathNotExcluded } from '../../../utils/glob';
+import { isPathNotExcluded } from '@/utils/glob';
 
 describe('isPathNotExcluded', () => {
     function filterExcludedFiles(

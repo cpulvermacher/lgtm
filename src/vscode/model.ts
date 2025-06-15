@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 
-import { Logger } from '../types/Logger';
-import { Model } from '../types/Model';
-import { ModelError } from '../types/ModelError';
+import { Logger } from '@/types/Logger';
+import { Model } from '@/types/Model';
+import { ModelError } from '@/types/ModelError';
 
 /** Get given chat model (asks for permissions the first time) */
 export async function getChatModel(

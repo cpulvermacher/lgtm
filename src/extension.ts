@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
 
-import { reviewDiff } from './review/review';
-import { Config } from './types/Config';
-import { UncommittedRef } from './types/Ref';
-import { ReviewRequest, ReviewScope } from './types/ReviewRequest';
-import { ReviewResult } from './types/ReviewResult';
-import { parseArguments } from './utils/parseArguments';
-import { getConfig, toUri } from './vscode/config';
-import { ReviewTool } from './vscode/ReviewTool';
-import { pickCommit, pickRef, pickRefs } from './vscode/ui';
+import { reviewDiff } from '@/review/review';
+import { Config } from '@/types/Config';
+import { UncommittedRef } from '@/types/Ref';
+import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
+import { ReviewResult } from '@/types/ReviewResult';
+import { parseArguments } from '@/utils/parseArguments';
+import { getConfig, toUri } from '@/vscode/config';
+import { ReviewTool } from '@/vscode/ReviewTool';
+import { pickCommit, pickRef, pickRefs } from '@/vscode/ui';
 
 let chatParticipant: vscode.ChatParticipant;
 

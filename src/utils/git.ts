@@ -1,7 +1,7 @@
 import simpleGit, { SimpleGit } from 'simple-git';
 
-import { UncommittedRef, type Ref } from '../types/Ref';
-import { ReviewScope } from '../types/ReviewRequest';
+import { UncommittedRef, type Ref } from '@/types/Ref';
+import { ReviewScope } from '@/types/ReviewRequest';
 
 /** same as git's default length for short commit hashes */
 export const shortHashLength = 7;

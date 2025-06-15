@@ -1,13 +1,13 @@
 import type { CancellationToken, Progress } from 'vscode';
 
-import { Config } from '../types/Config';
-import { ModelError } from '../types/ModelError';
-import { ReviewComment } from '../types/ReviewComment';
-import { ReviewRequest } from '../types/ReviewRequest';
-import { ReviewResult } from '../types/ReviewResult';
-import { correctFilename } from '../utils/filenames';
-import { DiffFile } from '../utils/git';
-import { isPathNotExcluded } from '../utils/glob';
+import { Config } from '@/types/Config';
+import { ModelError } from '@/types/ModelError';
+import { ReviewComment } from '@/types/ReviewComment';
+import { ReviewRequest } from '@/types/ReviewRequest';
+import { ReviewResult } from '@/types/ReviewResult';
+import { correctFilename } from '@/utils/filenames';
+import { DiffFile } from '@/utils/git';
+import { isPathNotExcluded } from '@/utils/glob';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { ModelRequest } from './ModelRequest';
 

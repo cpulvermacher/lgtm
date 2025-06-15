@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { Git } from '../../../utils/git';
-import { parseArguments } from '../../../utils/parseArguments';
+import { Git } from '@/utils/git';
+import { parseArguments } from '@/utils/parseArguments';
 
 describe('parseArguments', () => {
     const mockGit = {

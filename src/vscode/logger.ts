@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { Logger } from '../types/Logger';
+import { Logger } from '@/types/Logger';
 
 const outputChannelName = 'LGTM';
 

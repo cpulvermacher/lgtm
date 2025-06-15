@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { parseAsJsonArray } from '../../../utils/json';
+import { parseAsJsonArray } from '@/utils/json';
 
 describe('parseAsJsonArray', () => {
     it('parses valid JSON array', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { correctFilename } from '../../../utils/filenames';
+import { correctFilename } from '@/utils/filenames';
 
 describe('correctFilename', () => {
     it('returns exact match', () => {

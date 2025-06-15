@@ -1,6 +1,6 @@
-import { FileComments } from '../types/FileComments';
-import { ReviewComment } from '../types/ReviewComment';
-import { parseAsJsonArray } from '../utils/json';
+import { FileComments } from '@/types/FileComments';
+import { ReviewComment } from '@/types/ReviewComment';
+import { parseAsJsonArray } from '@/utils/json';
 
 /** Parse model response into individual comments  */
 export function parseResponse(response: string): ReviewComment[] {

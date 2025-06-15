@@ -9,9 +9,9 @@ import simpleGit, {
 } from 'simple-git';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { UncommittedRef } from '../../../types/Ref';
-import type { ReviewScope } from '../../../types/ReviewRequest';
-import { createGit, type Git } from '../../../utils/git';
+import { UncommittedRef } from '@/types/Ref';
+import type { ReviewScope } from '@/types/ReviewRequest';
+import { createGit, type Git } from '@/utils/git';
 
 const completeDiff = `diff --git a/index.html b/index.html
 index 44cbb3f..887431b 100644

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { distributeItems } from '../../../utils/distributeItems';
+import { distributeItems } from '@/utils/distributeItems';
 
 describe('distributeItems', () => {
     it('handles empty input', () => {

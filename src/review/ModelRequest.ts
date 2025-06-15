@@ -1,7 +1,7 @@
 import type { CancellationToken } from 'vscode';
 
-import type { Config, Options } from '../types/Config';
-import type { Model } from '../types/Model';
+import type { Config, Options } from '@/types/Config';
+import type { Model } from '@/types/Model';
 
 export class ModelRequest {
     public files: string[] = [];

@@ -5,11 +5,11 @@ import type {
     LanguageModelToolInvocationPrepareOptions,
 } from 'vscode';
 
-import { UncommittedRef } from '../../../types/Ref';
-import { ReviewTool, type ReviewInput } from '../../../vscode/ReviewTool';
+import { UncommittedRef } from '@/types/Ref';
+import { ReviewTool, type ReviewInput } from '@/vscode/ReviewTool';
 
 // Mock for getConfig and related functions
-vi.mock('../../../vscode/config', () => ({
+vi.mock('@/vscode/config', () => ({
     getConfig: vi.fn().mockResolvedValue({
         git: {
             getReviewScope: vi.fn().mockImplementation((target, base) => {
@@ -49,7 +49,7 @@ vi.mock('../../../vscode/config', () => ({
 }));
 
 // Mock for reviewDiff function
-vi.mock('../../../review/review', () => ({
+vi.mock('@/review/review', () => ({
     reviewDiff: vi.fn().mockResolvedValue({
         fileComments: [
             {

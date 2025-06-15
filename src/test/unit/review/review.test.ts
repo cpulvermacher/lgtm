@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CancellationToken } from 'vscode';
 
-import { parseResponse } from '../../../review/comment';
-import { ModelRequest } from '../../../review/ModelRequest';
-import { reviewDiff } from '../../../review/review';
-import { Config } from '../../../types/Config';
-import { FileComments } from '../../../types/FileComments';
-import { Logger } from '../../../types/Logger';
-import { ModelError } from '../../../types/ModelError';
-import { ReviewScope } from '../../../types/ReviewRequest';
-import { Git } from '../../../utils/git';
+import { parseResponse } from '@/review/comment';
+import { ModelRequest } from '@/review/ModelRequest';
+import { reviewDiff } from '@/review/review';
+import { Config } from '@/types/Config';
+import { FileComments } from '@/types/FileComments';
+import { Logger } from '@/types/Logger';
+import { ModelError } from '@/types/ModelError';
+import { ReviewScope } from '@/types/ReviewRequest';
+import { Git } from '@/utils/git';
 
 function createMockConfig() {
     const git = {
@@ -43,13 +43,13 @@ const cancellationToken = {
 } as CancellationToken;
 
 describe('reviewDiff', () => {
-    vi.mock('../../../review/comment', () => ({
+    vi.mock('@/review/comment', () => ({
         parseResponse: vi.fn(),
         sortFileCommentsBySeverity: vi.fn(
             (comments: Omit<FileComments, 'maxSeverity'>[]) => comments
         ),
     }));
-    vi.mock('../../../review/ModelRequest', () => ({
+    vi.mock('@/review/ModelRequest', () => ({
         ModelRequest: vi.fn(),
     }));
 
