@@ -8,8 +8,10 @@ import { ReviewResult } from '@/types/ReviewResult';
 import { correctFilename } from '@/utils/filenames';
 import { DiffFile } from '@/utils/git';
 import { isPathNotExcluded } from '@/utils/glob';
+import type { PromptType } from '../types/PromptType';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { ModelRequest } from './ModelRequest';
+import { defaultPromptType, toPromptType } from './prompt';
 
 export async function reviewDiff(
     config: Config,
@@ -138,7 +140,7 @@ async function generateReviewComments(
             });
         }
         try {
-            await processRequest(
+            await addComments(
                 config,
                 modelRequest,
                 commentsPerFile,
@@ -160,14 +162,50 @@ async function generateReviewComments(
     return { commentsPerFile, errors };
 }
 
-async function processRequest(
+async function addComments(
     config: Config,
     modelRequest: ModelRequest,
     commentsPerFile: Map<string, ReviewComment[]>,
     cancellationToken?: CancellationToken
 ) {
+    const comparePromptType = toPromptType(
+        config.getOptions().comparePromptType
+    );
+    if (comparePromptType) {
+        await processRequest(
+            config,
+            modelRequest,
+            commentsPerFile,
+            defaultPromptType,
+            cancellationToken
+        );
+        await processRequest(
+            config,
+            modelRequest,
+            commentsPerFile,
+            comparePromptType,
+            cancellationToken
+        );
+    } else {
+        await processRequest(
+            config,
+            modelRequest,
+            commentsPerFile,
+            undefined, // also default prompt type, but comments are not marked with it
+            cancellationToken
+        );
+    }
+}
+
+async function processRequest(
+    config: Config,
+    modelRequest: ModelRequest,
+    commentsPerFile: Map<string, ReviewComment[]>,
+    promptType?: PromptType,
+    cancellationToken?: CancellationToken
+) {
     const { response, promptTokens, responseTokens } =
-        await modelRequest.getReviewResponse(cancellationToken);
+        await modelRequest.getReviewResponse(cancellationToken, promptType);
     config.logger.debug(
         `Request with ${modelRequest.files.length} files used ${promptTokens} tokens, response used ${responseTokens} tokens. Response: ${response}`
     );
@@ -184,6 +222,9 @@ async function processRequest(
                 `File name mismatch, correcting "${comment.file}" to "${closestFile}"!`
             );
             comment.file = closestFile;
+        }
+        if (promptType) {
+            comment.comment = `**${promptType}**: ${comment.comment}`;
         }
 
         const commentsForFile = commentsPerFile.get(comment.file) || [];
