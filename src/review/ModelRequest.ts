@@ -2,6 +2,7 @@ import type { CancellationToken } from 'vscode';
 
 import type { Config, Options } from '@/types/Config';
 import type { Model } from '@/types/Model';
+import { type PromptType } from '../types/PromptType';
 import { createReviewPrompt } from './prompt';
 
 export class ModelRequest {
@@ -52,12 +53,15 @@ export class ModelRequest {
         this.diffs = newDiffs;
     }
 
-    getPrompt() {
-        return this.buildPrompt(this.diffs);
+    getPrompt(promptType?: PromptType) {
+        return this.buildPrompt(this.diffs, promptType);
     }
 
-    async getReviewResponse(cancellationToken?: CancellationToken) {
-        const prompt = this.getPrompt();
+    async getReviewResponse(
+        cancellationToken?: CancellationToken,
+        promptType?: PromptType
+    ) {
+        const prompt = this.getPrompt(promptType);
         const model = await this.getModel();
         const response = await model.sendRequest(prompt, cancellationToken);
 
@@ -127,13 +131,14 @@ export class ModelRequest {
         );
     }
 
-    private buildPrompt(diffs: string[]): string {
+    private buildPrompt(diffs: string[], promptType?: PromptType): string {
         const diff = diffs.join('\n');
         return createReviewPrompt(
             this.changeDescription,
             diff,
             this.options.customPrompt,
-            this.userPrompt
+            this.userPrompt,
+            promptType
         );
     }
 }
