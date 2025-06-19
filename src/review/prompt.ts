@@ -15,11 +15,23 @@ ${customPrompt}
 `;
     const reviewRules = userPrompt ? userPrompt.trim() : defaultRules.trim();
 
-    const wrappedChangeDescription = changeDescription
-        ? `<Change Description>\n${changeDescription}\n</Change Description>`
-        : '';
+    let wrappedChangeDescription = '';
+    if (changeDescription && changeDescription.trim()) {
+        wrappedChangeDescription = `
+Here's the change description for context:
+<change_description>
+${changeDescription.trim()}
+</change_description>`;
+    }
 
-    return `You are a senior software engineer reviewing a pull request. Analyze the following git diff for the changed files.
+    return `
+You are a senior software engineer tasked with reviewing a pull request. Your goal is to analyze the provided git diff and offer insightful, actionable comments on code issues. Focus on identifying bugs, security vulnerabilities, unreadable code, possible refactorings, and typos while considering the changeset as a whole.
+
+Here is the git diff to analyze:
+<git_diff>
+${diff}
+</git_diff>
+${wrappedChangeDescription}
 
 <Diff Format>
 - The diff starts with a diff header, followed by diff lines.
@@ -48,11 +60,7 @@ ${JSON.stringify(responseExample, undefined, 2)}
 \`\`\`
 </Output Example>
 
-${wrappedChangeDescription}
 
-<Diff>
-${diff}
-</Diff>
 `;
 }
 
