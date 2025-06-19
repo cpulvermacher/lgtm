@@ -138,30 +138,12 @@ async function generateReviewComments(
             });
         }
         try {
-            const { response, promptTokens, responseTokens } =
-                await modelRequest.getReviewResponse(cancellationToken);
-            config.logger.debug(
-                `Request with ${modelRequest.files.length} files used ${promptTokens} tokens, response used ${responseTokens} tokens. Response: ${response}`
+            await processRequest(
+                config,
+                modelRequest,
+                commentsPerFile,
+                cancellationToken
             );
-
-            const comments = parseResponse(response);
-            for (const comment of comments) {
-                //check file name
-                if (!modelRequest.files.includes(comment.file)) {
-                    const closestFile = correctFilename(
-                        comment.file,
-                        modelRequest.files
-                    );
-                    config.logger.info(
-                        `File name mismatch, correcting "${comment.file}" to "${closestFile}"!`
-                    );
-                    comment.file = closestFile;
-                }
-
-                const commentsForFile = commentsPerFile.get(comment.file) || [];
-                commentsForFile.push(comment);
-                commentsPerFile.set(comment.file, commentsForFile);
-            }
         } catch (error) {
             // it's entirely possible that something bad happened for a request, let's store the error and continue if possible
             if (error instanceof ModelError) {
@@ -176,4 +158,36 @@ async function generateReviewComments(
     }
 
     return { commentsPerFile, errors };
+}
+
+async function processRequest(
+    config: Config,
+    modelRequest: ModelRequest,
+    commentsPerFile: Map<string, ReviewComment[]>,
+    cancellationToken?: CancellationToken
+) {
+    const { response, promptTokens, responseTokens } =
+        await modelRequest.getReviewResponse(cancellationToken);
+    config.logger.debug(
+        `Request with ${modelRequest.files.length} files used ${promptTokens} tokens, response used ${responseTokens} tokens. Response: ${response}`
+    );
+
+    const comments = parseResponse(response);
+    for (const comment of comments) {
+        //check file name
+        if (!modelRequest.files.includes(comment.file)) {
+            const closestFile = correctFilename(
+                comment.file,
+                modelRequest.files
+            );
+            config.logger.info(
+                `File name mismatch, correcting "${comment.file}" to "${closestFile}"!`
+            );
+            comment.file = closestFile;
+        }
+
+        const commentsForFile = commentsPerFile.get(comment.file) || [];
+        commentsForFile.push(comment);
+        commentsPerFile.set(comment.file, commentsForFile);
+    }
 }
