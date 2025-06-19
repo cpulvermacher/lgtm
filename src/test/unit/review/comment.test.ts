@@ -5,7 +5,7 @@ import {
     parseResponse,
     sortFileCommentsBySeverity,
 } from '@/review/comment';
-import { responseExample } from '@/review/ModelRequest';
+import { responseExample } from '@/review/prompt';
 import type { FileComments } from '@/types/FileComments';
 
 describe('parseComment', () => {
