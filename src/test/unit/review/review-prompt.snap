@@ -14,7 +14,7 @@ Various refactorings
 <review_instructions>
 - Analyze the entire git diff provided.
 - Consider how the changes as a whole implement the described feature or fix.
-- Provide comments only for added lines that contain issues.
+- Focus on providing comments for added lines.
 - Ensure all comments are actionable and specific.
 - Avoid comments on formatting or purely positive feedback.
 - Do not make assumptions about code not included in the diff.
