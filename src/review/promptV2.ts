@@ -1,3 +1,5 @@
+import { responseExample } from './prompt';
+
 export function createReviewPromptV2(
     changeDescription: string | undefined,
     diff: string,
@@ -75,26 +77,3 @@ ${JSON.stringify(responseExample, undefined, 2)}
 </output_example>
 `.trim();
 }
-
-export const responseExample = [
-    {
-        file: 'src/index.html',
-        line: 23,
-        comment: 'The <script> tag is misspelled as <scirpt>.',
-        severity: 4,
-    },
-    {
-        file: 'src/js/main.js',
-        line: 43,
-        comment:
-            'This method duplicates some of the logic defined in `calculateTotal` inside `src/js/util.js`. Consider refactoring this into a separate helper function to improve readability and reduce duplication.',
-        severity: 3,
-    },
-    {
-        file: 'src/js/main.js',
-        line: 55,
-        comment:
-            'Using `eval()` with a possibly user-supplied string may result in code injection.',
-        severity: 5,
-    },
-];
