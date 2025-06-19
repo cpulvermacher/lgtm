@@ -4,16 +4,21 @@ export function createReviewPrompt(
     customPrompt: string,
     userPrompt?: string
 ): string {
-    const defaultRules = `
-- Provide comments on bugs, security vulnerabilities, code smells, and typos.
-- Only provide comments for added lines.
-- All comments must be actionable. Do not provide comments that are only positive feedback.
-- Do not provide comments on formatting.
-- Avoid repetitive comments.
-- Do not make assumptions about code that is not included in the diff.
+    let reviewInstructions = `
+- Analyze the entire git diff provided.
+- Consider how the changes as a whole implement the described feature or fix.
+- Provide comments only for added lines that contain issues.
+- Ensure all comments are actionable and specific.
+- Avoid comments on formatting or purely positive feedback.
+- Do not make assumptions about code not included in the diff.
+- Consider the context of changes across different functions, classes, and files.
+- Don't suggest issues that would be caught by compilations or running tests.
+- Do not suggest reverting to previous logic (removed lines) without a compelling reason.
 ${customPrompt}
 `;
-    const reviewRules = userPrompt ? userPrompt.trim() : defaultRules.trim();
+    if (userPrompt && userPrompt.trim()) {
+        reviewInstructions = userPrompt;
+    }
 
     let wrappedChangeDescription = '';
     if (changeDescription && changeDescription.trim()) {
@@ -33,35 +38,32 @@ ${diff}
 </git_diff>
 ${wrappedChangeDescription}
 
-<Diff Format>
+<review_instructions>
+${reviewInstructions.trim()}
+</review_instructions>
+
+<diff_format>
 - The diff starts with a diff header, followed by diff lines.
 - Diff lines have the format \`<LINE NUMBER><TAB><DIFF TYPE><LINE>\`.
 - Lines with DIFF TYPE \`+\` are added.
 - Lines with DIFF TYPE \`-\` are removed. (LINE NUMBER will be 0)
 - Lines with DIFF TYPE \` \` are unchanged and provided for context.
-</Diff Format>
+</diff_format>
 
-<Review Rules>
-${reviewRules}
-</Review Rules>
+<output_format>
+Respond with a JSON array of comment objects. Each object should contain:
+- \`file\`: The path of the file (from the diff header)
+- \`line\`: The first affected LINE NUMBER
+- \`comment\`: A string describing the issue
+- \`severity\`: An integer from 1 (likely irrelevant) to 5 (critical)
+</output_format>
 
-<Output Rules>
-- Respond with a JSON list of comments objects, which contain the fields \`file\`, \`line\`, \`comment\`, and \`severity\`.
-\`file\` is the path of the file, taken from the diff header.
-\`comment\` is a string describing the issue.
-\`line\` is the first affected LINE NUMBER.
-\`severity\` is the severity of the issue as an integer from 1 (likely irrelevant) to 5 (critical).
-- Respond with only JSON, do NOT include other text or markdown.
-</Output Rules>
-
-<Output Example>
+<output_example>
 \`\`\`json
 ${JSON.stringify(responseExample, undefined, 2)}
 \`\`\`
-</Output Example>
-
-
-`;
+</output_example>
+`.trim();
 }
 
 export const responseExample = [
