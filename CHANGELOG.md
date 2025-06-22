@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.19.0]
+- Add optional change description argument to #reviewStaged and #reviewUnstaged LM tools. This allows agents to provide additional context and requirements for changes.
+
 ## [0.18.0]
 - Add #reviewStaged and #reviewUnstaged tools for use in agent mode.
 
