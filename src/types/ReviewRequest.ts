@@ -22,5 +22,5 @@ export type UncommittedReviewScope = {
     target: UncommittedRef;
     isCommitted: false;
     isTargetCheckedOut: true;
-    changeDescription: undefined;
+    changeDescription?: string;
 };

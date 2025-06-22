@@ -11,7 +11,9 @@ type CommittedReviewInput = {
 };
 
 // Input for #reviewStaged and #reviewUnstaged (empty)
-type UncommittedReviewInput = object;
+type UncommittedReviewInput = {
+    changeDescription?: string;
+};
 
 // Union type for all possible inputs
 export type ReviewInput = CommittedReviewInput | UncommittedReviewInput;
@@ -37,6 +39,11 @@ export class ReviewTool implements vscode.LanguageModelTool<ReviewInput> {
         const reviewRequest = {
             scope: await config.git.getReviewScope(target, base),
         };
+        if ('changeDescription' in options.input) {
+            reviewRequest.scope.changeDescription =
+                options.input.changeDescription;
+        }
+
         const result = await reviewDiff(
             config,
             reviewRequest,

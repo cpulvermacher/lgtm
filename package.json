@@ -95,7 +95,12 @@
         "icon": "images/icon.png",
         "inputSchema": {
           "type": "object",
-          "properties": {}
+          "properties": {
+            "changeDescription": {
+              "type": "string",
+              "description": "Description of what the changes to review are expected to implement. Use this to provide context for the review and be explicit about requirements."
+            }
+          }
         }
       },
       {
@@ -107,7 +112,12 @@
         "icon": "images/icon.png",
         "inputSchema": {
           "type": "object",
-          "properties": {}
+          "properties": {
+            "changeDescription": {
+              "type": "string",
+              "description": "Description of what the changes to review are expected to implement. Use this to provide context for the review and be explicit about requirements."
+            }
+          }
         }
       }
     ],
