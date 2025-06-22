@@ -19,5 +19,5 @@ export type Options = {
     chatModel: string;
     mergeFileReviewRequests: boolean;
     maxInputTokensFraction: number;
-    comparePromptType?: string;
+    comparePromptTypes?: string;
 };

@@ -5,11 +5,23 @@ import { createReviewPromptV2 } from './promptV2';
 export const defaultPromptType: PromptType = 'v1';
 const promptTypes: PromptType[] = ['v1', 'v2'];
 
-export function toPromptType(type: string | undefined): PromptType | undefined {
+function toPromptType(type: string | undefined): PromptType | undefined {
     if (promptTypes.includes(type as PromptType)) {
         return type as PromptType;
     }
     return undefined;
+}
+
+export function toPromptTypes(
+    types: string | undefined
+): (PromptType | undefined)[] {
+    if (!types) {
+        return [undefined]; // same as default prompt type, but comments are not marked with it
+    }
+    return types
+        .split(',')
+        .map((type) => toPromptType(type.trim()))
+        .filter((t) => t !== undefined);
 }
 
 export function createReviewPrompt(

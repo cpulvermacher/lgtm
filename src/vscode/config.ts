@@ -147,9 +147,9 @@ function getOptions(): Options {
     } else if (maxInputTokensFraction < 0.05) {
         maxInputTokensFraction = 0.05;
     }
-    // hidden experimental setting for comparing prompts. When set to a PromptType different from the default prompt, will create review using both default and selected prompt type.
+    // hidden experimental setting for comparing prompts. Comma-separated list of prompt types to compare.
     // if empty, will only create a single review using the default prompt type.
-    const comparePromptType = config.get<string>('comparePromptType');
+    const comparePromptTypes = config.get<string>('comparePromptTypes');
 
     return {
         minSeverity,
@@ -159,6 +159,6 @@ function getOptions(): Options {
         chatModel,
         mergeFileReviewRequests,
         maxInputTokensFraction,
-        comparePromptType,
+        comparePromptTypes,
     };
 }

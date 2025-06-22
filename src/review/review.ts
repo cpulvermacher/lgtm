@@ -11,7 +11,7 @@ import { isPathNotExcluded } from '@/utils/glob';
 import type { PromptType } from '../types/PromptType';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { ModelRequest } from './ModelRequest';
-import { defaultPromptType, toPromptType } from './prompt';
+import { toPromptTypes } from './prompt';
 
 export async function reviewDiff(
     config: Config,
@@ -168,30 +168,17 @@ async function addComments(
     commentsPerFile: Map<string, ReviewComment[]>,
     cancellationToken?: CancellationToken
 ) {
-    const comparePromptType = toPromptType(
-        config.getOptions().comparePromptType
-    );
-    if (comparePromptType) {
+    const promptTypes = toPromptTypes(config.getOptions().comparePromptTypes);
+    if (promptTypes.length === 0) {
+        throw new Error('lgtm.comparePromptTypes settings is invalid!');
+    }
+
+    for (const promptType of promptTypes) {
         await processRequest(
             config,
             modelRequest,
             commentsPerFile,
-            defaultPromptType,
-            cancellationToken
-        );
-        await processRequest(
-            config,
-            modelRequest,
-            commentsPerFile,
-            comparePromptType,
-            cancellationToken
-        );
-    } else {
-        await processRequest(
-            config,
-            modelRequest,
-            commentsPerFile,
-            undefined, // also default prompt type, but comments are not marked with it
+            promptType,
             cancellationToken
         );
     }
