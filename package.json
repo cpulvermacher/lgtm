@@ -88,7 +88,6 @@
       },
       {
         "name": "reviewStaged",
-        "when": "git.activeResourceHasStagedChanges",
         "displayName": "Review staged changes in Git using AI",
         "modelDescription": "Reviews staged changes in Git using AI. Use this tool to review changes that have been staged with `git add` but not yet committed. Returns a list of review comments with file names, line numbers, and severity.",
         "canBeReferencedInPrompt": true,
@@ -106,7 +105,6 @@
       },
       {
         "name": "reviewUnstaged",
-        "when": "git.activeResourceHasUnstagedChanges",
         "displayName": "Review unstaged changes in Git using AI",
         "modelDescription": "Reviews unstaged changes in Git using AI. Use this tool to review changes in your working directory that haven't been staged yet. You can use this to check your work after completing a change requested by the user. Returns a list of review comments with file names, line numbers, and severity.",
         "canBeReferencedInPrompt": true,
