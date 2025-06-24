@@ -1,9 +1,10 @@
 import type { PromptType } from '../types/PromptType';
 import { createReviewPromptV1 } from './promptV1';
 import { createReviewPromptV2 } from './promptV2';
+import { createReviewPromptV2Think } from './promptV2Think';
 
 export const defaultPromptType: PromptType = 'v1';
-const promptTypes: PromptType[] = ['v1', 'v2'];
+const promptTypes: PromptType[] = ['v1', 'v2', 'v2think'];
 
 function toPromptType(type: string | undefined): PromptType | undefined {
     if (promptTypes.includes(type as PromptType)) {
@@ -34,6 +35,13 @@ export function createReviewPrompt(
     const type = promptType || defaultPromptType;
     if (type === 'v2') {
         return createReviewPromptV2(
+            changeDescription,
+            diff,
+            customPrompt,
+            userPrompt
+        );
+    } else if (type === 'v2think') {
+        return createReviewPromptV2Think(
             changeDescription,
             diff,
             customPrompt,
