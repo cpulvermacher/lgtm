@@ -6,6 +6,8 @@ import { createReviewPromptV2Think } from './promptV2Think';
 export const defaultPromptType: PromptType = 'v1';
 const promptTypes: PromptType[] = ['v1', 'v2', 'v2think'];
 
+export const reasoningTag = 'code_review_process';
+
 function toPromptType(type: string | undefined): PromptType | undefined {
     if (promptTypes.includes(type as PromptType)) {
         return type as PromptType;

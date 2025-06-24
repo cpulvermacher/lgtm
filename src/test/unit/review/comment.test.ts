@@ -116,6 +116,16 @@ describe('parseResponse', () => {
         expect(result).toEqual(responseExample);
     });
 
+    it('handles extra bits around JSON with reasoning tag', () => {
+        const wrappedJson = '```json\n' + responseJsonString + '\n```';
+        const response = `<code_review_process>[]</code_review_process>\n${wrappedJson}`;
+
+        const result = parseResponse(response);
+
+        // only 2nd wrapped JSON should be parsed
+        expect(result).toEqual(responseExample);
+    });
+
     it('returns empty list with no comments', () => {
         const result = parseResponse('[]');
 

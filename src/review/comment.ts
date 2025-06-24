@@ -1,9 +1,11 @@
 import { FileComments } from '@/types/FileComments';
 import { ReviewComment } from '@/types/ReviewComment';
 import { parseAsJsonArray } from '@/utils/json';
+import { reasoningTag } from './prompt';
 
 /** Parse model response into individual comments  */
 export function parseResponse(response: string): ReviewComment[] {
+    response = stripReasoning(response);
     const parsedArray = parseAsJsonArray(response);
     const comments: ReviewComment[] = [];
     for (const item of parsedArray) {
@@ -17,6 +19,14 @@ export function parseResponse(response: string): ReviewComment[] {
         }
     }
     return comments;
+}
+
+function stripReasoning(response: string): string {
+    // Remove any reasoning tag in the input (if it exists)
+    const reasoningTagRegex = new RegExp(
+        `<${reasoningTag}>[\\s\\S]*?<\\/${reasoningTag}>`
+    );
+    return response.trim().replace(reasoningTagRegex, '');
 }
 
 /** Hopefully parse an object into a ReviewComment; throws if it's badly wrong */
