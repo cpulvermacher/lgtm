@@ -210,10 +210,8 @@ async function processRequest(
             );
             comment.file = closestFile;
         }
-        if (promptType) {
-            comment.comment = `**${promptType}**: ${comment.comment}`;
-        }
 
+        comment.promptType = promptType;
         const commentsForFile = commentsPerFile.get(comment.file) || [];
         commentsForFile.push(comment);
         commentsPerFile.set(comment.file, commentsForFile);
