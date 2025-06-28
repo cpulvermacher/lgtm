@@ -240,16 +240,6 @@ function showReviewResults(
             );
             noProblemsFound = false;
         }
-        if (options.enableDebugOutput) {
-            const numCommentsSkipped = file.comments.reduce(
-                (acc, comment) =>
-                    comment.severity < options.minSeverity ? acc + 1 : acc,
-                0
-            );
-            config.logger.debug(
-                `File: ${file.target} Skipped comments: ${numCommentsSkipped}`
-            );
-        }
 
         if (filteredFileComments.length > 0) {
             stream.markdown('\n\n');
