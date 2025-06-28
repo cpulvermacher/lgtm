@@ -214,7 +214,7 @@ describe('reviewDiff', () => {
         expect(result.request.scope).toBe(scope);
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toHaveLength(0);
-        expect(progress.report).toHaveBeenCalledTimes(5);
+        expect(progress.report).toHaveBeenCalledTimes(4);
     });
 
     it('corrects file names if there is a mismatch', async () => {
@@ -259,6 +259,7 @@ describe('reviewDiff', () => {
         expect(result.request.scope).toBe(scope);
         expect(result.fileComments).toHaveLength(0);
         expect(result.errors).toHaveLength(0);
+        expect(progress.report).not.toHaveBeenCalled();
     });
 
     it('should abort and return errors if a ModelError occurs', async () => {
@@ -306,7 +307,7 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toEqual([nonModelError]);
 
-        expect(progress.report).toHaveBeenCalledTimes(5);
+        expect(progress.report).toHaveBeenCalledTimes(4);
         expect(parseResponse).toHaveBeenCalledOnce();
         expect(parseResponse).toHaveBeenCalledWith('model response');
     });

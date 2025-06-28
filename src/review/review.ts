@@ -122,62 +122,53 @@ async function generateReviewComments(
     progress?: Progress<{ message?: string; increment?: number }>,
     cancellationToken?: CancellationToken
 ) {
-    // reset to  an indeterminate progress bar for the review
-    progress?.report({ message: 'Reviewing...', increment: -100 });
+    const promptTypes = toPromptTypes(config.getOptions().comparePromptTypes);
+
+    const totalRequests = modelRequests.length * promptTypes.length;
+    let requestCounter = 0;
+    const updateProgress = () => {
+        requestCounter++;
+        const isSingle = totalRequests <= 1;
+        const increment = isSingle ? -100 : 100 / totalRequests;
+        const message = isSingle
+            ? 'Reviewing...'
+            : `Reviewing (${requestCounter}/${totalRequests})...`;
+        progress?.report({ message, increment });
+    };
 
     const errors = [];
     const commentsPerFile = new Map<string, ReviewComment[]>();
-    for (let i = 0; i < modelRequests.length; i++) {
-        if (cancellationToken?.isCancellationRequested) {
-            break;
-        }
+    for (const modelRequest of modelRequests) {
+        for (const promptType of promptTypes) {
+            if (cancellationToken?.isCancellationRequested) {
+                return { commentsPerFile, errors };
+            }
 
-        const modelRequest = modelRequests[i];
-        if (modelRequests.length > 1) {
-            progress?.report({
-                message: `Reviewing (${i + 1}/${modelRequests.length})...`,
-                increment: 100 / modelRequests.length,
-            });
-        }
-        try {
-            await addComments(
-                config,
-                modelRequest,
-                commentsPerFile,
-                cancellationToken
-            );
-        } catch (error) {
-            // it's entirely possible that something bad happened for a request, let's store the error and continue if possible
-            if (error instanceof ModelError) {
-                errors.push(error);
-                break; // would also fail for the remaining files
-            } else if (error instanceof Error) {
-                errors.push(error);
+            updateProgress();
+            try {
+                await processRequest(
+                    config,
+                    modelRequest,
+                    commentsPerFile,
+                    promptType,
+                    cancellationToken
+                );
+            } catch (error) {
+                // it's entirely possible that something bad happened for a request, let's store the error and continue if possible
+                if (error instanceof ModelError) {
+                    errors.push(error);
+                    // would also fail for the remaining files
+                    return { commentsPerFile, errors };
+                } else if (error instanceof Error) {
+                    errors.push(error);
+                    continue;
+                }
                 continue;
             }
-            continue;
         }
     }
 
     return { commentsPerFile, errors };
-}
-
-async function addComments(
-    config: Config,
-    modelRequest: ModelRequest,
-    commentsPerFile: Map<string, ReviewComment[]>,
-    cancellationToken?: CancellationToken
-) {
-    const promptTypes = toPromptTypes(config.getOptions().comparePromptTypes);
-    for (const promptType of promptTypes) {
-        await processRequest(
-            config,
-            modelRequest,
-            commentsPerFile,
-            promptType,
-            cancellationToken
-        );
-    }
 }
 
 async function processRequest(
