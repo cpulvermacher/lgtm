@@ -14,7 +14,7 @@ describe('createReviewPrompt', () => {
             customPrompt
         );
         await expect(prompt).toMatchFileSnapshot(
-            'review-prompt-v1-custom-prompt.snap'
+            'review-prompt-v2think-custom-prompt.snap'
         );
     });
 
@@ -27,7 +27,7 @@ describe('createReviewPrompt', () => {
             userPrompt
         );
         await expect(prompt).toMatchFileSnapshot(
-            'review-prompt-v1-user-prompt.snap'
+            'review-prompt-v2think-user-prompt.snap'
         );
     });
 

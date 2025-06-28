@@ -3,7 +3,7 @@ import { createReviewPromptV1 } from './promptV1';
 import { createReviewPromptV2 } from './promptV2';
 import { createReviewPromptV2Think } from './promptV2Think';
 
-export const defaultPromptType: PromptType = 'v1';
+export const defaultPromptType: PromptType = 'v2think';
 const promptTypes: PromptType[] = ['v1', 'v2', 'v2think'];
 
 export const reasoningTag = 'code_review_process';

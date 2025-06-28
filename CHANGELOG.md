@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.19.2] (pre-release)
+- Change default prompt type to v2think.
+
 ## [0.19.1] (pre-release)
 - Add experimental support for prompt variations. To enable, set `lgtm.comparePromptTypes` in your VS Code settings.json to a comma-separated list of prompt types. (v1: current default prompt, v2: integrate best practices, more specific instructions, v2think: v2 with added reasoning step)
 
