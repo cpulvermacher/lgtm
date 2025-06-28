@@ -11,7 +11,7 @@ import { isPathNotExcluded } from '@/utils/glob';
 import type { PromptType } from '../types/PromptType';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { ModelRequest } from './ModelRequest';
-import { toPromptTypes } from './prompt';
+import { defaultPromptType, toPromptTypes } from './prompt';
 
 export async function reviewDiff(
     config: Config,
@@ -187,10 +187,12 @@ async function processRequest(
     promptType?: PromptType,
     cancellationToken?: CancellationToken
 ) {
+    const reviewStart = Date.now();
     const { response, promptTokens, responseTokens } =
         await modelRequest.getReviewResponse(cancellationToken, promptType);
+    const reviewDuration = Date.now() - reviewStart;
     config.logger.debug(
-        `Request with ${modelRequest.files.length} files used ${promptTokens} tokens, response used ${responseTokens} tokens. Response: ${response}`
+        `Received review response. Took=${reviewDuration}ms, Files=${modelRequest.files.length}, prompt type=${promptType ?? defaultPromptType}, request tokens=${promptTokens}, response tokens=${responseTokens}, Response=${response}`
     );
 
     const comments = parseResponse(response);
