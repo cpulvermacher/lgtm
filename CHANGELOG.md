@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.19.1] (pre-release)
+- Add experimental support for prompt variations. To enable, set `lgtm.comparePromptTypes` in your VS Code settings.json to a comma-separated list of prompt types. (v1: current default prompt, v2: integrate best practices, more specific instructions, v2think: v2 with added reasoning step)
+
 ## [0.19.0]
 - Add optional change description argument to #reviewStaged and #reviewUnstaged LM tools. This allows agents to provide additional context and requirements for changes.
 

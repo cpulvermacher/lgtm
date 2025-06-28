@@ -232,6 +232,9 @@ function showReviewResults(
             } else {
                 stream.markdown(`Line ${comment.line}: `);
             }
+            if (comment.promptType) {
+                stream.markdown(`**${comment.promptType}**: `);
+            }
             stream.markdown(
                 `${comment.comment} (Severity: ${comment.severity}/5)`
             );

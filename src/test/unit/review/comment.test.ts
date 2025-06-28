@@ -5,7 +5,7 @@ import {
     parseResponse,
     sortFileCommentsBySeverity,
 } from '@/review/comment';
-import { responseExample } from '@/review/ModelRequest';
+import { responseExample } from '@/review/prompt';
 import type { FileComments } from '@/types/FileComments';
 
 describe('parseComment', () => {
@@ -113,6 +113,16 @@ describe('parseResponse', () => {
 
         const result = parseResponse(wrappedJson);
 
+        expect(result).toEqual(responseExample);
+    });
+
+    it('handles extra bits around JSON with reasoning tag', () => {
+        const wrappedJson = '```json\n' + responseJsonString + '\n```';
+        const response = `<code_review_process>[]</code_review_process>\n${wrappedJson}`;
+
+        const result = parseResponse(response);
+
+        // only 2nd wrapped JSON should be parsed
         expect(result).toEqual(responseExample);
     });
 
