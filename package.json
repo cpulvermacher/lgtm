@@ -190,7 +190,7 @@
     "checkall": "pnpm test && pnpm lint && pnpm build"
   },
   "devDependencies": {
-    "@types/node": "20.x",
+    "@types/node": "22.x",
     "@types/vscode": "^1.100.0",
     "@vitest/coverage-v8": "^3.2.4",
     "@vscode/vsce": "^3.6.0",
