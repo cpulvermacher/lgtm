@@ -57,7 +57,7 @@ export class ModelRequest {
         return this.buildPrompt(this.diffs, promptType);
     }
 
-    async getReviewResponse(
+    async sendRequest(
         cancellationToken?: CancellationToken,
         promptType?: PromptType
     ) {

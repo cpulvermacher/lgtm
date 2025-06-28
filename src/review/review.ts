@@ -189,7 +189,7 @@ async function processRequest(
 ) {
     const reviewStart = Date.now();
     const { response, promptTokens, responseTokens } =
-        await modelRequest.getReviewResponse(cancellationToken, promptType);
+        await modelRequest.sendRequest(cancellationToken, promptType);
     const reviewDuration = Date.now() - reviewStart;
     config.logger.debug(
         `Received review response. Took=${reviewDuration}ms, Files=${modelRequest.files.length}, prompt type=${promptType ?? defaultPromptType}, request tokens=${promptTokens}, response tokens=${responseTokens}, Response=${response}`

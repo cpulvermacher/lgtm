@@ -114,7 +114,7 @@ describe('ModelRequest', () => {
             isCancellationRequested: false,
         } as CancellationToken;
 
-        const response = await request.getReviewResponse(cancellationToken);
+        const response = await request.sendRequest(cancellationToken);
         expect(response).toEqual({
             response: 'RESPONSE',
             promptTokens: 4,

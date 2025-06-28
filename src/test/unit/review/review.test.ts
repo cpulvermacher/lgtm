@@ -57,9 +57,9 @@ describe('reviewDiff', () => {
     let git: Git;
     const modelRequest = {
         addDiff: vi.fn(),
-        getReviewResponse: vi.fn(),
+        sendRequest: vi.fn(),
         files: ['file1', 'file2'],
-    } as unknown as ModelRequest;
+    } as Partial<ModelRequest> as ModelRequest;
 
     const progress = {
         report: vi.fn(),
@@ -100,7 +100,7 @@ describe('reviewDiff', () => {
         vi.mocked(ModelRequest).mockImplementation(() => modelRequest);
     });
     it('should return a review result', async () => {
-        vi.mocked(modelRequest.getReviewResponse).mockResolvedValueOnce(
+        vi.mocked(modelRequest.sendRequest).mockResolvedValueOnce(
             reviewResponse
         );
         vi.mocked(parseResponse).mockReturnValue(mockComments);
@@ -142,7 +142,7 @@ describe('reviewDiff', () => {
             },
         ]);
 
-        vi.mocked(modelRequest.getReviewResponse).mockResolvedValueOnce(
+        vi.mocked(modelRequest.sendRequest).mockResolvedValueOnce(
             reviewResponse
         );
         vi.mocked(parseResponse).mockReturnValue(mockComments);
@@ -173,9 +173,7 @@ describe('reviewDiff', () => {
     });
 
     it('merges file review requests if enabled', async () => {
-        vi.mocked(modelRequest.getReviewResponse).mockResolvedValue(
-            reviewResponse
-        );
+        vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
         vi.mocked(parseResponse).mockReturnValue(mockComments);
 
         const result = await reviewDiff(
@@ -186,7 +184,7 @@ describe('reviewDiff', () => {
         );
 
         expect(modelRequest.addDiff).toHaveBeenCalledTimes(2);
-        expect(modelRequest.getReviewResponse).toHaveBeenCalledTimes(1);
+        expect(modelRequest.sendRequest).toHaveBeenCalledTimes(1);
         expect(result.request.scope).toBe(scope);
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toHaveLength(0);
@@ -212,7 +210,7 @@ describe('reviewDiff', () => {
         );
 
         expect(modelRequest.addDiff).toHaveBeenCalledTimes(2);
-        expect(modelRequest.getReviewResponse).toHaveBeenCalledTimes(2);
+        expect(modelRequest.sendRequest).toHaveBeenCalledTimes(2);
         expect(result.request.scope).toBe(scope);
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toHaveLength(0);
@@ -220,9 +218,7 @@ describe('reviewDiff', () => {
     });
 
     it('corrects file names if there is a mismatch', async () => {
-        vi.mocked(modelRequest.getReviewResponse).mockResolvedValue(
-            reviewResponse
-        );
+        vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
         vi.mocked(parseResponse).mockReturnValue([
             {
                 ...mockComments[0],
@@ -259,14 +255,14 @@ describe('reviewDiff', () => {
         );
 
         expect(modelRequest.addDiff).not.toHaveBeenCalled();
-        expect(modelRequest.getReviewResponse).not.toHaveBeenCalled();
+        expect(modelRequest.sendRequest).not.toHaveBeenCalled();
         expect(result.request.scope).toBe(scope);
         expect(result.fileComments).toHaveLength(0);
         expect(result.errors).toHaveLength(0);
     });
 
     it('should abort and return errors if a ModelError occurs', async () => {
-        vi.mocked(modelRequest.getReviewResponse).mockRejectedValueOnce(
+        vi.mocked(modelRequest.sendRequest).mockRejectedValueOnce(
             new ModelError('Blocked', 'Model error')
         );
 
@@ -282,7 +278,7 @@ describe('reviewDiff', () => {
         expect(result.errors).toHaveLength(1);
 
         expect(progress.report).toHaveBeenCalledTimes(3);
-        expect(modelRequest.getReviewResponse).toHaveBeenCalledTimes(1);
+        expect(modelRequest.sendRequest).toHaveBeenCalledTimes(1);
     });
 
     it('should continue and return errors if a non-ModelError occurs', async () => {
@@ -292,7 +288,7 @@ describe('reviewDiff', () => {
 
         vi.mocked(parseResponse).mockReturnValue(mockComments);
         const nonModelError = new Error('review failed');
-        vi.mocked(modelRequest.getReviewResponse)
+        vi.mocked(modelRequest.sendRequest)
             .mockRejectedValueOnce(nonModelError)
             .mockResolvedValueOnce(reviewResponse);
 
@@ -304,7 +300,7 @@ describe('reviewDiff', () => {
         );
 
         expect(modelRequest.addDiff).toHaveBeenCalledTimes(3);
-        expect(modelRequest.getReviewResponse).toHaveBeenCalledTimes(2);
+        expect(modelRequest.sendRequest).toHaveBeenCalledTimes(2);
 
         expect(result.request.scope).toBe(scope);
         expect(result.fileComments).toHaveLength(1);
@@ -319,7 +315,7 @@ describe('reviewDiff', () => {
         vi.mocked(git.getFileDiff).mockResolvedValueOnce('');
         vi.mocked(git.getFileDiff).mockResolvedValueOnce('diff for file2');
 
-        vi.mocked(modelRequest.getReviewResponse).mockResolvedValueOnce(
+        vi.mocked(modelRequest.sendRequest).mockResolvedValueOnce(
             reviewResponse
         );
         vi.mocked(parseResponse).mockReturnValue(mockComments);
