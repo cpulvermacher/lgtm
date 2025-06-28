@@ -8,11 +8,13 @@ const promptTypes: PromptType[] = ['v1', 'v2', 'v2think'];
 
 export const reasoningTag = 'code_review_process';
 
-function toPromptType(type: string | undefined): PromptType | undefined {
-    if (promptTypes.includes(type as PromptType)) {
-        return type as PromptType;
+function toPromptType(type: string): PromptType {
+    if (!promptTypes.includes(type as PromptType)) {
+        throw new Error(
+            `Invalid prompt type: ${type}. Valid types are: ${promptTypes.join(', ')}`
+        );
     }
-    return undefined;
+    return type as PromptType;
 }
 
 export function toPromptTypes(
@@ -21,10 +23,7 @@ export function toPromptTypes(
     if (!types) {
         return [undefined]; // same as default prompt type, but comments are not marked with it
     }
-    return types
-        .split(',')
-        .map((type) => toPromptType(type.trim()))
-        .filter((t) => t !== undefined);
+    return types.split(',').map((type) => toPromptType(type.trim()));
 }
 
 export function createReviewPrompt(

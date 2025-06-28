@@ -169,10 +169,6 @@ async function addComments(
     cancellationToken?: CancellationToken
 ) {
     const promptTypes = toPromptTypes(config.getOptions().comparePromptTypes);
-    if (promptTypes.length === 0) {
-        throw new Error('lgtm.comparePromptTypes settings is invalid!');
-    }
-
     for (const promptType of promptTypes) {
         await processRequest(
             config,
