@@ -92,6 +92,7 @@ export async function pickRef(
                 label: (ref.ref as string).substring(0, shortHashLength),
                 ref: ref.ref,
                 description: ref.description,
+                detail: ref.extra,
                 iconPath: commitIcon,
             });
         }
@@ -116,6 +117,7 @@ export async function pickRef(
                 label: tag.ref as string,
                 ref: tag.ref,
                 description: tag.description,
+                detail: tag.extra,
                 iconPath: tagIcon,
             });
         }

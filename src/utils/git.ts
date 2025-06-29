@@ -321,6 +321,18 @@ export class Git {
                 getBranchPriority(branchesByCommitRef[b][0], firstBranch)
         );
 
+        // Calculate numCommitsBehind for each commit if beforeRef is provided
+        const numCommitsBehindMap: { [commit: string]: number | undefined } =
+            {};
+        if (beforeRef) {
+            for (const commit of orderedUniqueRefs) {
+                numCommitsBehindMap[commit] = await this.calculateCommitsBehind(
+                    commit,
+                    beforeRef
+                );
+            }
+        }
+
         const refs = orderedUniqueRefs.map((commit) => {
             const [ref, ...otherBranches] = branchesByCommitRef[commit];
             const isCurrent = branches.branches[ref].current;
@@ -331,9 +343,17 @@ export class Git {
             }
             description += commit.substring(0, shortHashLength);
 
-            const extra = formatExtraBranches(otherBranches);
+            const extra = formatExtra(
+                otherBranches,
+                beforeRef,
+                numCommitsBehindMap[commit]
+            );
 
-            return { ref, description, extra };
+            return {
+                ref,
+                description,
+                extra,
+            };
         });
 
         return refs.slice(0, maxCount);
@@ -352,8 +372,10 @@ export class Git {
             tagOptions.push(`--no-contains=${beforeRef}`);
         }
         const tags = await this.git.tags(tagOptions);
+
         return tags.all.slice(0, maxCount).map((tag) => ({
             ref: tag,
+            extra: formatExtra([], beforeRef),
         }));
     }
 
@@ -374,6 +396,7 @@ export class Git {
         return commits.all.slice(0, maxCount).map((commit) => ({
             ref: commit.hash,
             description: commit.message,
+            extra: formatExtra([], beforeRef),
         }));
     }
 
@@ -400,6 +423,35 @@ export class Git {
         }
         return refs;
     }
+
+    /**
+     * Calculate the number of commits a ref is behind another ref
+     * @param ref The ref to check
+     * @param beforeRef The ref to compare against
+     * @returns The number of commits ref is behind beforeRef, or undefined if beforeRef is undefined or calculation fails
+     */
+    async calculateCommitsBehind(
+        ref: string,
+        beforeRef?: string
+    ): Promise<number | undefined> {
+        if (!beforeRef) {
+            return undefined;
+        }
+
+        try {
+            // Use simpleGit countCommits if possible in future versions
+            return parseInt(
+                await this.git.raw([
+                    'rev-list',
+                    '--count',
+                    `${ref}..${beforeRef}`,
+                ]),
+                10
+            );
+        } catch {
+            return undefined;
+        }
+    }
 }
 
 export type RefList = {
@@ -408,11 +460,22 @@ export type RefList = {
     extra?: string; // e.g. additional branch names pointing to the same commit
 }[];
 
-function formatExtraBranches(otherBranches: string[]) {
-    if (otherBranches.length === 0) {
+function formatExtra(
+    otherBranches: string[],
+    beforeRef: string | undefined,
+    numCommitsBehind?: number
+) {
+    if (otherBranches.length === 0 && numCommitsBehind === undefined) {
         return undefined;
     }
-    return '       Same as: ' + otherBranches.join(', ');
+    let extraText = '       '; // indent to align with ref name
+    if (numCommitsBehind !== undefined) {
+        extraText += `${numCommitsBehind} commits behind ${beforeRef}`;
+    }
+    if (otherBranches.length > 0) {
+        extraText += 'Same as: ' + otherBranches.join(', ');
+    }
+    return extraText;
 }
 
 /** returns a numerical value for the branch priority to be used with sort().

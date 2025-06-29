@@ -718,6 +718,66 @@ line3`;
                 expectedBranches.map((branch) => branch.substring(0, 7))
             );
         });
+
+        it('does not add extra when beforeRef is undefined', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['branch1', 'branch2'],
+                branches: {
+                    branch1: {
+                        current: false,
+                        commit: 'abc1',
+                    },
+                    branch2: {
+                        current: false,
+                        commit: 'abc2',
+                    },
+                },
+            } as unknown as BranchSummary);
+
+            const result = await git.getBranchList(undefined, 2);
+
+            expect(result.length).toBe(2);
+            expect(result[0].extra).toBe(undefined);
+            expect(result[1].extra).toBe(undefined);
+
+            expect(mockSimpleGit.raw).not.toHaveBeenCalled();
+        });
+
+        it('calculates numCommitsBehind when beforeRef is provided', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['branch1', 'branch2'],
+                branches: {
+                    branch1: {
+                        current: false,
+                        commit: 'abc1',
+                    },
+                    branch2: {
+                        current: false,
+                        commit: 'abc2',
+                    },
+                },
+            } as unknown as BranchSummary);
+
+            // Mock the raw git command responses for commit distance calculations
+            vi.mocked(mockSimpleGit.raw)
+                .mockResolvedValueOnce('7') // branch1/abc1 is 7 commits behind beforeRef
+                .mockResolvedValueOnce('2'); // branch2/abc2 is 2 commits behind beforeRef
+
+            const result = await git.getBranchList('beforeRef', 2);
+
+            expect(mockSimpleGit.raw).toHaveBeenCalledWith([
+                'rev-list',
+                '--count',
+                'abc1..beforeRef',
+            ]);
+            expect(mockSimpleGit.raw).toHaveBeenCalledWith([
+                'rev-list',
+                '--count',
+                'abc2..beforeRef',
+            ]);
+            expect(result[0].extra).toMatch(/7 commits behind beforeRef/);
+            expect(result[1].extra).toMatch(/2 commits behind beforeRef/);
+        });
     });
 
     describe('getTagList', () => {
@@ -868,5 +928,5 @@ line3`;
                 },
             ]);
         });
-    });
+    }); // We don't test private methods directly
 });
