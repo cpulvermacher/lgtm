@@ -31,14 +31,6 @@ ${changeDescription.trim()}
 </change_description>`;
     }
 
-    const thinking = `
-Before providing your final output, wrap your thought process in <${reasoningTag}> tags to show your reasoning and ensure a comprehensive review. In this process:
-1. List out the files changed in the diff.
-2. For each file, summarize the changes and their potential impact.
-3. Identify potential issues across different categories (different from change description, bugs, security vulnerabilities, typos).
-4. Consider the severity of each issue.
-`;
-
     return `
 You are a senior software engineer tasked with reviewing a pull request. Your goal is to analyze the provided git diff and offer insightful, actionable comments on code issues. Focus on identifying bugs, security vulnerabilities, unreadable code, possible refactorings, and typos while considering the changeset as a whole.
 
@@ -68,7 +60,11 @@ Respond with a JSON array of comment objects. Each object should contain:
 - \`severity\`: An integer from 1 (likely irrelevant) to 5 (critical)
 </output_format>
 
-${thinking.trim()}
+Before providing your final output, wrap your thought process in <${reasoningTag}> tags to show your reasoning and ensure a comprehensive review. In this process:
+1. List out the files changed in the diff.
+2. For each file, summarize the changes and their potential impact.
+3. Identify potential issues across different categories (different from change description, bugs, security vulnerabilities, typos).
+4. Consider the severity of each issue.
 
 <output_example>
 <code_review_process>
