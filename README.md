@@ -33,7 +33,7 @@ LGTM will respond with review comments grouped by file and sorted by severity.
 
 - **Only Copilot Required**: Uses Copilot Chat for reviewing changes.
 - **Model Selection**: Choose any language model available to VS Code via the **LGTM: Select Chat Model** command available in the Command Palette (press `Cmd+Shift+P` or `Ctrl+Shift+P`).
-- **Custom Instructions**: Add custom instructions via the `Lgtm: Custom Prompt` setting (e.g., change the language of review comments by adding `- All review comments must be in Spanish.`).
+- **Custom Instructions**: Add custom instructions via the `Lgtm: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the  `comment` field.`).
 - **Agent Support**: Adds tools to enable automatic reviews in agent mode:
   - `#review`: Reviews changes between two git references (branches, tags, or commits)
   - `#reviewStaged`: Reviews only staged changes in your working directory
