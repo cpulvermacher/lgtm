@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.20.0]
+Includes changes from 0.19.1 and 0.19.2.
+Highlight: New improved prompt with reasoning step to reduce false positives, validate code changes against the commit description, and find refactoring opportunities.
+
+Note: If you are using the custom prompt setting to change the comment language, a format like "- In the final JSON output, use Spanish for the  `comment` field." works best.
+
 ## [0.19.2] (pre-release)
 - Change default prompt type to v2think.
 
