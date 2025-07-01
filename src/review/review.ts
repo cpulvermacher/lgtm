@@ -90,8 +90,7 @@ async function aggregateFileDiffs(
         if (modelRequests.length === 0 || !options.mergeFileReviewRequests) {
             const modelRequest = new ModelRequest(
                 config,
-                request.scope.changeDescription,
-                request.userPrompt
+                request.scope.changeDescription
             );
             modelRequests.push(modelRequest);
         }
@@ -106,8 +105,7 @@ async function aggregateFileDiffs(
             // if the diff cannot be added to the last request, create a new one
             const modelRequest = new ModelRequest(
                 config,
-                request.scope.changeDescription,
-                request.userPrompt
+                request.scope.changeDescription
             );
             await modelRequest.addDiff(file.file, diff); // adding the first diff will never throw
             modelRequests.push(modelRequest);

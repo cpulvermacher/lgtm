@@ -13,8 +13,7 @@ export class ModelRequest {
 
     constructor(
         private readonly config: Config,
-        private changeDescription: string | undefined,
-        private userPrompt?: string
+        private changeDescription: string | undefined
     ) {
         this.options = config.getOptions();
     }
@@ -137,7 +136,6 @@ export class ModelRequest {
             this.changeDescription,
             diff,
             this.options.customPrompt,
-            this.userPrompt,
             promptType
         );
     }

@@ -11,11 +11,7 @@ describe('ModelRequest', () => {
     let request: ModelRequest;
     beforeEach(async () => {
         const { config } = createMockConfig();
-        request = new ModelRequest(
-            config,
-            'Various refactorings',
-            'user prompt'
-        );
+        request = new ModelRequest(config, 'Various refactorings');
         model = await config.getModel();
     });
 

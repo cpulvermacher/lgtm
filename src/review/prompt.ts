@@ -31,38 +31,21 @@ export function createReviewPrompt(
     changeDescription: string | undefined,
     diff: string,
     customPrompt: string,
-    userPrompt?: string,
     promptType?: PromptType
 ): string {
     const type = promptType || defaultPromptType;
     if (type === 'v2') {
-        return createReviewPromptV2(
-            changeDescription,
-            diff,
-            customPrompt,
-            userPrompt
-        );
+        return createReviewPromptV2(changeDescription, diff, customPrompt);
     } else if (type === 'v2think') {
-        return createReviewPromptV2Think(
-            changeDescription,
-            diff,
-            customPrompt,
-            userPrompt
-        );
+        return createReviewPromptV2Think(changeDescription, diff, customPrompt);
     } else if (type === 'v2backtrack') {
         return createReviewPromptV2Backtrack(
             changeDescription,
             diff,
-            customPrompt,
-            userPrompt
+            customPrompt
         );
     } else {
-        return createReviewPromptV1(
-            changeDescription,
-            diff,
-            customPrompt,
-            userPrompt
-        );
+        return createReviewPromptV1(changeDescription, diff, customPrompt);
     }
 }
 

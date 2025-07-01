@@ -3,24 +3,9 @@ import { responseExample } from './prompt';
 export function createReviewPromptV2(
     changeDescription: string | undefined,
     diff: string,
-    customPrompt: string,
-    userPrompt?: string
+    customPrompt: string
 ): string {
-    let reviewInstructions = `
-- Analyze the entire git diff provided.
-- Consider how the changes as a whole implement the described feature or fix.
-- Focus on providing comments for added lines.
-- Ensure all comments are actionable and specific.
-- Avoid comments on formatting or purely positive feedback.
-- Do not make assumptions about code not included in the diff.
-- Consider the context of changes across different functions, classes, and files.
-- Don't suggest issues that would be caught by compilations or running tests.
-- Do not suggest reverting to previous logic (removed lines) without a compelling reason.
-${customPrompt}
-`;
-    if (userPrompt && userPrompt.trim()) {
-        reviewInstructions = userPrompt;
-    }
+    customPrompt = customPrompt.length > 0 ? customPrompt.trim() + '\n' : '';
 
     let wrappedChangeDescription = '';
     if (changeDescription && changeDescription.trim()) {
@@ -41,8 +26,16 @@ ${diff}
 ${wrappedChangeDescription}
 
 <review_instructions>
-${reviewInstructions.trim()}
-</review_instructions>
+- Analyze the entire git diff provided.
+- Consider how the changes as a whole implement the described feature or fix.
+- Focus on providing comments for added lines.
+- Ensure all comments are actionable and specific.
+- Avoid comments on formatting or purely positive feedback.
+- Do not make assumptions about code not included in the diff.
+- Consider the context of changes across different functions, classes, and files.
+- Don't suggest issues that would be caught by compilations or running tests.
+- Do not suggest reverting to previous logic (removed lines) without a compelling reason.
+${customPrompt}</review_instructions>
 
 <diff_format>
 - The diff starts with a diff header, followed by diff lines.

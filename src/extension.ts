@@ -97,12 +97,6 @@ async function handleChat(
             return;
         }
     }
-    if (reviewRequest.userPrompt) {
-        stream.markdown(
-            `Using custom prompt: \`${reviewRequest.userPrompt}\`\n\n`
-        );
-    }
-
     const results = await review(config, reviewRequest, stream, token);
 
     showReviewResults(config, results, stream, token);
@@ -162,7 +156,7 @@ async function getReviewRequest(
         reviewScope = await config.git.getReviewScope(refs.target, refs.base);
     }
 
-    return { scope: reviewScope, userPrompt: parsedPrompt.customPrompt };
+    return { scope: reviewScope };
 }
 
 /** Reviews changes and displays progress bar */

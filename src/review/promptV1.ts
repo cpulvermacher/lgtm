@@ -3,19 +3,9 @@ import { responseExample } from './prompt';
 export function createReviewPromptV1(
     changeDescription: string | undefined,
     diff: string,
-    customPrompt: string,
-    userPrompt?: string
+    customPrompt: string
 ): string {
-    const defaultRules = `
-- Provide comments on bugs, security vulnerabilities, code smells, and typos.
-- Only provide comments for added lines.
-- All comments must be actionable. Do not provide comments that are only positive feedback.
-- Do not provide comments on formatting.
-- Avoid repetitive comments.
-- Do not make assumptions about code that is not included in the diff.
-${customPrompt}
-`;
-    const reviewRules = userPrompt ? userPrompt.trim() : defaultRules.trim();
+    customPrompt = customPrompt.length > 0 ? customPrompt.trim() + '\n' : '';
 
     const wrappedChangeDescription = changeDescription
         ? `<Change Description>\n${changeDescription}\n</Change Description>`
@@ -32,8 +22,13 @@ ${customPrompt}
 </Diff Format>
 
 <Review Rules>
-${reviewRules}
-</Review Rules>
+- Provide comments on bugs, security vulnerabilities, code smells, and typos.
+- Only provide comments for added lines.
+- All comments must be actionable. Do not provide comments that are only positive feedback.
+- Do not provide comments on formatting.
+- Avoid repetitive comments.
+- Do not make assumptions about code that is not included in the diff.
+${customPrompt}</Review Rules>
 
 <Output Rules>
 - Respond with a JSON list of comments objects, which contain the fields \`file\`, \`line\`, \`comment\`, and \`severity\`.

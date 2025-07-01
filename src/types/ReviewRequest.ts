@@ -2,7 +2,6 @@ import type { UncommittedRef } from './Ref';
 
 export type ReviewRequest = {
     scope: ReviewScope;
-    userPrompt?: string; // optional replacement prompt for this review
 };
 
 /** scope of changes in version control for a given review request  */

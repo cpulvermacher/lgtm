@@ -3,13 +3,13 @@ import { Git } from './git';
 export type ParsedArguments = {
     target?: string;
     base?: string;
-    customPrompt?: string;
 };
 
 /** parse given arguments to a /command in the format
- * [target [base]] [customPrompt]
- * That is, try to parse the first two arguments as commit refs and the rest as a custom prompt.
- * If the first arguments are not valid commit refs, everything is considered a custom prompt.
+ * [target [base]]
+ * That is, try to parse the first two arguments as commit refs.
+ * If base is not a commit ref, it is ignored.
+ * If target is not a commit ref, both target and base are ignored.
  */
 export async function parseArguments(
     git: Git,
@@ -21,16 +21,19 @@ export async function parseArguments(
     }
 
     const [target, base, ...rest] = args.split(' ');
+    if (rest.length > 0) {
+        throw new Error(
+            'Expected at most two refs as arguments. Use the command without arguments to select refs interactively.'
+        );
+    }
     if (await isCommitRef(git, target)) {
-        const restString = rest.length > 0 ? rest.join(' ') : undefined;
         if (base && (await isCommitRef(git, base))) {
-            return { target, base, customPrompt: restString };
+            return { target, base };
         }
-        const customPrompt = restString ? `${base} ${restString}` : base;
-        return { target, customPrompt };
+        return { target };
     }
 
-    return { customPrompt: args };
+    return {};
 }
 
 async function isCommitRef(git: Git, ref: string): Promise<boolean> {

@@ -36,101 +36,40 @@ describe('parseArguments', () => {
         expect(result).toEqual({ target: 'target', base: 'base' });
     });
 
-    it('parses more than two arguments', async () => {
-        const result = await parseArguments(
-            mockGit,
-            'target base some long prompt'
-        );
-
-        expect(result).toEqual({
-            target: 'target',
-            base: 'base',
-            customPrompt: 'some long prompt',
-        });
-    });
-
-    it('parses single non-commit-ref argument into customPrompt', async () => {
+    it('parses single non-commit-ref argument into empty object', async () => {
         vi.mocked(mockGit.getCommitRef).mockRejectedValue(new Error());
 
         const result = await parseArguments(mockGit, 'prompt');
 
-        expect(result).toEqual({ customPrompt: 'prompt' });
+        expect(result).toEqual({});
     });
 
-    it('parses two non-commit-ref arguments into customPrompt', async () => {
+    it('parses two non-commit-ref arguments into empty object', async () => {
         vi.mocked(mockGit.getCommitRef).mockRejectedValue(new Error());
 
         const result = await parseArguments(mockGit, 'prompt1 prompt2');
 
-        expect(result).toEqual({ customPrompt: 'prompt1 prompt2' });
+        expect(result).toEqual({});
     });
 
-    it('parses longer non-commit-ref arguments into customPrompt', async () => {
+    it('throws on more than two arguments', async () => {
         vi.mocked(mockGit.getCommitRef).mockRejectedValue(new Error());
 
-        const result = await parseArguments(
-            mockGit,
-            'this is a longish prompt'
+        await expect(() =>
+            parseArguments(mockGit, 'target base extra')
+        ).rejects.toThrow(
+            'Expected at most two refs as arguments. Use the command without arguments to select refs interactively.'
         );
-
-        expect(result).toEqual({
-            customPrompt: 'this is a longish prompt',
-        });
+        expect(mockGit.getCommitRef).not.toHaveBeenCalled();
     });
 
-    it('parses single commit-ref argument and rest into customPrompt', async () => {
+    it('parses single commit-ref argument plus non-commit-ref', async () => {
         vi.mocked(mockGit.getCommitRef)
             .mockResolvedValueOnce('')
             .mockRejectedValue(new Error());
 
-        const result = await parseArguments(mockGit, 'target prompt');
+        const result = await parseArguments(mockGit, 'target extra');
 
-        expect(result).toEqual({ target: 'target', customPrompt: 'prompt' });
-    });
-
-    it('parses two commit-ref arguments and rest into customPrompt', async () => {
-        vi.mocked(mockGit.getCommitRef)
-            .mockResolvedValueOnce('')
-            .mockResolvedValueOnce('')
-            .mockRejectedValue(new Error());
-
-        const result = await parseArguments(mockGit, 'target base prompt');
-
-        expect(result).toEqual({
-            target: 'target',
-            base: 'base',
-            customPrompt: 'prompt',
-        });
-    });
-
-    it('parses single commit-ref argument and longer rest into customPrompt', async () => {
-        vi.mocked(mockGit.getCommitRef)
-            .mockResolvedValueOnce('')
-            .mockRejectedValue(new Error());
-
-        const result = await parseArguments(mockGit, 'target longer prompt');
-
-        expect(result).toEqual({
-            target: 'target',
-            customPrompt: 'longer prompt',
-        });
-    });
-
-    it('parses two commit-ref arguments and longer rest into customPrompt', async () => {
-        vi.mocked(mockGit.getCommitRef)
-            .mockResolvedValueOnce('')
-            .mockResolvedValueOnce('')
-            .mockRejectedValue(new Error());
-
-        const result = await parseArguments(
-            mockGit,
-            'target base longer prompt'
-        );
-
-        expect(result).toEqual({
-            target: 'target',
-            base: 'base',
-            customPrompt: 'longer prompt',
-        });
+        expect(result).toEqual({ target: 'target' });
     });
 });

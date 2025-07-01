@@ -18,25 +18,11 @@ describe('createReviewPrompt', () => {
         );
     });
 
-    it('creates prompt with user prompt (default)', async () => {
-        const userPrompt = 'explicit user prompt';
-        const prompt = createReviewPrompt(
-            changeDescription,
-            diff,
-            customPrompt,
-            userPrompt
-        );
-        await expect(prompt).toMatchFileSnapshot(
-            'review-prompt-v2think-user-prompt.snap'
-        );
-    });
-
     it('creates prompt with v1 type', async () => {
         const prompt = createReviewPrompt(
             changeDescription,
             diff,
             customPrompt,
-            undefined,
             'v1'
         );
         await expect(prompt).toMatchFileSnapshot('review-prompt-v1.snap');
@@ -47,7 +33,6 @@ describe('createReviewPrompt', () => {
             changeDescription,
             diff,
             customPrompt,
-            undefined,
             'v2'
         );
         await expect(prompt).toMatchFileSnapshot('review-prompt-v2.snap');
@@ -58,7 +43,6 @@ describe('createReviewPrompt', () => {
             changeDescription,
             diff,
             customPrompt,
-            undefined,
             'v2think'
         );
         await expect(prompt).toMatchFileSnapshot('review-prompt-v2think.snap');
