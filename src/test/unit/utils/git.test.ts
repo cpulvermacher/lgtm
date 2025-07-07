@@ -406,7 +406,10 @@ line3`;
 
     describe('getCommitRef', () => {
         it('returns commit ref', async () => {
+            vi.mocked(mockSimpleGit.revparse).mockResolvedValue('rev');
+
             const ref = await git.getCommitRef('hash');
+
             expect(ref).toBe('rev');
         });
 
@@ -421,9 +424,11 @@ line3`;
     });
 
     describe('isBranch', () => {
-        vi.mocked(mockSimpleGit.branch).mockResolvedValue({
-            all: ['branch1', 'branch2'],
-        } as BranchSummary);
+        beforeEach(() => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['branch1', 'branch2'],
+            } as BranchSummary);
+        });
 
         it('returns true for branch', async () => {
             expect(await git.isBranch('branch1')).toBe(true);

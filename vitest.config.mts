@@ -11,7 +11,7 @@ export default defineConfig({
     },
     test: {
         include: ['src/test/unit/**/*.test.ts'],
-        clearMocks: true,
+        mockReset: true,
         coverage: {
             include: ['src/**/*.ts'],
             exclude: [

@@ -192,6 +192,8 @@ describe('reviewDiff', () => {
     });
 
     it('does not merge file review requests if disabled', async () => {
+        vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
+        vi.mocked(parseResponse).mockReturnValue(mockComments);
         vi.mocked(config.getOptions).mockReturnValue({
             customPrompt: 'custom prompt',
             minSeverity: 3,
