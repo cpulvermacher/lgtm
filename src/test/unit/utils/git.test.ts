@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { UncommittedRef } from '@/types/Ref';
 import type { ReviewScope } from '@/types/ReviewRequest';
-import { createGit, type Git } from '@/utils/git';
+import { createGit, GIT_EMPTY_TREE_HASH, type Git } from '@/utils/git';
 
 const completeDiff = `diff --git a/index.html b/index.html
 index 44cbb3f..887431b 100644
@@ -320,6 +320,48 @@ rename to index.html'
                 target: UncommittedRef.Unstaged,
                 isTargetCheckedOut: true,
                 isCommitted: false,
+            });
+        });
+
+        it('for initial commit', async () => {
+            // call for targetRef^ - should fail to indicate initial commit
+            vi.mocked(mockSimpleGit.revparse).mockRejectedValueOnce(
+                new Error('Not a valid object name')
+            );
+
+            vi.mocked(mockSimpleGit.revparse).mockResolvedValueOnce('rev');
+
+            const result = await git.getReviewScope('rev');
+
+            expect(result).toEqual({
+                target: 'rev',
+                base: GIT_EMPTY_TREE_HASH,
+                isTargetCheckedOut: true,
+                isCommitted: true,
+                revisionRangeDiff: `${GIT_EMPTY_TREE_HASH}..rev`,
+                revisionRangeLog: `${GIT_EMPTY_TREE_HASH}..rev`,
+                changeDescription: 'message\nmessage2',
+            });
+        });
+
+        it('for initial commit with HEAD check failure', async () => {
+            vi.mocked(mockSimpleGit.revparse)
+                .mockRejectedValueOnce(new Error('Not a valid object name')) // call for targetRef^ - should fail to indicate initial commit
+                .mockResolvedValueOnce('rev') //getCommitRange
+                .mockResolvedValueOnce('rev') //getCommitRange
+                .mockResolvedValueOnce('HEAD') //isSameRef
+                .mockResolvedValueOnce('rev');
+
+            const result = await git.getReviewScope('rev');
+
+            expect(result).toEqual({
+                target: 'rev',
+                base: GIT_EMPTY_TREE_HASH,
+                isTargetCheckedOut: false,
+                isCommitted: true,
+                revisionRangeDiff: `${GIT_EMPTY_TREE_HASH}..rev`,
+                revisionRangeLog: `${GIT_EMPTY_TREE_HASH}..rev`,
+                changeDescription: 'message\nmessage2',
             });
         });
     });

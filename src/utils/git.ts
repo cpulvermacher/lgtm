@@ -6,6 +6,9 @@ import { ReviewScope } from '@/types/ReviewRequest';
 /** same as git's default length for short commit hashes */
 export const shortHashLength = 7;
 
+/** Git's empty tree object hash, useful when comparing against the initial commit. */
+export const GIT_EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+
 export type DiffFile = {
     file: string;
     from?: string; //previous file name (if renamed)
@@ -145,7 +148,11 @@ export class Git {
         return true;
     }
 
-    /** get review scope for the given refs (commits, branches, tags, ...). If baseRef is undefined will use the parent commit. */
+    /**
+     * Get review scope for the given refs (commits, branches, tags, ...).
+     * If baseRef is undefined will use the parent commit, or for the initial commit
+     * it will use the empty tree object as base.
+     */
     async getReviewScope(
         targetRef: Ref,
         baseRef?: string
@@ -160,13 +167,24 @@ export class Git {
         }
 
         if (!baseRef) {
-            baseRef = `${targetRef}^`;
+            // Check if this is the initial commit (has no parent)
+            try {
+                await this.getCommitRef(`${targetRef}^`);
+                baseRef = `${targetRef}^`;
+            } catch {
+                // This is the initial commit, use git's empty tree object as base
+                baseRef = GIT_EMPTY_TREE_HASH;
+            }
+        }
+        const commitRange = await this.getCommitRange(baseRef, targetRef);
+        if (baseRef === GIT_EMPTY_TREE_HASH) {
+            // for initial commit, avoid using ... for diff
+            commitRange.revisionRangeDiff = commitRange.revisionRangeLog;
         }
 
-        const { revisionRangeDiff, revisionRangeLog } =
-            await this.getCommitRange(baseRef, targetRef);
-        const changeDescription =
-            await this.getCommitMessages(revisionRangeLog);
+        const changeDescription = await this.getCommitMessages(
+            commitRange.revisionRangeLog
+        );
 
         const isTargetCheckedOut = await this.isSameRef('HEAD', targetRef);
         return {
@@ -174,8 +192,8 @@ export class Git {
             base: baseRef,
             isCommitted: true,
             isTargetCheckedOut,
-            revisionRangeDiff,
-            revisionRangeLog,
+            revisionRangeDiff: commitRange.revisionRangeDiff,
+            revisionRangeLog: commitRange.revisionRangeLog,
             changeDescription,
         };
     }
