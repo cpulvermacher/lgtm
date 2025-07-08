@@ -28,8 +28,8 @@ importers:
         specifier: 22.x
         version: 22.15.33
       '@types/vscode':
-        specifier: ^1.100.0
-        version: 1.100.0
+        specifier: ^1.99.1
+        version: 1.99.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4(@types/node@22.15.33))
@@ -597,8 +597,8 @@ packages:
   '@types/sarif@2.1.7':
     resolution: {integrity: sha512-kRz0VEkJqWLf1LLVN4pT1cg1Z9wAuvI6L97V3m2f5B76Tg8d413ddvLBPTEHAZJlnn4XSvu0FkZtViCQGVyrXQ==}
 
-  '@types/vscode@1.100.0':
-    resolution: {integrity: sha512-4uNyvzHoraXEeCamR3+fzcBlh7Afs4Ifjs4epINyUX/jvdk0uzLnwiDY35UKDKnkCHP5Nu3dljl2H8lR6s+rQw==}
+  '@types/vscode@1.99.1':
+    resolution: {integrity: sha512-cQlqxHZ040ta6ovZXnXRxs3fJiTmlurkIWOfZVcLSZPcm9J4ikFpXuB7gihofGn5ng+kDVma5EmJIclfk0trPQ==}
 
   '@typescript-eslint/eslint-plugin@8.36.0':
     resolution: {integrity: sha512-lZNihHUVB6ZZiPBNgOQGSxUASI7UJWhT8nHyUGCnaQ28XFCw98IfrMCG3rUl1uwUWoAvodJQby2KTs79UTcrAg==}
@@ -2616,7 +2616,7 @@ snapshots:
 
   '@types/sarif@2.1.7': {}
 
-  '@types/vscode@1.100.0': {}
+  '@types/vscode@1.99.1': {}
 
   '@typescript-eslint/eslint-plugin@8.36.0(@typescript-eslint/parser@8.36.0(eslint@9.30.1)(typescript@5.8.3))(eslint@9.30.1)(typescript@5.8.3)':
     dependencies:
