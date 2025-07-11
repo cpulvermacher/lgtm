@@ -167,7 +167,10 @@ export async function pickRefs(config: Config, type?: 'branch') {
     if (!target) {
         return;
     }
-    if (config.git.isUncommitted(target)) {
+    if (
+        config.git.isUncommitted(target) ||
+        (await config.git.isInitialCommit(target))
+    ) {
         return { target };
     }
 

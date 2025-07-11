@@ -149,11 +149,23 @@ async function getReviewRequest(
         } else if (command === 'branch') {
             refs = await pickRefs(config, 'branch');
         }
-        if (!config.git.isValidRefPair(refs)) {
+
+        if (config.git.isValidRefPair(refs)) {
+            reviewScope = await config.git.getReviewScope(
+                refs.target,
+                refs.base
+            );
+        } else if (
+            refs?.target &&
+            (await config.git.isInitialCommit(refs.target))
+        ) {
+            reviewScope = await config.git.getReviewScope(
+                refs.target,
+                undefined
+            );
+        } else {
             return;
         }
-
-        reviewScope = await config.git.getReviewScope(refs.target, refs.base);
     }
 
     return { scope: reviewScope };

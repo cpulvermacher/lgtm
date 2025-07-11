@@ -149,9 +149,13 @@ export class Git {
     }
 
     /**
-     * Returns true if the given commit one of the root commits.
+     * Returns true if the given ref is one of the root commits.
      */
-    private async isInitialCommit(ref: string): Promise<boolean> {
+    async isInitialCommit(ref?: Ref): Promise<boolean> {
+        if (typeof ref !== 'string') {
+            return false;
+        }
+
         const commitRef = await this.getCommitRef(ref);
         const rootCommits = await this.git.raw([
             'rev-list',
