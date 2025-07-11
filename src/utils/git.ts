@@ -149,6 +149,20 @@ export class Git {
     }
 
     /**
+     * Returns true if the given commit one of the root commits.
+     */
+    private async isInitialCommit(ref: string): Promise<boolean> {
+        const commitRef = await this.getCommitRef(ref);
+        const rootCommits = await this.git.raw([
+            'rev-list',
+            '--max-parents=0',
+            commitRef,
+        ]);
+        const hashes = rootCommits.trim().split(/\s+/);
+        return hashes.includes(commitRef);
+    }
+
+    /**
      * Get review scope for the given refs (commits, branches, tags, ...).
      * If baseRef is undefined will use the parent commit, or for the initial commit
      * it will use the empty tree object as base.
@@ -167,13 +181,10 @@ export class Git {
         }
 
         if (!baseRef) {
-            // Check if this is the initial commit (has no parent)
-            try {
-                await this.getCommitRef(`${targetRef}^`);
-                baseRef = `${targetRef}^`;
-            } catch {
-                // This is the initial commit, use git's empty tree object as base
+            if (await this.isInitialCommit(targetRef)) {
                 baseRef = GIT_EMPTY_TREE_HASH;
+            } else {
+                baseRef = `${targetRef}^`;
             }
         }
         const commitRange = await this.getCommitRange(baseRef, targetRef);

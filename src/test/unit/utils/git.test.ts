@@ -52,6 +52,7 @@ describe('git', () => {
         tags: vi.fn(),
         firstCommit: vi.fn(),
         status: vi.fn(),
+        raw: vi.fn(),
     } as unknown as SimpleGit;
 
     const scope: ReviewScope = {
@@ -276,6 +277,8 @@ rename to index.html'
         });
 
         it('for commit', async () => {
+            vi.mocked(mockSimpleGit.raw).mockResolvedValueOnce('first\nfirst2');
+
             const result = await git.getReviewScope('rev');
 
             expect(result).toEqual({
@@ -325,11 +328,10 @@ rename to index.html'
 
         it('for initial commit', async () => {
             // call for targetRef^ - should fail to indicate initial commit
-            vi.mocked(mockSimpleGit.revparse).mockRejectedValueOnce(
-                new Error('Not a valid object name')
-            );
-
-            vi.mocked(mockSimpleGit.revparse).mockResolvedValueOnce('rev');
+            vi.mocked(mockSimpleGit.revparse)
+                .mockResolvedValueOnce('first') //isInitialCommit
+                .mockResolvedValueOnce('rev');
+            vi.mocked(mockSimpleGit.raw).mockResolvedValueOnce('first');
 
             const result = await git.getReviewScope('rev');
 
@@ -346,11 +348,12 @@ rename to index.html'
 
         it('for initial commit with HEAD check failure', async () => {
             vi.mocked(mockSimpleGit.revparse)
-                .mockRejectedValueOnce(new Error('Not a valid object name')) // call for targetRef^ - should fail to indicate initial commit
+                .mockResolvedValueOnce('first') //isInitialCommit
                 .mockResolvedValueOnce('rev') //getCommitRange
                 .mockResolvedValueOnce('rev') //getCommitRange
                 .mockResolvedValueOnce('HEAD') //isSameRef
                 .mockResolvedValueOnce('rev');
+            vi.mocked(mockSimpleGit.raw).mockResolvedValueOnce('first');
 
             const result = await git.getReviewScope('rev');
 
