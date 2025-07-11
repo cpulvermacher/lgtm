@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.20.1] (pre-release)
+- Allow reviewing the initial commit of the repository.
+
 ## [0.20.0]
 Includes changes from 0.19.1 and 0.19.2.
 Highlight: New improved prompt with reasoning step to reduce false positives, validate code changes against the commit description, and find refactoring opportunities.
