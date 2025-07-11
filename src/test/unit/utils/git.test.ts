@@ -268,6 +268,32 @@ rename to index.html'
         ).toBe(false);
     });
 
+    describe('isInitialCommit', () => {
+        it('returns true for initial commit', async () => {
+            vi.mocked(mockSimpleGit.revparse).mockResolvedValue('root1');
+            vi.mocked(mockSimpleGit.raw).mockResolvedValue('root1');
+
+            const result = await git.isInitialCommit('anything');
+
+            expect(result).toBe(true);
+        });
+
+        it('returns false for non-initial commit', async () => {
+            vi.mocked(mockSimpleGit.revparse).mockResolvedValue('commit1');
+            vi.mocked(mockSimpleGit.raw).mockResolvedValue('root1\nroot2');
+
+            const result = await git.isInitialCommit('anything');
+
+            expect(result).toBe(false);
+        });
+
+        it('returns false for non-string ref', async () => {
+            const result = await git.isInitialCommit(undefined);
+
+            expect(result).toBe(false);
+        });
+    });
+
     describe('getReviewScope', () => {
         beforeEach(() => {
             vi.mocked(mockSimpleGit.revparse).mockResolvedValue('rev');
