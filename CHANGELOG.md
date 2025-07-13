@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.21.0]
+- Same as 0.20.1.
+
 ## [0.20.1] (pre-release)
 - Allow reviewing the initial commit of the repository.
 
