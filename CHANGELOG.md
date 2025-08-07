@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.21.1]
+- Change default model to GPT 4.1. (previous default GPT 4o was deprecated)
+
 ## [0.21.0]
 - Same as 0.20.1.
 
