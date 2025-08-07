@@ -52,7 +52,7 @@ LGTM will respond with review comments grouped by file and sorted by severity.
 
 ## Data Usage
 
-Source code changes and commit messages selected for review are sent to the chat model configured in the extension settings (default: GitHub Copilot GPT-4o).
+Source code changes and commit messages selected for review are sent to the chat model configured in the extension settings (default: GitHub Copilot GPT-4.1).
 
 
 ## Contributing

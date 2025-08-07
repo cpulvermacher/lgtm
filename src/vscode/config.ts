@@ -10,7 +10,7 @@ import { getChatModel } from './model';
 // defined when built via `npm run dev`
 declare const __GIT_VERSION__: string | undefined;
 
-const defaultModelId = 'gpt-4o';
+const defaultModelId = 'gpt-4.1';
 
 let config: Config | undefined;
 

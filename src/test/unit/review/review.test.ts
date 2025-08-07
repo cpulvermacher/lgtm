@@ -199,7 +199,7 @@ describe('reviewDiff', () => {
             minSeverity: 3,
             excludeGlobs: [] as string[],
             enableDebugOutput: false,
-            chatModel: 'gpt-4o',
+            chatModel: 'gpt-4.1',
             mergeFileReviewRequests: false,
             maxInputTokensFraction: 0.95,
         });
