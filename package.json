@@ -190,16 +190,16 @@
     "checkall": "pnpm test && pnpm lint && pnpm build"
   },
   "devDependencies": {
-    "@eslint/js": "^9.31.0",
+    "@eslint/js": "^9.32.0",
     "@types/node": "22.x",
     "@types/vscode": "^1.99.1",
     "@vitest/coverage-v8": "^3.2.4",
     "@vscode/vsce": "^3.6.0",
-    "esbuild": "^0.25.6",
-    "eslint": "^9.31.0",
+    "esbuild": "^0.25.8",
+    "eslint": "^9.32.0",
     "prettier": "^3.6.2",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.36.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.0",
     "vitest": "^3.2.4"
   },
   "dependencies": {
