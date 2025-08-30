@@ -125,10 +125,10 @@ describe('ModelRequest', () => {
 
 function createMockConfig() {
     const model = {
-        sendRequest: vi.fn(async () => {
+        sendRequest: vi.fn(() => {
             return Promise.resolve('Some review comment\n3/5');
         }),
-        countTokens: vi.fn(async () => Promise.resolve(4)),
+        countTokens: vi.fn(() => Promise.resolve(4)),
         maxInputTokens: 1000,
     } as unknown as Model;
 

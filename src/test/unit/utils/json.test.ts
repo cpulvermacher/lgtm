@@ -1,8 +1,17 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { parseAsJsonArray } from '@/utils/json';
 
 describe('parseAsJsonArray', () => {
+    let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+    beforeEach(() => {
+        // mock console.warn before each test
+        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
+    });
+    afterEach(() => {
+        consoleWarnSpy.mockRestore();
+    });
+
     it('parses valid JSON array', () => {
         const input =
             '[{"name": "test", "value": 123}, {"name": "example", "value": 456}]';
@@ -30,11 +39,6 @@ describe('parseAsJsonArray', () => {
     });
 
     it('falls back to jsonc-parser for invalid JSON', () => {
-        // Mock console.warn to verify it's called
-        const consoleWarnSpy = vi
-            .spyOn(console, 'warn')
-            .mockImplementation(() => {});
-
         // JSON with comments and trailing comma, which standard JSON.parse would reject
         const input = `[
             {
@@ -59,8 +63,6 @@ describe('parseAsJsonArray', () => {
             { name: 'test', value: 123 },
             { name: 'example', value: 456 },
         ]);
-
-        consoleWarnSpy.mockRestore();
     });
 
     it('throws error when JSON.parse returns a non-array', () => {
