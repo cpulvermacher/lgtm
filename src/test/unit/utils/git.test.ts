@@ -1,11 +1,11 @@
 import simpleGit, {
     BranchSummary,
-    LogResult,
-    SimpleGit,
-    TagResult,
     type BranchSummaryBranch,
     type DiffResult,
+    LogResult,
+    SimpleGit,
     type StatusResult,
+    TagResult,
 } from 'simple-git';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

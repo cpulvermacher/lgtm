@@ -1,6 +1,6 @@
 import {
-    CancellationTokenSource,
     type CancellationToken,
+    CancellationTokenSource,
     type Disposable,
 } from 'vscode';
 
