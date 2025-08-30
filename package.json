@@ -184,22 +184,20 @@
     "watch": "pnpm esbuild-base --sourcemap --watch",
     "dev": "GIT_VERSION=$(git describe  --tags --long) pnpm build",
     "build": "npx vsce package --no-dependencies",
-    "lint": "tsc --noEmit && eslint src && prettier src --check",
+    "format": "pnpm exec biome check --write src/",
+    "lint": "tsc --noEmit && pnpm exec biome check src/",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "checkall": "pnpm test && pnpm lint && pnpm build"
   },
   "devDependencies": {
-    "@eslint/js": "^9.32.0",
+    "@biomejs/biome": "2.2.2",
     "@types/node": "22.x",
     "@types/vscode": "^1.99.1",
     "@vitest/coverage-v8": "^3.2.4",
     "@vscode/vsce": "^3.6.0",
     "esbuild": "^0.25.8",
-    "eslint": "^9.32.0",
-    "prettier": "^3.6.2",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.39.0",
     "vitest": "^3.2.4"
   },
   "dependencies": {
