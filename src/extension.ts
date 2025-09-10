@@ -283,17 +283,7 @@ async function handleSelectChatModel() {
 
     const config = await getConfig();
     const currentModelId = config.getOptions().chatModel;
-
-    const quickPickItems = models.map((model) => {
-        const prefix = model.id === currentModelId ? '$(check)' : '\u2003 '; // em space
-        const modelName = model.name ?? model.id;
-        return {
-            label: prefix + modelName,
-            description: model.vendor,
-            id: model.id, // Store the actual model.id
-            name: modelName,
-        };
-    });
+    const quickPickItems = getModelQuickPickItems(models, currentModelId);
     const selectedQuickPickItem = await vscode.window.showQuickPick(
         quickPickItems,
         { placeHolder: 'Select a chat model for LGTM reviews' }
@@ -310,4 +300,54 @@ async function handleSelectChatModel() {
             `LGTM chat model set to: ${selectedQuickPickItem.name}`
         );
     }
+}
+
+type ModelQuickPickItem = vscode.QuickPickItem & {
+    id?: string;
+    name?: string;
+};
+function getModelQuickPickItems(
+    models: vscode.LanguageModelChat[],
+    currentModelId: string
+): ModelQuickPickItem[] {
+    const unsupportedModelIds = [
+        //vendor: copilot
+        //these return code: model_not_supported
+        'claude-3.7-sonnet',
+        'claude-3.7-sonnet-thought',
+        //vendor: anthropic
+        // all fail with {"type":"invalid_request_error","message":"system: text content blocks must be non-empty"}
+        'claude-opus-4-20250514',
+        'claude-sonnet-4-20250514',
+        'claude-3-7-sonnet-20250219',
+        'claude-3-5-sonnet-20241022',
+        'claude-3-5-haiku-20241022',
+    ];
+
+    const supportModels: ModelQuickPickItem[] = [];
+    const unsupportedModels: ModelQuickPickItem[] = [];
+    models.forEach((model) => {
+        const prefix = model.id === currentModelId ? '$(check)' : '\u2003 '; // em space
+        const modelName = model.name ?? model.id;
+        const item = {
+            label: prefix + modelName,
+            description: model.vendor,
+            id: model.id, // Store the actual model.id
+            name: modelName,
+        };
+        if (unsupportedModelIds.includes(model.id)) {
+            unsupportedModels.push(item);
+        } else {
+            supportModels.push(item);
+        }
+    });
+
+    if (unsupportedModels.length > 0) {
+        unsupportedModels.unshift({
+            label: 'Unsupported Models',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
+
+    return [...supportModels, ...unsupportedModels];
 }
