@@ -324,7 +324,7 @@ function getModelQuickPickItems(
         'claude-3-5-haiku-20241022',
     ];
 
-    const supportModels: ModelQuickPickItem[] = [];
+    const supportedModels: ModelQuickPickItem[] = [];
     const unsupportedModels: ModelQuickPickItem[] = [];
     models.forEach((model) => {
         const prefix = model.id === currentModelId ? '$(check)' : '\u2003 '; // em space
@@ -338,7 +338,7 @@ function getModelQuickPickItems(
         if (unsupportedModelIds.includes(model.id)) {
             unsupportedModels.push(item);
         } else {
-            supportModels.push(item);
+            supportedModels.push(item);
         }
     });
 
@@ -349,5 +349,5 @@ function getModelQuickPickItems(
         });
     }
 
-    return [...supportModels, ...unsupportedModels];
+    return [...supportedModels, ...unsupportedModels];
 }
