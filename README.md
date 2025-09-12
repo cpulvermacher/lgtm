@@ -1,7 +1,6 @@
 # LGTM - AI Code Review
 
 [![Latest Release](https://flat.badgen.net/github/release/cpulvermacher/lgtm)](https://github.com/cpulvermacher/lgtm/releases)
-![Installs](https://vsmarketplacebadges.dev/installs-short/cpulvermacher.lgtm.svg)
 [![Status](https://flat.badgen.net/github/checks/cpulvermacher/lgtm)](https://github.com/cpulvermacher/lgtm/actions/workflows/node.js.yml)
 [![License](https://flat.badgen.net/github/license/cpulvermacher/lgtm)](./LICENSE)
 
