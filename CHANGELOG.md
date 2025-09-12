@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.21.3]
+- In `LGTM: Select Chat Model`, move unsupported models to bottom of list.
+
+(reupload with updated readme)
+
 ## [0.21.2]
 - In `LGTM: Select Chat Model`, move unsupported models to bottom of list.
 
