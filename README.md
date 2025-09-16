@@ -20,6 +20,11 @@ Switch to the Chat sidebar.
 
 LGTM will respond with review comments grouped by file and sorted by severity.
 
+### Use in Agent Mode
+
+LGTM is also available in agent mode, so you can include it as part of your worklflow.
+For example, you might ask the agent to `Review the current changes using #reviewStaged and fix any severe issues.`
+Assuming you have staged changes, the agent will start a review using LGTM and then act on the review comments. Consider specifying the severity of issues to fix, e.g. `... and fix any issues with severity >= 3.`
 
 ![Demo](./images/demo.gif)
 
