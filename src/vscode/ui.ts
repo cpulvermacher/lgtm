@@ -17,22 +17,17 @@ export async function pickRef(
     type?: 'branch' | 'tag' | 'commit', // all types by default
     totalCount: number = 20 // total amount of refs to show in picker
 ): Promise<Ref | undefined> {
-    let uncommitted: RefList = [];
-    let branches: RefList = [];
-    let commits: RefList = [];
-    let tags: RefList = [];
-    if (!type && !beforeRef) {
-        uncommitted = await config.git.getUncommittedChanges();
-    }
-    if (!type || type === 'branch') {
-        branches = await config.git.getBranchList(beforeRef, totalCount + 1);
-    }
-    if (!type || type === 'commit') {
-        commits = await config.git.getCommitList(beforeRef, totalCount + 1);
-    }
-    if (!type || type === 'tag') {
-        tags = await config.git.getTagList(beforeRef, totalCount + 1);
-    }
+    const showUncommitted = !type && !beforeRef;
+    const showBranches = !type || type === 'branch';
+    const showCommits = !type || type === 'commit';
+    const showTags = !type || type === 'tag';
+
+    const [uncommitted, branches, commits, tags] = await Promise.all([
+        showUncommitted ? config.git.getUncommittedChanges() : [],
+        showBranches ? config.git.getBranchList(beforeRef, totalCount + 1) : [],
+        showCommits ? config.git.getCommitList(beforeRef, totalCount + 1) : [],
+        showTags ? config.git.getTagList(beforeRef, totalCount + 1) : [],
+    ]);
 
     const [numBranches, numCommits, numTags] = distributeItems(
         totalCount - uncommitted.length,
@@ -44,7 +39,7 @@ export async function pickRef(
     let moreTagsOption = undefined;
     const quickPickOptions: RefQuickPickItem[] = [];
 
-    if (uncommitted && uncommitted.length > 0) {
+    if (uncommitted.length > 0) {
         const uncommittedIcon = new vscode.ThemeIcon('request-changes');
         quickPickOptions.push({
             label: 'Not committed',
@@ -60,7 +55,7 @@ export async function pickRef(
             });
         }
     }
-    if (branches && branches.length > 0) {
+    if (branches.length > 0) {
         quickPickOptions.push({
             label: 'Branches',
             kind: vscode.QuickPickItemKind.Separator,
@@ -85,7 +80,7 @@ export async function pickRef(
         }
     }
 
-    if (commits && commits.length > 0) {
+    if (commits.length > 0) {
         quickPickOptions.push({
             label: 'Commits',
             kind: vscode.QuickPickItemKind.Separator,
@@ -109,7 +104,7 @@ export async function pickRef(
         }
     }
 
-    if (tags && tags.length > 0) {
+    if (tags.length > 0) {
         quickPickOptions.push({
             label: 'Tags',
             kind: vscode.QuickPickItemKind.Separator,
