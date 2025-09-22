@@ -3,6 +3,10 @@ export async function parallelLimit<R>(
     tasks: (() => Promise<R>)[],
     maxWorkers: number
 ): Promise<R[]> {
+    if (maxWorkers < 1) {
+        throw new Error('maxWorkers must be at least 1');
+    }
+
     const results: R[] = [];
     let iTask = 0;
 

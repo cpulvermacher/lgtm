@@ -8,6 +8,15 @@ describe('parallelLimit', () => {
         expect(result).toEqual([]);
     });
 
+    it('throws on invalid maxWorkers', async () => {
+        await expect(
+            parallelLimit([() => Promise.resolve(1)], 0)
+        ).rejects.toThrow();
+        await expect(
+            parallelLimit([() => Promise.resolve(1)], -1)
+        ).rejects.toThrow();
+    });
+
     it('executes all tasks and returns results in order', async () => {
         const tasks = [
             () => Promise.resolve(1),
