@@ -11,8 +11,13 @@ describe('ModelRequest', () => {
     let request: ModelRequest;
     beforeEach(async () => {
         const { config } = createMockConfig();
-        request = new ModelRequest(config, 'Various refactorings');
         model = await config.getModel();
+        request = new ModelRequest(
+            model,
+            config.getOptions(),
+            config.logger,
+            'Various refactorings'
+        );
     });
 
     it('constructs empty request', () => {

@@ -1,30 +1,21 @@
 import type { CancellationToken } from 'vscode';
 
-import type { Config, Options } from '@/types/Config';
+import type { Options } from '@/types/Config';
+import type { Logger } from '@/types/Logger';
 import type { Model } from '@/types/Model';
-import { type PromptType } from '../types/PromptType';
+import type { PromptType } from '@/types/PromptType';
 import { createReviewPrompt } from './prompt';
 
 export class ModelRequest {
     public files: string[] = [];
     private diffs: string[] = [];
-    private model?: Model;
-    private options: Options;
 
     constructor(
-        private readonly config: Config,
+        private readonly model: Model,
+        private readonly options: Options,
+        private readonly logger: Logger,
         private changeDescription: string | undefined
-    ) {
-        this.options = config.getOptions();
-    }
-
-    /** get model on first use, fixed for this request */
-    private getModel = async () => {
-        if (!this.model) {
-            this.model = await this.config.getModel();
-        }
-        return this.model;
-    };
+    ) {}
 
     /** add diff for one file, throw if we cannot fit this into the current request (caller should create new ModelRequest) */
     async addDiff(fileName: string, diff: string) {
@@ -39,9 +30,8 @@ export class ModelRequest {
 
         // build prompt with the new diff set
         const prompt = this.buildPrompt(newDiffs);
-        const model = await this.getModel();
-        const numTokens = await model.countTokens(prompt);
-        if (numTokens > this.getMaxInputTokens(model)) {
+        const numTokens = await this.model.countTokens(prompt);
+        if (numTokens > this.getMaxInputTokens(this.model)) {
             throw new Error(
                 `Cannot add diff to request, prompt size ${numTokens} exceeds limit`
             );
@@ -61,13 +51,15 @@ export class ModelRequest {
         promptType?: PromptType
     ) {
         const prompt = this.getPrompt(promptType);
-        const model = await this.getModel();
-        const response = await model.sendRequest(prompt, cancellationToken);
+        const response = await this.model.sendRequest(
+            prompt,
+            cancellationToken
+        );
 
         return {
             response,
-            promptTokens: await model.countTokens(prompt),
-            responseTokens: await model.countTokens(response),
+            promptTokens: await this.model.countTokens(prompt),
+            responseTokens: await this.model.countTokens(response),
         };
     }
 
@@ -75,12 +67,11 @@ export class ModelRequest {
     private async setFirstDiff(fileName: string, diff: string) {
         const originalSize = diff.length;
 
-        const model = await this.getModel();
-        const maxTokens = this.getMaxInputTokens(model);
+        const maxTokens = this.getMaxInputTokens(this.model);
 
         while (true) {
             const prompt = this.buildPrompt([diff]);
-            const tokenCount = await model.countTokens(prompt);
+            const tokenCount = await this.model.countTokens(prompt);
             if (tokenCount <= maxTokens) {
                 break;
             }
@@ -115,7 +106,7 @@ export class ModelRequest {
             diff = diff.slice(0, diff.length - numCharsToRemove);
         }
         if (diff.length < originalSize) {
-            this.config.logger.info(
+            this.logger.info(
                 `Diff truncated from ${originalSize} to ${diff.length} characters`
             );
         }

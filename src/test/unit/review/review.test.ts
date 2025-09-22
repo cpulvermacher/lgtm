@@ -33,6 +33,7 @@ function createMockConfig() {
             enableDebugOutput: false,
             mergeFileReviewRequests: true,
         })),
+        getModel: async () => 'model',
         logger,
     } as unknown as Config;
     return { config, git, logger };

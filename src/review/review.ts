@@ -67,6 +67,7 @@ async function aggregateFileDiffs(
     progress?: Progress<{ message?: string; increment?: number }>,
     cancellationToken?: CancellationToken
 ) {
+    const model = await config.getModel();
     const options = config.getOptions();
     const modelRequests: ModelRequest[] = [];
     for (const file of files) {
@@ -89,7 +90,9 @@ async function aggregateFileDiffs(
         // if merging is off, create a new request for each file
         if (modelRequests.length === 0 || !options.mergeFileReviewRequests) {
             const modelRequest = new ModelRequest(
-                config,
+                model,
+                options,
+                config.logger,
                 request.scope.changeDescription
             );
             modelRequests.push(modelRequest);
@@ -104,7 +107,9 @@ async function aggregateFileDiffs(
         } catch {
             // if the diff cannot be added to the last request, create a new one
             const modelRequest = new ModelRequest(
-                config,
+                model,
+                options,
+                config.logger,
                 request.scope.changeDescription
             );
             await modelRequest.addDiff(file.file, diff); // adding the first diff will never throw

@@ -75,6 +75,7 @@ async function initializeConfig(): Promise<Config> {
 /** get desired chat model.
  *
  * If the model is not available, shows an error toast with possible options.
+ * Note that this is rather slow (~1 sec), avoid repeated calls.
  */
 async function loadModel(modelId: string, logger: Logger): Promise<Model> {
     logger.debug(`Loading chat model: ${modelId}`);
