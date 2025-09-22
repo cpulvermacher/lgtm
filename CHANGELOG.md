@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.22.0] (pre-release)
+- Performance improvements for larger reviews. If multiple model requests are necessary for a review, these are now done in parallel. This can be controlled using the `Lgtm: Max Concurrent Model Requests` setting.
+
 ## [0.21.3]
 - In `LGTM: Select Chat Model`, move unsupported models to bottom of list.
 
