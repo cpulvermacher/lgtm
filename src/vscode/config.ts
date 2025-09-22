@@ -150,7 +150,7 @@ function getOptions(): Options {
     }
     const maxConcurrentModelRequests = config.get<number>(
         'maxConcurrentModelRequests',
-        2
+        4
     );
 
     // hidden experimental setting for comparing prompts. Comma-separated list of prompt types to compare.

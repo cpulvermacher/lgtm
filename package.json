@@ -174,7 +174,7 @@
         },
         "lgtm.maxConcurrentModelRequests": {
           "type": "number",
-          "default": 2,
+          "default": 4,
           "description": "Maximum number of concurrent requests to the chat model. Increase this to speed up reviews, but be aware that this may lead to rate limiting by the model provider.",
           "minimum": 1,
           "maximum": 10
