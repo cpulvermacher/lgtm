@@ -1,14 +1,15 @@
 import type { CancellationToken, Progress } from 'vscode';
 
-import { Config } from '@/types/Config';
+import type { Config } from '@/types/Config';
 import { ModelError } from '@/types/ModelError';
-import { ReviewComment } from '@/types/ReviewComment';
-import { ReviewRequest } from '@/types/ReviewRequest';
-import { ReviewResult } from '@/types/ReviewResult';
+import type { PromptType } from '@/types/PromptType';
+import type { ReviewComment } from '@/types/ReviewComment';
+import type { ReviewRequest } from '@/types/ReviewRequest';
+import type { ReviewResult } from '@/types/ReviewResult';
+import { parallelLimit } from '@/utils/async';
 import { correctFilename } from '@/utils/filenames';
-import { DiffFile } from '@/utils/git';
+import type { DiffFile } from '@/utils/git';
 import { isPathNotExcluded } from '@/utils/glob';
-import type { PromptType } from '../types/PromptType';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { ModelRequest } from './ModelRequest';
 import { defaultPromptType, toPromptTypes } from './prompt';
@@ -125,6 +126,7 @@ async function generateReviewComments(
     progress?: Progress<{ message?: string; increment?: number }>,
     cancellationToken?: CancellationToken
 ) {
+    const maxParallelModelRequests = 2;
     const promptTypes = toPromptTypes(config.getOptions().comparePromptTypes);
 
     const totalRequests = modelRequests.length * promptTypes.length;
@@ -139,36 +141,48 @@ async function generateReviewComments(
         progress?.report({ message, increment });
     };
 
-    const errors = [];
+    const errors: Error[] = [];
     const commentsPerFile = new Map<string, ReviewComment[]>();
-    for (const modelRequest of modelRequests) {
-        for (const promptType of promptTypes) {
-            if (cancellationToken?.isCancellationRequested) {
-                return { commentsPerFile, errors };
-            }
+    const startRequest = async (
+        modelRequest: ModelRequest,
+        promptType?: PromptType
+    ) => {
+        if (cancellationToken?.isCancellationRequested) {
+            return;
+        }
+        updateProgress();
 
-            updateProgress();
-            try {
-                await processRequest(
-                    config,
-                    modelRequest,
-                    commentsPerFile,
-                    promptType,
-                    cancellationToken
-                );
-            } catch (error) {
-                // it's entirely possible that something bad happened for a request, let's store the error and continue if possible
-                if (error instanceof ModelError) {
-                    errors.push(error);
-                    // would also fail for the remaining files
-                    return { commentsPerFile, errors };
-                } else if (error instanceof Error) {
-                    errors.push(error);
-                    continue;
-                }
-                continue;
+        try {
+            await processRequest(
+                config,
+                modelRequest,
+                commentsPerFile,
+                promptType,
+                cancellationToken
+            );
+        } catch (error) {
+            // it's entirely possible that something bad happened for a request, let's store the error and continue if possible
+            if (error instanceof ModelError) {
+                errors.push(error);
+                // would also fail for the remaining files
+                throw error;
+            } else if (error instanceof Error) {
+                errors.push(error);
             }
         }
+    };
+
+    const tasks = [];
+    for (const modelRequest of modelRequests) {
+        for (const promptType of promptTypes) {
+            tasks.push(() => startRequest(modelRequest, promptType));
+        }
+    }
+
+    try {
+        await parallelLimit(tasks, maxParallelModelRequests);
+    } catch {
+        // error already in `errors` array, proceed normally
     }
 
     return { commentsPerFile, errors };
