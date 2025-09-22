@@ -3,11 +3,6 @@
 ## [0.21.3]
 - In `LGTM: Select Chat Model`, move unsupported models to bottom of list.
 
-(reupload with updated readme)
-
-## [0.21.2]
-- In `LGTM: Select Chat Model`, move unsupported models to bottom of list.
-
 ## [0.21.1]
 - Change default model to GPT 4.1. (previous default GPT 4o was deprecated)
 
