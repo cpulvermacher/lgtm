@@ -187,7 +187,6 @@
     "check-exclusive": "ps aux | grep -v grep | grep -q 'esbuild.*--watch' && echo 'esbuild --watch running, aborting!' && exit 1 || exit 0",
     "vscode:prepublish": "pnpm check-exclusive && rm -rf ./out && pnpm esbuild-base --minify --pure:console.debug",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --define:__GIT_VERSION__=\\\"$GIT_VERSION\\\"",
-    "esbuild": "pnpm esbuild-base --sourcemap",
     "watch": "pnpm esbuild-base --sourcemap --watch",
     "dev": "GIT_VERSION=$(git describe  --tags --long) pnpm build",
     "build": "npx vsce package --no-dependencies",
