@@ -133,6 +133,12 @@ async function generateReviewComments(
     let requestCounter = 0;
     const updateProgress = () => {
         requestCounter++;
+        if (
+            requestCounter <
+            Math.min(options.maxConcurrentModelRequests, totalRequests)
+        ) {
+            return; // no need to update on the first N - 1 requests started at the same time
+        }
         const isSingle = totalRequests <= 1;
         const increment = isSingle ? -100 : 100 / totalRequests;
         const message = isSingle
