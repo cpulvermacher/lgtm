@@ -171,6 +171,13 @@
           "description": "Fraction of the chat model's input token limit to use for requests. Lower values may increase quality of e.g. function level comments, but reduce the available context; higher values may improve the models understanding on how different changes relate to each other. The maximum allowed value is 0.95 to avoid token limit errors.",
           "minimum": 0.05,
           "maximum": 0.95
+        },
+        "lgtm.maxConcurrentModelRequests": {
+          "type": "number",
+          "default": 2,
+          "description": "Maximum number of concurrent requests to the chat model. Increase this to speed up reviews, but be aware that this may lead to rate limiting by the model provider.",
+          "minimum": 1,
+          "maximum": 10
         }
       }
     }

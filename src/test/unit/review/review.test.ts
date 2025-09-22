@@ -32,6 +32,7 @@ function createMockConfig() {
             excludeGlobs: [] as string[],
             enableDebugOutput: false,
             mergeFileReviewRequests: true,
+            maxConcurrentModelRequests: 1,
         })),
         getModel: async () => 'model',
         logger,
@@ -203,6 +204,7 @@ describe('reviewDiff', () => {
             chatModel: 'gpt-4.1',
             mergeFileReviewRequests: false,
             maxInputTokensFraction: 0.95,
+            maxConcurrentModelRequests: 1,
         });
 
         const result = await reviewDiff(

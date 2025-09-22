@@ -126,8 +126,8 @@ async function generateReviewComments(
     progress?: Progress<{ message?: string; increment?: number }>,
     cancellationToken?: CancellationToken
 ) {
-    const maxParallelModelRequests = 2;
-    const promptTypes = toPromptTypes(config.getOptions().comparePromptTypes);
+    const options = config.getOptions();
+    const promptTypes = toPromptTypes(options.comparePromptTypes);
 
     const totalRequests = modelRequests.length * promptTypes.length;
     let requestCounter = 0;
@@ -180,7 +180,7 @@ async function generateReviewComments(
     }
 
     try {
-        await parallelLimit(tasks, maxParallelModelRequests);
+        await parallelLimit(tasks, options.maxConcurrentModelRequests);
     } catch {
         // error already in `errors` array, proceed normally
     }
