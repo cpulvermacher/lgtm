@@ -201,7 +201,7 @@
     "@types/node": "22.x",
     "@types/vscode": "^1.104.0",
     "@vitest/coverage-v8": "^3.2.4",
-    "@vscode/vsce": "^3.6.0",
+    "@vscode/vsce": "^3.6.1",
     "esbuild": "^0.25.10",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
@@ -216,9 +216,6 @@
     "github.copilot-chat"
   ],
   "pnpm": {
-    "overrides": {
-      "form-data@>=4.0.0 <4.0.4": ">=4.0.4",
-      "tmp@<=0.2.3": ">=0.2.4"
-    }
+    "overrides": { }
   }
 }
