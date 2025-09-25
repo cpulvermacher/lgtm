@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 
-import { Config } from '@/types/Config';
+import type { Config } from '@/types/Config';
 import { type Ref, UncommittedRef } from '@/types/Ref';
 import { distributeItems } from '@/utils/distributeItems';
-import { RefList, shortHashLength } from '@/utils/git';
+import { shortHashLength } from '@/utils/git';
 
 type RefQuickPickItem = vscode.QuickPickItem & {
     ref?: Ref;
