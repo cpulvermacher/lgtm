@@ -21,4 +21,5 @@ export type Options = {
     maxInputTokensFraction: number;
     maxConcurrentModelRequests: number;
     comparePromptTypes?: string;
+    saveOutputToFile: boolean;
 };

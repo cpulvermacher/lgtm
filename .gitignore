@@ -4,6 +4,7 @@ node_modules
 coverage
 .vscode-test/
 *.vsix
+.lgtm-debug/
 
 images/*
 !images/icon.png

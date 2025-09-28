@@ -152,6 +152,7 @@ function getOptions(): Options {
         'maxConcurrentModelRequests',
         4
     );
+    const saveOutputToFile = config.get<boolean>('saveOutputToFile', false);
 
     // hidden experimental setting for comparing prompts. Comma-separated list of prompt types to compare.
     // if empty, will only create a single review using the default prompt type.
@@ -167,5 +168,6 @@ function getOptions(): Options {
         maxInputTokensFraction,
         maxConcurrentModelRequests,
         comparePromptTypes,
+        saveOutputToFile,
     };
 }
