@@ -8,7 +8,7 @@
     "typescript.tsc.autoDetect": "off",
     "typescript.format.semicolons": "insert",
     "[typescript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+        "editor.defaultFormatter": "biomejs.biome"
     },
     "[yaml]": {
         "editor.formatOnSave": false
