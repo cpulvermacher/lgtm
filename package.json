@@ -178,6 +178,11 @@
           "description": "Maximum number of concurrent requests to the chat model. Increase this to speed up reviews, but be aware that this may lead to rate limiting by the model provider.",
           "minimum": 1,
           "maximum": 10
+        },
+        "lgtm.saveOutputToFile": {
+          "type": "boolean",
+          "default": false,
+          "description": "Save ReviewResult to JSON file for debugging purposes. Files are saved to .lgtm-debug/ directory in workspace root."
         }
       }
     }

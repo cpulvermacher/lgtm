@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import type { CancellationToken, Progress } from 'vscode';
 
 import type { Config } from '@/types/Config';
@@ -13,6 +15,34 @@ import { isPathNotExcluded } from '@/utils/glob';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { ModelRequest } from './ModelRequest';
 import { defaultPromptType, toPromptTypes } from './prompt';
+
+function saveReviewResultToFile(config: Config, result: ReviewResult): void {
+    try {
+        const debugDir = path.join(config.workspaceRoot, '.lgtm-debug');
+
+        // Create debug directory if it doesn't exist
+        if (!fs.existsSync(debugDir)) {
+            fs.mkdirSync(debugDir, { recursive: true });
+        }
+
+        // Generate filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `review-result-${timestamp}.json`;
+        const filePath = path.join(debugDir, filename);
+
+        // Save the result as formatted JSON
+        const jsonData = JSON.stringify(result, null, 2);
+        fs.writeFileSync(filePath, jsonData, 'utf8');
+
+        config.logger.debug(`ReviewResult saved to: ${filePath}`);
+    } catch (error) {
+        config.logger.info(
+            `Failed to save ReviewResult to file: ${
+                error instanceof Error ? error.message : 'Unknown error'
+            }`
+        );
+    }
+}
 
 export async function reviewDiff(
     config: Config,
@@ -54,11 +84,18 @@ export async function reviewDiff(
         comments,
     }));
 
-    return {
+    const result: ReviewResult = {
         request,
         fileComments: sortFileCommentsBySeverity(fileComments),
         errors,
     };
+
+    // Save to file if the setting is enabled
+    if (options.saveOutputToFile) {
+        saveReviewResultToFile(config, result);
+    }
+
+    return result;
 }
 
 async function aggregateFileDiffs(
@@ -206,7 +243,11 @@ async function processRequest(
         await modelRequest.sendRequest(cancellationToken, promptType);
     const reviewDuration = Date.now() - reviewStart;
     config.logger.debug(
-        `Received review response. Took=${reviewDuration}ms, Files=${modelRequest.files.length}, prompt type=${promptType ?? defaultPromptType}, request tokens=${promptTokens}, response tokens=${responseTokens}, Response=${response}`
+        `Received review response. Took=${reviewDuration}ms, Files=${
+            modelRequest.files.length
+        }, prompt type=${
+            promptType ?? defaultPromptType
+        }, request tokens=${promptTokens}, response tokens=${responseTokens}, Response=${response}`
     );
 
     const comments = parseResponse(response);
