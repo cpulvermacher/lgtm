@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.22.2]
+- Bump required version of Visual Studio Code to 1.104 (August 2025).
+
 ## [0.22.0] (pre-release)
 - Performance improvements for larger reviews. If multiple model requests are necessary for a review, these are now done in parallel. This can be controlled using the `Lgtm: Max Concurrent Model Requests` setting.
 
