@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.22.1] (pre-release)
+- Test release to check allowed SVGs in readme.
+
 ## [0.22.0] (pre-release)
 - Performance improvements for larger reviews. If multiple model requests are necessary for a review, these are now done in parallel. This can be controlled using the `Lgtm: Max Concurrent Model Requests` setting.
 
