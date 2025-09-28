@@ -201,7 +201,7 @@
     "@types/node": "22.x",
     "@types/vscode": "^1.104.0",
     "@vitest/coverage-v8": "^3.2.4",
-    "@vscode/vsce": "^3.6.1",
+    "@vscode/vsce": "^3.6.2",
     "esbuild": "^0.25.10",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
