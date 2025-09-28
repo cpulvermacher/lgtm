@@ -30,8 +30,11 @@ function saveReviewResultToFile(config: Config, result: ReviewResult): void {
         const filename = `review-result-${timestamp}.json`;
         const filePath = path.join(debugDir, filename);
 
-        // Save the result as formatted JSON
-        const jsonData = JSON.stringify(result, null, 2);
+        const info = {
+            options: config.getOptions(),
+            ...result,
+        };
+        const jsonData = JSON.stringify(info, null, 2);
         fs.writeFileSync(filePath, jsonData, 'utf8');
 
         config.logger.debug(`ReviewResult saved to: ${filePath}`);
