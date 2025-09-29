@@ -10,13 +10,7 @@ import { Logger } from '@/types/Logger';
 import { ModelError } from '@/types/ModelError';
 import { ReviewScope } from '@/types/ReviewRequest';
 import { Git } from '@/utils/git';
-
-// Mock fs module
-vi.mock('fs', () => ({
-    existsSync: vi.fn(),
-    mkdirSync: vi.fn(),
-    writeFileSync: vi.fn(),
-}));
+import { saveToFile } from '@/utils/saveToFile';
 
 function createMockConfig(saveOutputToFile = false) {
     const git = {
@@ -58,6 +52,19 @@ const modelRequest = {
     sendRequest: vi.fn(),
     files: ['file1', 'file2'],
 } as Partial<ModelRequest> as ModelRequest;
+describe('reviewDiff', () => {
+    vi.mock('@/review/comment', () => ({
+        parseResponse: vi.fn(),
+        sortFileCommentsBySeverity: vi.fn(
+            (comments: Omit<FileComments, 'maxSeverity'>[]) => comments
+        ),
+    }));
+    vi.mock('@/review/ModelRequest', () => ({
+        ModelRequest: vi.fn(),
+    }));
+    vi.mock('@/utils/saveToFile', () => ({
+        saveToFile: vi.fn(),
+    }));
 
 vi.mock('@/review/comment', () => ({
     parseResponse: vi.fn(),
@@ -358,11 +365,9 @@ describe('reviewDiff', () => {
     });
 
     it('saves review result to file when saveOutputToFile is enabled', async () => {
-        const fs = await import('fs');
         const { config, git } = createMockConfig(true); // Enable file saving
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
-        vi.mocked(fs.existsSync).mockReturnValue(false);
         vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
         vi.mocked(parseResponse).mockReturnValue(mockComments);
 
@@ -374,26 +379,10 @@ describe('reviewDiff', () => {
         );
 
         expect(result.request.scope).toBe(scope);
-        expect(fs.mkdirSync).toHaveBeenCalledWith(
-            '/test/workspace/.lgtm-debug',
-            { recursive: true }
-        );
-        expect(fs.writeFileSync).toHaveBeenCalledWith(
-            expect.stringMatching(
-                /\/test\/workspace\/\.lgtm-debug\/review-result-.*\.json/
-            ),
-            expect.stringContaining('"request"'),
-            'utf8'
-        );
-        expect(config.logger.debug).toHaveBeenCalledWith(
-            expect.stringMatching(
-                /ReviewResult saved to: \/test\/workspace\/\.lgtm-debug\/review-result-.*\.json/
-            )
-        );
+        expect(saveToFile).toHaveBeenCalledWith(config, result);
     });
 
     it('does not save review result to file when saveOutputToFile is disabled', async () => {
-        const fs = await import('fs');
         const { config, git } = createMockConfig(false); // Disable file saving
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
@@ -408,33 +397,6 @@ describe('reviewDiff', () => {
         );
 
         expect(result.request.scope).toBe(scope);
-        expect(fs.mkdirSync).not.toHaveBeenCalled();
-        expect(fs.writeFileSync).not.toHaveBeenCalled();
-    });
-
-    it('handles file saving errors gracefully', async () => {
-        const fs = await import('fs');
-        const { config, git } = createMockConfig(true); // Enable file saving
-
-        vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
-        vi.mocked(fs.existsSync).mockReturnValue(false);
-        vi.mocked(fs.writeFileSync).mockImplementation(() => {
-            throw new Error('Permission denied');
-        });
-        vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
-        vi.mocked(parseResponse).mockReturnValue(mockComments);
-
-        const result = await reviewDiff(
-            config,
-            { scope },
-            progress,
-            cancellationToken
-        );
-
-        expect(result.request.scope).toBe(scope);
-        expect(result.errors).toEqual([]);
-        expect(config.logger.info).toHaveBeenCalledWith(
-            'Failed to save ReviewResult to file: Permission denied'
-        );
+        expect(saveToFile).not.toHaveBeenCalled();
     });
 });

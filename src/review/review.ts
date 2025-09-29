@@ -1,5 +1,3 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import type { CancellationToken, Progress } from 'vscode';
 
 import type { Config } from '@/types/Config';
@@ -12,40 +10,10 @@ import { parallelLimit } from '@/utils/async';
 import { correctFilename } from '@/utils/filenames';
 import type { DiffFile } from '@/utils/git';
 import { isPathNotExcluded } from '@/utils/glob';
+import { saveToFile } from '@/utils/saveToFile';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { ModelRequest } from './ModelRequest';
 import { defaultPromptType, toPromptTypes } from './prompt';
-
-function saveReviewResultToFile(config: Config, result: ReviewResult): void {
-    try {
-        const debugDir = path.join(config.workspaceRoot, '.lgtm-debug');
-
-        // Create debug directory if it doesn't exist
-        if (!fs.existsSync(debugDir)) {
-            fs.mkdirSync(debugDir, { recursive: true });
-        }
-
-        // Generate filename with timestamp
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `review-result-${timestamp}.json`;
-        const filePath = path.join(debugDir, filename);
-
-        const info = {
-            options: config.getOptions(),
-            ...result,
-        };
-        const jsonData = JSON.stringify(info, null, 2);
-        fs.writeFileSync(filePath, jsonData, 'utf8');
-
-        config.logger.debug(`ReviewResult saved to: ${filePath}`);
-    } catch (error) {
-        config.logger.info(
-            `Failed to save ReviewResult to file: ${
-                error instanceof Error ? error.message : 'Unknown error'
-            }`
-        );
-    }
-}
 
 export async function reviewDiff(
     config: Config,
@@ -95,7 +63,7 @@ export async function reviewDiff(
 
     // Save to file if the setting is enabled
     if (options.saveOutputToFile) {
-        saveReviewResultToFile(config, result);
+        saveToFile(config, result);
     }
 
     return result;
