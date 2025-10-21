@@ -6,6 +6,8 @@
 
 LGTM is a Visual Studio Code extension that uses GitHub Copilot Chat to review source code changes in Git. It can help you catch bugs, areas for improvement, and other issues before merging.
 
+![Demo](./images/demo.gif)
+
 ## Getting Started
 
 **Start a Review**
@@ -26,22 +28,17 @@ LGTM is also available in agent mode, so you can include it as part of your work
 For example, you might ask the agent to `Review the current changes using #reviewStaged and fix any severe issues.`
 Assuming you have staged changes, the agent will start a review using LGTM and then act on the review comments. Consider specifying the severity of issues to fix, e.g. `... and fix any issues with severity >= 3.`
 
-![Demo](./images/demo.gif)
-
-
 ## Features
 
 - **Only Copilot Required**: Uses Copilot Chat for reviewing changes.
 - **Model Selection**: Choose other language model available to VS Code via the **LGTM: Select Chat Model** command available in the Command Palette (press `Cmd+Shift+P` or `Ctrl+Shift+P`).
 - **Custom Instructions**: Add custom instructions via the `Lgtm: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the  `comment` field.`).
 - **Agent Support**: Adds tools to enable automatic reviews in agent mode:
-  - `#review`: Reviews changes between two git references (branches, tags, or commits)
-  - `#reviewStaged`: Reviews only staged changes in your working directory
-  - `#reviewUnstaged`: Reviews only unstaged changes in your working directory
-  - Example usage: `After your changes, run all tests and run #reviewUnstaged to check your work.`
+    - `#review`: Reviews changes between two git references (branches, tags, or commits)
+    - `#reviewStaged`: Reviews only staged changes in your working directory
+    - `#reviewUnstaged`: Reviews only unstaged changes in your working directory
+    - Example usage: `After your changes, run all tests and run #reviewUnstaged to check your work.`
 - **Chat Integration**: Review content remains in chat history for follow-up questions by omitting `@lgtm`.
-
-
 
 ## Limitations
 
@@ -49,11 +46,9 @@ Assuming you have staged changes, the agent will start a review using LGTM and t
 - Large change sets may trigger chat model rate limits. Please wait before retrying.
 - Some non-Copilot models require setting a system prompt which is not possible just yet.
 
-
 ## Data Usage
 
 Source code changes and commit messages selected for review are sent to the chat model configured in the extension settings (default: GitHub Copilot GPT-4.1).
-
 
 ## Contributing
 
