@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.22.3]
+- Minor updates to Readme and code style.
+
 ## [0.22.2]
 - Bump required version of Visual Studio Code to 1.104 (August 2025).
 
