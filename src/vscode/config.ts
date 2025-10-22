@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { Config, Options } from '@/types/Config';
 import type { Logger } from '@/types/Logger';
 import type { Model } from '@/types/Model';
-import { createGit } from '@/utils/git';
+import { createGit, type Git } from '@/utils/git';
 import { LgtmLogger } from './logger';
 import { getChatModel } from './model';
 
@@ -41,7 +41,7 @@ async function initializeConfig(): Promise<Config> {
     }
 
     const workspaceRoot = mainWorkspace.uri.fsPath;
-    let git;
+    let git: Git;
     try {
         git = await createGit(workspaceRoot);
     } catch (error) {

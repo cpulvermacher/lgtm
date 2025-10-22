@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// biome-ignore lint/correctness/noUnusedImports: <jsdoc>
 import type { LanguageModelError } from 'vscode';
 
 /** A non-retryable @type LanguageModelError */

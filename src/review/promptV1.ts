@@ -5,7 +5,7 @@ export function createReviewPromptV1(
     diff: string,
     customPrompt: string
 ): string {
-    customPrompt = customPrompt.length > 0 ? customPrompt.trim() + '\n' : '';
+    customPrompt = customPrompt.length > 0 ? `${customPrompt.trim()}\n` : '';
 
     const wrappedChangeDescription = changeDescription
         ? `<Change Description>\n${changeDescription}\n</Change Description>`

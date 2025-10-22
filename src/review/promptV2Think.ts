@@ -5,10 +5,10 @@ export function createReviewPromptV2Think(
     diff: string,
     customPrompt: string
 ): string {
-    customPrompt = customPrompt.length > 0 ? customPrompt.trim() + '\n' : '';
+    customPrompt = customPrompt.length > 0 ? `${customPrompt.trim()}\n` : '';
 
     let wrappedChangeDescription = '';
-    if (changeDescription && changeDescription.trim()) {
+    if (changeDescription?.trim()) {
         wrappedChangeDescription = `
 Here's the change description for context:
 <change_description>

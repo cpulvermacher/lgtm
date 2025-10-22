@@ -422,7 +422,7 @@ function formatExtraBranches(otherBranches: string[]) {
  * 0 otherwise
  */
 function getBranchPriority(ref: string, first?: RegExp) {
-    if (first && first.test(ref)) {
+    if (first?.test(ref)) {
         return -5;
     }
     const index = ['develop', 'main', 'master', 'trunk'].indexOf(ref);

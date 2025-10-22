@@ -145,7 +145,6 @@ function createMockConfig() {
     } as Logger;
 
     const config = {
-        // eslint-disable-next-line @typescript-eslint/require-await
         getModel: async () => model,
         getOptions: () =>
             ({
