@@ -32,7 +32,7 @@ Assuming you have staged changes, the agent will start a review using LGTM and t
 
 - **Only Copilot Required**: Uses Copilot Chat for reviewing changes.
 - **Model Selection**: Choose other language model available to VS Code via the **LGTM: Select Chat Model** command available in the Command Palette (press `Cmd+Shift+P` or `Ctrl+Shift+P`).
-- **Custom Instructions**: Add custom instructions via the `Lgtm: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the  `comment` field.`).
+- **Custom Instructions**: Add custom instructions via the `Lgtm: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the `comment` field.`).
 - **Agent Support**: Adds tools to enable automatic reviews in agent mode:
     - `#review`: Reviews changes between two git references (branches, tags, or commits)
     - `#reviewStaged`: Reviews only staged changes in your working directory
