@@ -44,24 +44,30 @@ const cancellationToken = {
     isCancellationRequested: false,
 } as CancellationToken;
 
-describe('reviewDiff', () => {
-    vi.mock('@/review/comment', () => ({
-        parseResponse: vi.fn(),
-        sortFileCommentsBySeverity: vi.fn(
-            (comments: Omit<FileComments, 'maxSeverity'>[]) => comments
-        ),
-    }));
-    vi.mock('@/review/ModelRequest', () => ({
-        ModelRequest: vi.fn(),
-    }));
+const modelRequest = {
+    addDiff: vi.fn(),
+    sendRequest: vi.fn(),
+    files: ['file1', 'file2'],
+} as Partial<ModelRequest> as ModelRequest;
 
+vi.mock('@/review/comment', () => ({
+    parseResponse: vi.fn(),
+    sortFileCommentsBySeverity: vi.fn(
+        (comments: Omit<FileComments, 'maxSeverity'>[]) => comments
+    ),
+}));
+
+vi.mock('@/review/ModelRequest', () => ({
+    ModelRequest: class {
+        addDiff = modelRequest.addDiff;
+        sendRequest = modelRequest.sendRequest;
+        files = modelRequest.files;
+    },
+}));
+
+describe('reviewDiff', () => {
     let config: Config;
     let git: Git;
-    const modelRequest = {
-        addDiff: vi.fn(),
-        sendRequest: vi.fn(),
-        files: ['file1', 'file2'],
-    } as Partial<ModelRequest> as ModelRequest;
 
     const progress = {
         report: vi.fn(),
@@ -99,8 +105,8 @@ describe('reviewDiff', () => {
         ({ config, git } = createMockConfig());
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
-        vi.mocked(ModelRequest).mockImplementation(() => modelRequest);
     });
+
     it('should return a review result', async () => {
         vi.mocked(modelRequest.sendRequest).mockResolvedValueOnce(
             reviewResponse

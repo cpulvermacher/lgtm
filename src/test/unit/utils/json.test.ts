@@ -1,9 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 
 import { parseAsJsonArray } from '@/utils/json';
 
 describe('parseAsJsonArray', () => {
-    let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+    // biome-ignore lint/suspicious/noExplicitAny: matches actual type
+    let consoleWarnSpy: Mock<(message?: any, ...optionalParams: any[]) => void>;
     beforeEach(() => {
         // mock console.warn before each test
         consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
