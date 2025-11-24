@@ -52,19 +52,6 @@ const modelRequest = {
     sendRequest: vi.fn(),
     files: ['file1', 'file2'],
 } as Partial<ModelRequest> as ModelRequest;
-describe('reviewDiff', () => {
-    vi.mock('@/review/comment', () => ({
-        parseResponse: vi.fn(),
-        sortFileCommentsBySeverity: vi.fn(
-            (comments: Omit<FileComments, 'maxSeverity'>[]) => comments
-        ),
-    }));
-    vi.mock('@/review/ModelRequest', () => ({
-        ModelRequest: vi.fn(),
-    }));
-    vi.mock('@/utils/saveToFile', () => ({
-        saveToFile: vi.fn(),
-    }));
 
 vi.mock('@/review/comment', () => ({
     parseResponse: vi.fn(),
@@ -79,6 +66,10 @@ vi.mock('@/review/ModelRequest', () => ({
         sendRequest = modelRequest.sendRequest;
         files = modelRequest.files;
     },
+}));
+
+vi.mock('@/utils/saveToFile', () => ({
+    saveToFile: vi.fn(),
 }));
 
 describe('reviewDiff', () => {
