@@ -34,9 +34,9 @@ export async function pickRef(
         [branches.length, commits.length, tags.length]
     );
 
-    let moreBranchesOption = undefined;
-    let moreCommitsOption = undefined;
-    let moreTagsOption = undefined;
+    let moreBranchesOption;
+    let moreCommitsOption;
+    let moreTagsOption;
     const quickPickOptions: RefQuickPickItem[] = [];
 
     if (uncommitted.length > 0) {

@@ -1,9 +1,9 @@
+import * as fs from 'fs';
+import { describe, expect, it, vi } from 'vitest';
 import type { Config } from '@/types/Config';
 import type { Logger } from '@/types/Logger';
 import type { ReviewResult } from '@/types/ReviewResult';
 import { saveToFile } from '@/utils/saveToFile';
-import * as fs from 'fs';
-import { describe, expect, it, vi } from 'vitest';
 
 describe('saveToFile', () => {
     vi.mock('fs', () => ({
