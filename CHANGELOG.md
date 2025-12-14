@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.22.4]
+- Update list of unsupported language models.
+
 ## [0.22.3]
 - Minor updates to Readme and code style.
 
