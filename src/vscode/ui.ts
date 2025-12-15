@@ -15,7 +15,7 @@ export async function pickRef(
     title: string,
     beforeRef?: string,
     type?: 'branch' | 'tag' | 'commit', // all types by default
-    totalCount: number = 20 // total amount of refs to show in picker
+    totalCount: number = 30 // total amount of refs to show in picker
 ): Promise<Ref | undefined> {
     const showUncommitted = !type && !beforeRef;
     const showBranches = !type || type === 'branch';
