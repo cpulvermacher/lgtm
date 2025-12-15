@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.22.5] (pre-release)
+- Increase number of refs shown by default to 30 (was: 20)
+- Add 'LGTM: Save to File' option for debugging
+
 ## [0.22.4]
 - Update list of unsupported language models.
 
