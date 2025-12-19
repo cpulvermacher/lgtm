@@ -85,7 +85,7 @@ async function aggregateFileDiffs(
         }
 
         progress?.report({
-            message: `Gathering changes for ${files.length} files...`,
+            message: formatGatheringFilesMessage(files),
             increment: 100 / files.length,
         });
 
@@ -240,4 +240,21 @@ async function processRequest(
         commentsForFile.push(comment);
         commentsPerFile.set(comment.file, commentsForFile);
     }
+}
+
+export function formatGatheringFilesMessage(
+    files: DiffFile[],
+    numFileNamesShown = 4
+): string {
+    const fileNames = files
+        .slice(0, numFileNamesShown)
+        .map((f) => f.file.split('/').pop() || f.file)
+        .join(', ');
+    const remainingCount = files.length - numFileNamesShown;
+
+    if (remainingCount <= 0) {
+        return `Gathering changes for ${fileNames}...`;
+    }
+
+    return `Gathering changes for ${fileNames}, and ${remainingCount} other ${remainingCount === 1 ? 'file' : 'files'}...`;
 }

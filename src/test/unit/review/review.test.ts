@@ -3,13 +3,13 @@ import type { CancellationToken } from 'vscode';
 
 import { parseResponse } from '@/review/comment';
 import { ModelRequest } from '@/review/ModelRequest';
-import { reviewDiff } from '@/review/review';
+import { formatGatheringFilesMessage, reviewDiff } from '@/review/review';
 import { Config } from '@/types/Config';
 import { FileComments } from '@/types/FileComments';
 import { Logger } from '@/types/Logger';
 import { ModelError } from '@/types/ModelError';
 import { ReviewScope } from '@/types/ReviewRequest';
-import { Git } from '@/utils/git';
+import type { Git } from '@/utils/git';
 import { saveToFile } from '@/utils/saveToFile';
 
 function createMockConfig(saveOutputToFile = false) {
@@ -132,7 +132,7 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(1);
 
         expect(progress.report).toHaveBeenCalledWith({
-            message: 'Gathering changes for 2 files...',
+            message: 'Gathering changes for file1, file2...',
             increment: 50,
         });
         expect(progress.report).toHaveBeenCalledWith({
@@ -174,7 +174,7 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(1);
 
         expect(progress.report).toHaveBeenCalledWith({
-            message: 'Gathering changes for 1 files...',
+            message: 'Gathering changes for file2...',
             increment: 100,
         });
         expect(progress.report).toHaveBeenCalledWith({
@@ -389,5 +389,56 @@ describe('reviewDiff', () => {
 
         expect(result.request.scope).toBe(scope);
         expect(saveToFile).not.toHaveBeenCalled();
+    });
+});
+
+describe('formatGatheringFilesMessage', () => {
+    it('handles single file', () => {
+        const files = [{ file: 'src/index.ts', status: 'M' }];
+        const result = formatGatheringFilesMessage(files);
+        expect(result).toBe('Gathering changes for index.ts...');
+    });
+
+    it('handles two files', () => {
+        const files = [
+            { file: 'src/index.ts', status: 'M' },
+            { file: 'src/app.ts', status: 'A' },
+        ];
+        const result = formatGatheringFilesMessage(files);
+        expect(result).toBe('Gathering changes for index.ts, app.ts...');
+    });
+
+    it('respects custom numFileNamesShown parameter', () => {
+        const files = [
+            { file: 'file1.ts', status: 'M' },
+            { file: 'file2.ts', status: 'M' },
+            { file: 'file3.ts', status: 'M' },
+        ];
+        const result = formatGatheringFilesMessage(files, 2);
+        expect(result).toBe(
+            'Gathering changes for file1.ts, file2.ts, and 1 other file...'
+        );
+    });
+
+    it('respects custom numFileNamesShown parameter (with plural form)', () => {
+        const files = [
+            { file: 'file1.ts', status: 'M' },
+            { file: 'file2.ts', status: 'M' },
+            { file: 'file3.ts', status: 'M' },
+            { file: 'file4.ts', status: 'M' },
+        ];
+        const result = formatGatheringFilesMessage(files, 2);
+        expect(result).toBe(
+            'Gathering changes for file1.ts, file2.ts, and 2 other files...'
+        );
+    });
+
+    it('shows all files when count equals custom numFileNamesShown', () => {
+        const files = [
+            { file: 'file1.ts', status: 'M' },
+            { file: 'file2.ts', status: 'M' },
+        ];
+        const result = formatGatheringFilesMessage(files, 2);
+        expect(result).toBe('Gathering changes for file1.ts, file2.ts...');
     });
 });
