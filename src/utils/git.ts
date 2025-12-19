@@ -321,17 +321,13 @@ export class Git {
                 getBranchPriority(branchesByCommitRef[b][0], firstBranch)
         );
 
-        // Calculate numCommitsBehind for each commit if beforeRef is provided
-        const numCommitsBehindMap: { [commit: string]: number | undefined } =
-            {};
-        if (beforeRef) {
-            for (const commit of orderedUniqueRefs) {
-                numCommitsBehindMap[commit] = await this.calculateCommitsBehind(
-                    commit,
-                    beforeRef
-                );
-            }
-        }
+        //TODO remove log
+        console.time('getNumCommitsBehindMap');
+        const numCommitsBehindMap = await this.getNumCommitsBehindMap(
+            orderedUniqueRefs,
+            beforeRef
+        );
+        console.timeEnd('getNumCommitsBehindMap');
 
         const refs = orderedUniqueRefs.map((commit) => {
             const [ref, ...otherBranches] = branchesByCommitRef[commit];
@@ -425,32 +421,44 @@ export class Git {
     }
 
     /**
-     * Calculate the number of commits a ref is behind another ref
-     * @param ref The ref to check
-     * @param beforeRef The ref to compare against
-     * @returns The number of commits ref is behind beforeRef, or undefined if beforeRef is undefined or calculation fails
+     * Calculate the number of commits a list of refs is behind another ref.
+     * @param refs The refs to check
+     * @param beforeRef The ref to compare against (target ref)
+     * @returns A map of refs to the number of commits ref is behind beforeRef, or undefined if beforeRef is undefined or calculation fails
      */
-    async calculateCommitsBehind(
-        ref: string,
-        beforeRef?: string
-    ): Promise<number | undefined> {
+    async getNumCommitsBehindMap(
+        refs: string[],
+        beforeRef: string | undefined
+    ) {
+        // Calculate numCommitsBehind for each commit if beforeRef is provided
+        const numCommitsBehindMap: { [commit: string]: number | undefined } =
+            {};
         if (!beforeRef) {
-            return undefined;
+            return numCommitsBehindMap;
         }
 
-        try {
-            // Use simpleGit countCommits if possible in future versions
-            return parseInt(
-                await this.git.raw([
-                    'rev-list',
-                    '--count',
-                    `${ref}..${beforeRef}`,
-                ]),
-                10
-            );
-        } catch {
-            return undefined;
-        }
+        const behindCounts = await Promise.all(
+            refs.map(async (ref) => {
+                try {
+                    // Use simpleGit countCommits if possible in future versions
+                    return parseInt(
+                        await this.git.raw([
+                            'rev-list',
+                            '--count',
+                            `${ref}..${beforeRef}`,
+                        ]),
+                        10
+                    );
+                } catch {
+                    return undefined;
+                }
+            })
+        );
+
+        refs.forEach((ref, i) => {
+            numCommitsBehindMap[ref] = behindCounts[i];
+        });
+        return numCommitsBehindMap;
     }
 }
 
