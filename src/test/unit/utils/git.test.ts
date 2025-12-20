@@ -928,5 +928,55 @@ line3`;
                 },
             ]);
         });
-    }); // We don't test private methods directly
+    });
+
+    describe('getNumCommitsBehindMap', () => {
+        const refs = ['ref1', 'ref2'];
+        it('returns empty map if beforeRef is undefined', async () => {
+            const result = await git.getNumCommitsBehindMap(refs, undefined);
+
+            expect(Object.keys(result)).toHaveLength(0);
+            expect(mockSimpleGit.raw).not.toHaveBeenCalled();
+        });
+
+        it('returns map with values when beforeRef is provided', async () => {
+            vi.mocked(mockSimpleGit.raw)
+                .mockResolvedValueOnce('7')
+                .mockResolvedValueOnce('999');
+
+            const result = await git.getNumCommitsBehindMap(refs, 'before');
+
+            expect(mockSimpleGit.raw).toHaveBeenCalledWith([
+                'rev-list',
+                '--count',
+                'ref1..before',
+            ]);
+            expect(mockSimpleGit.raw).toHaveBeenCalledWith([
+                'rev-list',
+                '--count',
+                'ref2..before',
+            ]);
+
+            expect(Object.keys(result)).toHaveLength(2);
+            expect(result['ref1']).toBe(7);
+            expect(result['ref2']).toBe(999);
+        });
+
+        it('skips values where git.raw call fails', async () => {
+            vi.mocked(mockSimpleGit.raw).mockImplementation(((
+                args: string[]
+            ) => {
+                if (args[2] === 'ref2..before') {
+                    return Promise.resolve('8');
+                }
+                throw new Error();
+            }) as SimpleGit['raw']);
+
+            const result = await git.getNumCommitsBehindMap(refs, 'before');
+
+            expect(Object.keys(result)).toHaveLength(2);
+            expect(result['ref1']).toBe(undefined);
+            expect(result['ref2']).toBe(8);
+        });
+    });
 });
