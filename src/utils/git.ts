@@ -269,19 +269,22 @@ export class Git {
         return ref === UncommittedRef.Staged || ref === UncommittedRef.Unstaged;
     }
 
-    /** returns up to `maxCount` branches. Branches are sorted by last commit date,
-     * with current branch first. Branches with same ref are grouped together.
+    /** returns up to `maxCount` branches. Branches with same ref are grouped together.
      *
-     * If `beforeRef` is given, only returns branches that don't include that ref, and
-     * prioritizes the suspected remote branch and common main branches in order.
+     * If `targetRef` is not given, returns branches sorted by last commit date,
+     * with current branch first.
+     *
+     * If `targetRef` is given, only returns branches that don't include `targetRef, and
+     * returns branches sorted by the number of commits they are behind the targetRef,
+     * with remote branch for targetRef first.
      */
     async getBranchList(
-        beforeRef: string | undefined,
+        targetRef: string | undefined,
         maxCount: number
     ): Promise<RefList> {
         const branchOptions = ['--all', '--sort=-committerdate'];
-        if (beforeRef) {
-            branchOptions.push(`--no-contains=${beforeRef}`);
+        if (targetRef) {
+            branchOptions.push(`--no-contains=${targetRef}`);
         }
         const branches = await this.git.branch(branchOptions);
 
@@ -297,37 +300,43 @@ export class Git {
             }
         });
 
-        let firstBranch;
-        if (!beforeRef) {
-            //for target: put current branch first
-            firstBranch = new RegExp(`^${branches.current}$`);
-        } else {
-            //for base: put remote for `beforeRef` and common main branches first
-            firstBranch = new RegExp(`^remotes/.*/${beforeRef}$`);
-        }
+        //TODO remove log
+        console.time('getNumCommitsBehindMap');
+        const numCommitsBehindMap = await this.getNumCommitsBehindMap(
+            orderedUniqueRefs,
+            targetRef
+        );
+        console.timeEnd('getNumCommitsBehindMap');
+
+        const branchPriority = (branchName: string, commit: string) => {
+            if (targetRef) {
+                const remotesForTargetRegex = new RegExp(
+                    `^remotes/.*/${targetRef}$`
+                );
+                if (remotesForTargetRegex.test(branchName)) {
+                    const frac = numCommitsBehindMap[commit]
+                        ? 1 / numCommitsBehindMap[commit]
+                        : 0;
+                    return -1 - frac;
+                }
+                return numCommitsBehindMap[commit] ?? 0;
+            } else {
+                return branchName === branches.current ? -1 : 0;
+            }
+        };
 
         // sort each branchesByCommitRef entry
         for (const commit in branchesByCommitRef) {
             branchesByCommitRef[commit].sort(
-                (a, b) =>
-                    getBranchPriority(a, firstBranch) -
-                    getBranchPriority(b, firstBranch)
+                (a, b) => branchPriority(a, commit) - branchPriority(b, commit)
             );
         }
         // sort the orderedUniqueRefs
         orderedUniqueRefs.sort(
             (a, b) =>
-                getBranchPriority(branchesByCommitRef[a][0], firstBranch) -
-                getBranchPriority(branchesByCommitRef[b][0], firstBranch)
+                branchPriority(branchesByCommitRef[a][0], a) -
+                branchPriority(branchesByCommitRef[b][0], b)
         );
-
-        //TODO remove log
-        console.time('getNumCommitsBehindMap');
-        const numCommitsBehindMap = await this.getNumCommitsBehindMap(
-            orderedUniqueRefs,
-            beforeRef
-        );
-        console.timeEnd('getNumCommitsBehindMap');
 
         const refs = orderedUniqueRefs.map((commit) => {
             const [ref, ...otherBranches] = branchesByCommitRef[commit];
@@ -341,7 +350,7 @@ export class Git {
 
             const extra = formatExtra(
                 otherBranches,
-                beforeRef,
+                targetRef,
                 numCommitsBehindMap[commit]
             );
 
@@ -423,17 +432,17 @@ export class Git {
     /**
      * Calculate the number of commits a list of refs is behind another ref.
      * @param refs The refs to check
-     * @param beforeRef The ref to compare against (target ref)
+     * @param targetRef The ref to compare against
      * @returns A map of refs to the number of commits ref is behind beforeRef, or undefined if beforeRef is undefined or calculation fails
      */
     async getNumCommitsBehindMap(
         refs: string[],
-        beforeRef: string | undefined
+        targetRef: string | undefined
     ) {
         // Calculate numCommitsBehind for each commit if beforeRef is provided
         const numCommitsBehindMap: { [commit: string]: number | undefined } =
             {};
-        if (!beforeRef) {
+        if (!targetRef) {
             return numCommitsBehindMap;
         }
 
@@ -445,7 +454,7 @@ export class Git {
                         await this.git.raw([
                             'rev-list',
                             '--count',
-                            `${ref}..${beforeRef}`,
+                            `${ref}..${targetRef}`,
                         ]),
                         10
                     );
@@ -478,24 +487,10 @@ function formatExtra(
     }
     let extraText = '       '; // indent to align with ref name
     if (numCommitsBehind !== undefined) {
-        extraText += `${numCommitsBehind} commits behind ${beforeRef}`;
+        extraText += `${numCommitsBehind} commits behind ${beforeRef}. `;
     }
     if (otherBranches.length > 0) {
         extraText += 'Same as: ' + otherBranches.join(', ');
     }
     return extraText;
-}
-
-/** returns a numerical value for the branch priority to be used with sort().
- * Priority is as follows:
- * -5: branch that matches the regex `first`, if provided
- * -4..-1: develop, main, master, trunk
- * 0 otherwise
- */
-function getBranchPriority(ref: string, first?: RegExp) {
-    if (first?.test(ref)) {
-        return -5;
-    }
-    const index = ['develop', 'main', 'master', 'trunk'].indexOf(ref);
-    return index >= 0 ? -4 + index : 0;
 }

@@ -617,7 +617,7 @@ line3`;
             expect(result.map((ref) => ref.description)).toEqual(['abc1']);
         });
 
-        it('puts current branch first with beforeRef=undefined', async () => {
+        it('puts current branch first with targetRef=undefined', async () => {
             vi.mocked(mockSimpleGit.branch).mockResolvedValue({
                 all: ['branch1', 'branch2'],
                 branches: {
@@ -645,7 +645,7 @@ line3`;
             ]);
         });
 
-        it('does not put current branch first with beforeRef set', async () => {
+        it('does not put current branch first with targetRef set', async () => {
             vi.mocked(mockSimpleGit.branch).mockResolvedValue({
                 all: ['branch1', 'branch2'],
                 branches: {
@@ -678,13 +678,11 @@ line3`;
             ]);
         });
 
-        it('puts common base branches first when beforeRef set', async () => {
+        it('puts origin branch first and sorts by numCommitsBehind when targetRef set', async () => {
             const branches = [
-                'trunk',
-                'master',
                 'main',
-                'develop',
                 'other',
+                'yetanother',
                 'remotes/origin/myfeature',
                 'remotes/origin/other',
                 'remotes/mirror/myfeature',
@@ -701,17 +699,27 @@ line3`;
                 all: branches,
                 branches: branchSummaries,
             } as BranchSummary);
+            // mock for number of commits behind targetRef
+            vi.mocked(mockSimpleGit.raw)
+                .mockResolvedValueOnce('7') // main
+                .mockResolvedValueOnce('2') // other
+                .mockResolvedValueOnce('4') // yetanother
+                .mockResolvedValueOnce('9') // remotes/origin/myfeature
+                .mockResolvedValueOnce('4') // remotes/origin/other
+                .mockResolvedValueOnce('8'); // remotes/mirror/myfeature
 
-            const result = await git.getBranchList('myfeature', 7);
+            const result = await git.getBranchList('myfeature', 5);
 
             const expectedBranches = [
-                'remotes/origin/myfeature',
+                // remote branches for 'myfeature' first (even with higher numCommitsBehind)
                 'remotes/mirror/myfeature',
-                'develop',
-                'main',
-                'master',
-                'trunk',
+                'remotes/origin/myfeature',
+                // sorted by numCommitsBehind asc
                 'other',
+                //  both of these have numCommitsBehind=4, should retain original order
+                'yetanother',
+                'remotes/origin/other',
+                // main is dropped due to maxCount=5
             ];
             expect(result.map((ref) => ref.ref)).toEqual(expectedBranches);
             expect(result.map((ref) => ref.description)).toEqual(
@@ -719,7 +727,7 @@ line3`;
             );
         });
 
-        it('does not add extra when beforeRef is undefined', async () => {
+        it('does not add extra when targetRef is undefined', async () => {
             vi.mocked(mockSimpleGit.branch).mockResolvedValue({
                 all: ['branch1', 'branch2'],
                 branches: {
@@ -743,7 +751,7 @@ line3`;
             expect(mockSimpleGit.raw).not.toHaveBeenCalled();
         });
 
-        it('calculates numCommitsBehind when beforeRef is provided', async () => {
+        it('calculates numCommitsBehind when targetRef is provided', async () => {
             vi.mocked(mockSimpleGit.branch).mockResolvedValue({
                 all: ['branch1', 'branch2'],
                 branches: {
@@ -758,25 +766,24 @@ line3`;
                 },
             } as unknown as BranchSummary);
 
-            // Mock the raw git command responses for commit distance calculations
             vi.mocked(mockSimpleGit.raw)
-                .mockResolvedValueOnce('7') // branch1/abc1 is 7 commits behind beforeRef
-                .mockResolvedValueOnce('2'); // branch2/abc2 is 2 commits behind beforeRef
+                .mockResolvedValueOnce('7') // branch1/abc1 is 7 commits behind targetRef
+                .mockResolvedValueOnce('2'); // branch2/abc2 is 2 commits behind targetRef
 
-            const result = await git.getBranchList('beforeRef', 2);
+            const result = await git.getBranchList('targetRef', 2);
 
             expect(mockSimpleGit.raw).toHaveBeenCalledWith([
                 'rev-list',
                 '--count',
-                'abc1..beforeRef',
+                'abc1..targetRef',
             ]);
             expect(mockSimpleGit.raw).toHaveBeenCalledWith([
                 'rev-list',
                 '--count',
-                'abc2..beforeRef',
+                'abc2..targetRef',
             ]);
-            expect(result[0].extra).toMatch(/7 commits behind beforeRef/);
-            expect(result[1].extra).toMatch(/2 commits behind beforeRef/);
+            expect(result[0].extra).toMatch(/2 commits behind targetRef/);
+            expect(result[1].extra).toMatch(/7 commits behind targetRef/);
         });
     });
 
@@ -932,14 +939,14 @@ line3`;
 
     describe('getNumCommitsBehindMap', () => {
         const refs = ['ref1', 'ref2'];
-        it('returns empty map if beforeRef is undefined', async () => {
+        it('returns empty map if targetRef is undefined', async () => {
             const result = await git.getNumCommitsBehindMap(refs, undefined);
 
             expect(Object.keys(result)).toHaveLength(0);
             expect(mockSimpleGit.raw).not.toHaveBeenCalled();
         });
 
-        it('returns map with values when beforeRef is provided', async () => {
+        it('returns map with values when targetRef is provided', async () => {
             vi.mocked(mockSimpleGit.raw)
                 .mockResolvedValueOnce('7')
                 .mockResolvedValueOnce('999');
