@@ -492,6 +492,6 @@ function formatExtra(otherBranches: string[]) {
         return undefined;
     }
 
-    const identToRefName = '       ';
-    return identToRefName + 'Same as: ' + otherBranches.join(', ');
+    const indentToRefName = '       ';
+    return indentToRefName + 'Same as: ' + otherBranches.join(', ');
 }
