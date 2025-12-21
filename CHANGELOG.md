@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.22.6] (pre-release)
+- Show commit distance when selecting base branch (e.g. `3 commits behind` if there would be 3 commits to review).
+- Sort target branches in UI by last commit date, and base branches by commit distance to target ref.
+
 ## [0.22.5] (pre-release)
 - Increase number of refs shown by default to 30 (was: 20)
 - Add 'LGTM: Save to File' option for debugging
