@@ -339,22 +339,16 @@ export class Git {
             const [ref, ...otherBranches] = branchesByCommitRef[commit];
             const isCurrent = branches.branches[ref].current;
 
-            let description = '';
-            if (isCurrent) {
-                description += '(current) ';
-            }
-            description += commit.substring(0, shortHashLength);
-
-            const extra = formatExtra(
-                otherBranches,
-                targetRef,
+            const description = formatDescription(
+                isCurrent,
+                commit,
                 numCommitsBehindMap[commit]
             );
 
             return {
                 ref,
                 description,
-                extra,
+                extra: formatExtra(otherBranches),
             };
         });
 
@@ -377,7 +371,6 @@ export class Git {
 
         return tags.all.slice(0, maxCount).map((tag) => ({
             ref: tag,
-            extra: formatExtra([], beforeRef),
         }));
     }
 
@@ -398,7 +391,6 @@ export class Git {
         return commits.all.slice(0, maxCount).map((commit) => ({
             ref: commit.hash,
             description: commit.message,
-            extra: formatExtra([], beforeRef),
         }));
     }
 
@@ -479,21 +471,27 @@ export type RefList = {
     extra?: string; // e.g. additional branch names pointing to the same commit
 }[];
 
-function formatExtra(
-    otherBranches: string[],
-    beforeRef: string | undefined,
-    numCommitsBehind?: number
+function formatDescription(
+    isCurrent: boolean,
+    commit: string,
+    numCommitsBehind: number | undefined
 ) {
-    let extraText = '';
-    if (numCommitsBehind !== undefined && isFinite(numCommitsBehind)) {
-        extraText += `${numCommitsBehind} commits behind ${beforeRef}. `;
+    let description = '';
+    if (isCurrent) {
+        description += '(current) ';
     }
-    if (otherBranches.length > 0) {
-        extraText += 'Same as: ' + otherBranches.join(', ');
+    description += commit.substring(0, shortHashLength);
+    if (numCommitsBehind !== undefined && Number.isFinite(numCommitsBehind)) {
+        description += ` (${numCommitsBehind} commits behind)`;
+    }
+    return description;
+}
+
+function formatExtra(otherBranches: string[]) {
+    if (otherBranches.length === 0) {
+        return undefined;
     }
 
-    if (extraText) {
-        return '       ' + extraText; // indent to align with ref name
-    }
-    return undefined;
+    const identToRefName = '       ';
+    return identToRefName + 'Same as: ' + otherBranches.join(', ');
 }

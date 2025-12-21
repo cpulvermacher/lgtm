@@ -722,9 +722,11 @@ line3`;
                 // main is dropped due to maxCount=5
             ];
             expect(result.map((ref) => ref.ref)).toEqual(expectedBranches);
-            expect(result.map((ref) => ref.description)).toEqual(
-                expectedBranches.map((branch) => branch.substring(0, 7))
-            );
+            expect(result[0].description).toContain('(8 commits behind)');
+            expect(result[1].description).toContain('(9 commits behind)');
+            expect(result[2].description).toContain('(2 commits behind)');
+            expect(result[3].description).toContain('(4 commits behind)');
+            expect(result[4].description).toContain('(4 commits behind)');
         });
 
         it('does not add extra when targetRef is undefined', async () => {
@@ -782,8 +784,8 @@ line3`;
                 '--count',
                 'abc2..targetRef',
             ]);
-            expect(result[0].extra).toMatch(/2 commits behind targetRef/);
-            expect(result[1].extra).toMatch(/7 commits behind targetRef/);
+            expect(result[0].description).toBe('abc2 (2 commits behind)');
+            expect(result[1].description).toBe('abc1 (7 commits behind)');
         });
     });
 
