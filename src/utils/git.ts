@@ -300,13 +300,10 @@ export class Git {
             }
         });
 
-        //TODO remove log
-        console.time('getNumCommitsBehindMap');
         const numCommitsBehindMap = await this.getNumCommitsBehindMap(
             orderedUniqueRefs,
             targetRef
         );
-        console.timeEnd('getNumCommitsBehindMap');
 
         const branchPriority = (branchName: string, commit: string) => {
             if (targetRef) {
@@ -431,39 +428,44 @@ export class Git {
 
     /**
      * Calculate the number of commits a list of refs is behind another ref.
-     * @param refs The refs to check
-     * @param targetRef The ref to compare against
-     * @returns A map of refs to the number of commits ref is behind beforeRef, or undefined if beforeRef is undefined or calculation fails
+     * @param refs refs to check
+     * @param targetRef ref to compare against
+     * @param timeoutMs timeout in milliseconds
+     * @returns A map of refs to the number of commits ref is behind targetRef, or Infinity if calculation fails
      */
     async getNumCommitsBehindMap(
         refs: string[],
-        targetRef: string | undefined
-    ) {
-        // Calculate numCommitsBehind for each commit if beforeRef is provided
-        const numCommitsBehindMap: { [commit: string]: number | undefined } =
-            {};
+        targetRef: string | undefined,
+        timeoutMs = 500
+    ): Promise<{ [commit: string]: number | undefined }> {
         if (!targetRef) {
-            return numCommitsBehindMap;
+            return {};
         }
 
-        const behindCounts = await Promise.all(
-            refs.map(async (ref) => {
-                try {
-                    // Use simpleGit countCommits if possible in future versions
-                    return parseInt(
-                        await this.git.raw([
-                            'rev-list',
-                            '--count',
-                            `${ref}..${targetRef}`,
-                        ]),
-                        10
-                    );
-                } catch {
-                    return undefined;
-                }
-            })
-        );
+        const timeout = () =>
+            new Promise<string>((_, reject) =>
+                setTimeout(() => reject(new Error()), timeoutMs)
+            );
 
+        const getNumCommitsBehind = async (ref: string) => {
+            try {
+                const result = await Promise.race([
+                    this.git.raw([
+                        'rev-list',
+                        '--count',
+                        `${ref}..${targetRef}`,
+                    ]),
+                    timeout(),
+                ]);
+                return parseInt(result, 10);
+            } catch {
+                return Infinity;
+            }
+        };
+
+        const behindCounts = await Promise.all(refs.map(getNumCommitsBehind));
+
+        const numCommitsBehindMap: { [commit: string]: number } = {};
         refs.forEach((ref, i) => {
             numCommitsBehindMap[ref] = behindCounts[i];
         });
@@ -482,15 +484,16 @@ function formatExtra(
     beforeRef: string | undefined,
     numCommitsBehind?: number
 ) {
-    if (otherBranches.length === 0 && numCommitsBehind === undefined) {
-        return undefined;
-    }
-    let extraText = '       '; // indent to align with ref name
-    if (numCommitsBehind !== undefined) {
+    let extraText = '';
+    if (numCommitsBehind !== undefined && isFinite(numCommitsBehind)) {
         extraText += `${numCommitsBehind} commits behind ${beforeRef}. `;
     }
     if (otherBranches.length > 0) {
         extraText += 'Same as: ' + otherBranches.join(', ');
     }
-    return extraText;
+
+    if (extraText) {
+        return '       ' + extraText; // indent to align with ref name
+    }
+    return undefined;
 }

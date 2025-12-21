@@ -982,8 +982,29 @@ line3`;
             const result = await git.getNumCommitsBehindMap(refs, 'before');
 
             expect(Object.keys(result)).toHaveLength(2);
-            expect(result['ref1']).toBe(undefined);
+            expect(result['ref1']).toBe(Infinity);
             expect(result['ref2']).toBe(8);
+        });
+
+        it('skips results on timeout ', async () => {
+            const refs = ['a', 'b', 'c'];
+            const timeout = (timeoutMs: number) => () =>
+                new Promise<string>((resolve) =>
+                    setTimeout(() => resolve(timeoutMs.toString()), timeoutMs)
+                );
+            vi.mocked(mockSimpleGit.raw, {
+                partial: true,
+            })
+                .mockImplementationOnce(timeout(200))
+                .mockImplementationOnce(timeout(4))
+                .mockImplementationOnce(timeout(2));
+
+            const result = await git.getNumCommitsBehindMap(refs, 'before', 8);
+
+            expect(Object.keys(result)).toHaveLength(3);
+            expect(result['a']).toBe(Infinity);
+            expect(result['b']).toBe(4);
+            expect(result['c']).toBe(2);
         });
     });
 });
