@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.22.7] (pre-release)
+- Show designated branches like 'develop' or 'main' before other base branches (if same number of commits behind)
+
 ## [0.22.6] (pre-release)
 - Show commit distance when selecting base branch (e.g. `3 commits behind` if there would be 3 commits to review).
 - Sort target branches in UI by last commit date, and base branches by commit distance to target ref.
