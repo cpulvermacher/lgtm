@@ -305,35 +305,77 @@ export class Git {
             targetRef
         );
 
-        const branchPriority = (branchName: string, commit: string) => {
-            if (targetRef) {
-                const remotesForTargetRegex = new RegExp(
-                    `^remotes/.*/${targetRef}$`
-                );
-                if (remotesForTargetRegex.test(branchName)) {
-                    const frac = numCommitsBehindMap[commit]
-                        ? 1 / numCommitsBehindMap[commit]
-                        : 0;
-                    return -1 - frac;
-                }
-                return numCommitsBehindMap[commit] ?? 0;
-            } else {
-                return branchName === branches.current ? -1 : 0;
-            }
+        const remoteBranchFirst = (a: string, b: string): number => {
+            // 1) remote for target first - if there are unpushed changes, we likely want to check those
+            const remotesForTargetRegex = new RegExp(
+                `^remotes/.*/${targetRef}$`
+            );
+            const aIsRemote = remotesForTargetRegex.test(a);
+            const bIsRemote = remotesForTargetRegex.test(b);
+            if (aIsRemote && !bIsRemote) return -1;
+            if (!aIsRemote && bIsRemote) return 1;
+            return 0;
         };
 
-        // sort each branchesByCommitRef entry
-        for (const commit in branchesByCommitRef) {
-            branchesByCommitRef[commit].sort(
-                (a, b) => branchPriority(a, commit) - branchPriority(b, commit)
+        const compareBranches = (a: string, b: string) => {
+            if (!targetRef) {
+                // target branch: current first
+                if (a === branches.current) return -1;
+                if (b === branches.current) return 1;
+                return 0;
+            }
+
+            // base branch:
+            const remoteRefFirstOrder = remoteBranchFirst(a, b);
+            if (remoteRefFirstOrder !== 0) {
+                return remoteRefFirstOrder;
+            }
+
+            return getBranchNamePriority(a) - getBranchNamePriority(b);
+        };
+
+        const compareCommits = (a: string, b: string) => {
+            const firstBranchA = branchesByCommitRef[a][0];
+            const firstBranchB = branchesByCommitRef[b][0];
+
+            if (!targetRef) {
+                // target branch: just use branch comparison
+                return compareBranches(firstBranchA, firstBranchB);
+            }
+
+            // base branch:
+            const remoteRefFirstOrder = remoteBranchFirst(
+                firstBranchA,
+                firstBranchB
             );
+            if (remoteRefFirstOrder !== 0) {
+                return remoteRefFirstOrder;
+            }
+
+            // 2) otherwise, order by #commits behind
+            const commitsBehindOrder =
+                (numCommitsBehindMap[a] ?? Infinity) -
+                (numCommitsBehindMap[b] ?? Infinity);
+            if (commitsBehindOrder !== 0) {
+                return commitsBehindOrder;
+            }
+
+            // 3) otherwise (same #commits behind), order by branch name
+            return (
+                getBranchNamePriority(firstBranchA) -
+                getBranchNamePriority(firstBranchB)
+            );
+
+            // 4) otherwise (same branch priority), committerdate order preserved by stable sort
+        };
+
+        // sort branches within each unique ref
+        for (const commit in branchesByCommitRef) {
+            branchesByCommitRef[commit].sort(compareBranches);
         }
-        // sort the orderedUniqueRefs
-        orderedUniqueRefs.sort(
-            (a, b) =>
-                branchPriority(branchesByCommitRef[a][0], a) -
-                branchPriority(branchesByCommitRef[b][0], b)
-        );
+
+        // sort unique refs
+        orderedUniqueRefs.sort(compareCommits);
 
         const refs = orderedUniqueRefs.map((commit) => {
             const [ref, ...otherBranches] = branchesByCommitRef[commit];
@@ -494,4 +536,14 @@ function formatExtra(otherBranches: string[]) {
 
     const indentToRefName = '       ';
     return indentToRefName + 'Same as: ' + otherBranches.join(', ');
+}
+
+/** returns a numerical value for the branch priority to be used with sort().
+ * Priority is as follows:
+ * -4..-1: develop, main, master, trunk
+ * 0 otherwise
+ */
+function getBranchNamePriority(ref: string) {
+    const index = ['develop', 'main', 'master', 'trunk'].indexOf(ref);
+    return index >= 0 ? -4 + index : 0;
 }

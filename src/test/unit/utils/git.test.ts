@@ -729,6 +729,88 @@ line3`;
             expect(result[4].description).toContain('(4 commits behind)');
         });
 
+        it('uses branch name priority when branches have same numCommitsBehind', async () => {
+            const branches = [
+                'feature1',
+                'feature2',
+                'trunk',
+                'master',
+                'main',
+                'develop',
+                'remotes/origin/myfeature',
+            ];
+            const branchSummaries: Record<string, BranchSummaryBranch> = {};
+            branches.forEach((branch) => {
+                branchSummaries[branch] = {
+                    current: false,
+                    commit: branch,
+                } as BranchSummaryBranch;
+            });
+
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: branches,
+                branches: branchSummaries,
+            } as BranchSummary);
+            // All non-remote branches have same numCommitsBehind (5)
+            vi.mocked(mockSimpleGit.raw)
+                .mockResolvedValueOnce('5') // feature1
+                .mockResolvedValueOnce('5') // feature2
+                .mockResolvedValueOnce('5') // trunk
+                .mockResolvedValueOnce('5') // master
+                .mockResolvedValueOnce('5') // main
+                .mockResolvedValueOnce('5') // develop
+                .mockResolvedValueOnce('1'); // remotes/origin/myfeature
+
+            const result = await git.getBranchList('myfeature', 10);
+
+            const expectedBranches = [
+                // 1) remote for target first
+                'remotes/origin/myfeature',
+                // 2) sorted by #commits behind (all have 5)
+                // 3) then by branch name priority: develop (-4), main (-3), master (-2), trunk (-1), others (0)
+                'develop',
+                'main',
+                'master',
+                'trunk',
+                // 4) feature1 and feature2 retain original order (stable sort)
+                'feature1',
+                'feature2',
+            ];
+            expect(result.map((ref) => ref.ref)).toEqual(expectedBranches);
+        });
+
+        it('sorts branches within same commit by name priority', async () => {
+            const branches = ['feature', 'main', 'remotes/origin/myfeature'];
+            const branchSummaries: Record<string, BranchSummaryBranch> = {};
+            // All point to the same commit
+            branches.forEach((branch) => {
+                branchSummaries[branch] = {
+                    current: false,
+                    commit: 'abc123',
+                } as BranchSummaryBranch;
+            });
+
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: branches,
+                branches: branchSummaries,
+            } as BranchSummary);
+            vi.mocked(mockSimpleGit.raw).mockResolvedValueOnce('5'); // abc123
+
+            const result = await git.getBranchList('myfeature', 10);
+
+            // Within the same commit:
+            // 1) remote for target first
+            // 3) then by branch name priority
+            expect(result.map((ref) => ref.ref)).toEqual([
+                'remotes/origin/myfeature',
+            ]);
+            // main and feature are grouped as "Same as:"
+            expect(result[0].extra).toContain('main');
+            expect(result[0].extra).toContain('feature');
+            // main should come before feature in the "Same as" list
+            expect(result[0].extra).toMatch(/main.*feature/);
+        });
+
         it('does not add extra when targetRef is undefined', async () => {
             vi.mocked(mockSimpleGit.branch).mockResolvedValue({
                 all: ['branch1', 'branch2'],
