@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.23.0]
+Includes changes from 0.22.5 to 0.22.7.
+Highlights:
+- Show commit distance when selecting base branch (e.g. `3 commits behind` if there would be 3 commits to review).
+- Rework branch sorting for base branches to prioritise, in order: remote of selected branch, commit distance, designated branches (develop, main, etc.), and commit age.
+
 ## [0.22.7] (pre-release)
 - Show designated branches like 'develop' or 'main' before other base branches (if same number of commits behind)
 
