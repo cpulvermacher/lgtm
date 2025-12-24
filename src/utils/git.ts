@@ -344,6 +344,7 @@ export class Git {
             }
 
             // base branch:
+            // 1) remote branch for current first
             const remoteRefFirstOrder = remoteBranchFirst(
                 firstBranchA,
                 firstBranchB
@@ -540,10 +541,18 @@ function formatExtra(otherBranches: string[]) {
 
 /** returns a numerical value for the branch priority to be used with sort().
  * Priority is as follows:
- * -4..-1: develop, main, master, trunk
+ * -8..-5: local develop, main, master, trunk
+ * -4..-1: remote develop, main, master, trunk (like remotes/origin/main)
  * 0 otherwise
  */
 function getBranchNamePriority(ref: string) {
-    const index = ['develop', 'main', 'master', 'trunk'].indexOf(ref);
-    return index >= 0 ? -4 + index : 0;
+    // Extract branch name from remote refs like "remotes/origin/develop"
+    const remoteMatch = ref.match(/^remotes\/[^/]+\/(.+)$/);
+    const branchName = remoteMatch ? remoteMatch[1] : ref;
+
+    const index = ['develop', 'main', 'master', 'trunk'].indexOf(branchName);
+    if (index >= 0) {
+        return !!remoteMatch ? -4 + index : -8 + index;
+    }
+    return 0;
 }

@@ -767,7 +767,7 @@ line3`;
                 // 1) remote for target first
                 'remotes/origin/myfeature',
                 // 2) sorted by #commits behind (all have 5)
-                // 3) then by branch name priority: develop (-4), main (-3), master (-2), trunk (-1), others (0)
+                // 3) then by branch name priority: develop (-8), main (-7), master (-6), trunk (-5), others (0)
                 'develop',
                 'main',
                 'master',
@@ -809,6 +809,44 @@ line3`;
             expect(result[0].extra).toContain('feature');
             // main should come before feature in the "Same as" list
             expect(result[0].extra).toMatch(/main.*feature/);
+        });
+
+        it('prioritizes local branches before remote branches', async () => {
+            const branches = [
+                'feature',
+                'remotes/origin/develop',
+                'remotes/origin/feature',
+                'develop',
+                'main',
+            ];
+            const branchSummaries: Record<string, BranchSummaryBranch> = {};
+            branches.forEach((branch) => {
+                branchSummaries[branch] = {
+                    current: false,
+                    commit: branch,
+                } as BranchSummaryBranch;
+            });
+
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: branches,
+                branches: branchSummaries,
+            } as BranchSummary);
+            // All have same numCommitsBehind
+            vi.mocked(mockSimpleGit.raw).mockResolvedValue('10');
+
+            const result = await git.getBranchList('myfeature', 10);
+
+            const expectedBranches = [
+                // local designated branches
+                'develop',
+                'main',
+                // remote designated branches
+                'remotes/origin/develop',
+                // then other branches, in original order (since same numCommitsBehind)
+                'feature',
+                'remotes/origin/feature',
+            ];
+            expect(result.map((ref) => ref.ref)).toEqual(expectedBranches);
         });
 
         it('does not add extra when targetRef is undefined', async () => {
