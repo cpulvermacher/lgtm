@@ -22,19 +22,29 @@ export async function parseArguments(
 
     const [target, base, ...rest] = args.split(' ');
     if (rest.length > 0) {
-        throw new Error(
-            'Expected at most two refs as arguments. Use the command without arguments to select refs interactively.'
-        );
+        throw new Error('Expected at most two refs as arguments.' + usageHint);
     }
-    if (await isCommitRef(git, target)) {
-        if (base && (await isCommitRef(git, base))) {
-            return { target, base };
-        }
+
+    if (!target) {
+        return {};
+    }
+
+    if (!(await isCommitRef(git, target))) {
+        throw new Error(`Could not find target ref '${target}'.` + usageHint);
+    }
+    if (!base) {
         return { target };
     }
 
-    return {};
+    if (!(await isCommitRef(git, base))) {
+        throw new Error(`Could not find base ref '${base}'.` + usageHint);
+    }
+
+    return { target, base };
 }
+
+const usageHint =
+    '\nUsage: /review [target [base]], with target and base being any branch, tag or commit ref. Use the command without arguments to select refs interactively.';
 
 async function isCommitRef(git: Git, ref: string): Promise<boolean> {
     try {

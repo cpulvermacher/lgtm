@@ -36,40 +36,38 @@ describe('parseArguments', () => {
         expect(result).toEqual({ target: 'target', base: 'base' });
     });
 
-    it('parses single non-commit-ref argument into empty object', async () => {
+    it('throws for single non-commit-ref argument', async () => {
         vi.mocked(mockGit.getCommitRef).mockRejectedValue(new Error());
 
-        const result = await parseArguments(mockGit, 'prompt');
-
-        expect(result).toEqual({});
+        await expect(parseArguments(mockGit, 'prompt')).rejects.toThrow(
+            "Could not find target ref 'prompt'."
+        );
     });
 
-    it('parses two non-commit-ref arguments into empty object', async () => {
+    it('throws for two non-commit-ref arguments', async () => {
         vi.mocked(mockGit.getCommitRef).mockRejectedValue(new Error());
 
-        const result = await parseArguments(mockGit, 'prompt1 prompt2');
-
-        expect(result).toEqual({});
+        await expect(
+            parseArguments(mockGit, 'prompt1 prompt2')
+        ).rejects.toThrow("Could not find target ref 'prompt1'.");
     });
 
     it('throws on more than two arguments', async () => {
         vi.mocked(mockGit.getCommitRef).mockRejectedValue(new Error());
 
-        await expect(() =>
+        await expect(
             parseArguments(mockGit, 'target base extra')
-        ).rejects.toThrow(
-            'Expected at most two refs as arguments. Use the command without arguments to select refs interactively.'
-        );
+        ).rejects.toThrow('Expected at most two refs as arguments.');
         expect(mockGit.getCommitRef).not.toHaveBeenCalled();
     });
 
-    it('parses single commit-ref argument plus non-commit-ref', async () => {
+    it('throws on single commit-ref argument plus non-commit-ref', async () => {
         vi.mocked(mockGit.getCommitRef)
             .mockResolvedValueOnce('')
             .mockRejectedValue(new Error());
 
-        const result = await parseArguments(mockGit, 'target extra');
-
-        expect(result).toEqual({ target: 'target' });
+        await expect(parseArguments(mockGit, 'target extra')).rejects.toThrow(
+            "Could not find base ref 'extra'."
+        );
     });
 });
