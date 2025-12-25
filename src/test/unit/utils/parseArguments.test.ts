@@ -30,8 +30,17 @@ describe('parseArguments', () => {
         expect(mockGit.getCommitRef).toHaveBeenCalledTimes(2);
     });
 
-    it('parses two arguments with whitespace', async () => {
+    it('parses two arguments with surrounding whitespace', async () => {
         const result = await parseArguments(mockGit, ' target base ');
+
+        expect(result).toEqual({ target: 'target', base: 'base' });
+    });
+
+    it('parses two arguments with extra whitespace', async () => {
+        const result = await parseArguments(
+            mockGit,
+            'target \t\t      base     '
+        );
 
         expect(result).toEqual({ target: 'target', base: 'base' });
     });

@@ -20,7 +20,7 @@ export async function parseArguments(
         return {};
     }
 
-    const [target, base, ...rest] = args.split(' ');
+    const [target, base, ...rest] = args.split(/\s+/);
     if (rest.length > 0) {
         throw new Error('Expected at most two refs as arguments.' + usageHint);
     }
