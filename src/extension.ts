@@ -5,6 +5,7 @@ import { getConfig } from '@/vscode/config';
 import { ReviewTool } from '@/vscode/ReviewTool';
 import { registerChatParticipant } from './vscode/chat';
 import { isUnSupportedModel } from './vscode/model';
+import { parsePullRequest } from './utils/parsePullRequest';
 
 // called the first time a command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -26,6 +27,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(
             'lgtm.reviewUnstagedChanges',
             reviewUnstagedChangesCommand
+        ),
+        vscode.commands.registerCommand(
+            'lgtm.reviewPullRequest',
+            reviewPullRequestCommand
         )
     );
 
@@ -50,6 +55,11 @@ async function reviewStagedChangesCommand() {
 }
 async function reviewUnstagedChangesCommand() {
     await startReviewChat('unstaged');
+}
+async function reviewPullRequestCommand(model: unknown) {
+    const { target, base } = parsePullRequest(model);
+
+    await startReviewChat(target, base);
 }
 
 async function startReviewChat(target: string = '', base: string = '') {
