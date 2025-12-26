@@ -5,11 +5,9 @@ import { getConfig } from '@/vscode/config';
 import { ReviewTool } from '@/vscode/ReviewTool';
 import { registerChatParticipant } from './vscode/chat';
 
-let chatParticipant: vscode.ChatParticipant;
-
 // called the first time a command is executed
 export function activate(context: vscode.ExtensionContext) {
-    chatParticipant = registerChatParticipant(context);
+    context.subscriptions.push(registerChatParticipant(context));
 
     context.subscriptions.push(
         vscode.commands.registerCommand(
@@ -41,12 +39,6 @@ export function activate(context: vscode.ExtensionContext) {
             new ReviewTool({ defaultTarget: UncommittedRef.Unstaged })
         )
     );
-}
-
-export function deactivate() {
-    if (chatParticipant) {
-        chatParticipant.dispose();
-    }
 }
 
 async function startCodeReviewCommand() {
