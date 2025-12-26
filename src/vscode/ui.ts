@@ -183,18 +183,3 @@ export async function pickRefs(config: Config, type?: 'branch') {
 
     return { base, target };
 }
-
-/** Asks user to select a commit. Returns short commit hash, or undefined when aborted.
- * If `beforeRef` is provided, only commits before that ref are shown. */
-export async function pickCommit(
-    config: Config,
-    beforeRef?: string,
-    pickerTitle: string = 'Select a commit to review'
-) {
-    const commit = await pickRef(config, pickerTitle, beforeRef, 'commit');
-    if (!commit) {
-        return;
-    }
-
-    return commit;
-}

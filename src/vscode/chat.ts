@@ -7,7 +7,7 @@ import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
 import { parseArguments } from '@/utils/parseArguments';
 import { getConfig, toUri } from './config';
-import { pickCommit, pickRef, pickRefs } from './ui';
+import { pickRef, pickRefs } from './ui';
 
 export function registerChatParticipant(context: vscode.ExtensionContext) {
     const chatParticipant = vscode.chat.createChatParticipant(
@@ -29,33 +29,27 @@ async function handleChat(
 ): Promise<void> {
     const config = await getConfig();
 
-    if (
-        !chatRequest.command ||
-        !['review', 'branch', 'commit'].includes(chatRequest.command)
-    ) {
+    if (chatRequest.command !== 'review') {
+        if (['branch', 'commit'].includes(chatRequest.command ?? '')) {
+            //TODO temporary, clean this up in ~Mar 2026
+            stream.markdown(
+                'The /branch and /commit have been removed, please use /review instead.'
+            );
+            return;
+        }
         stream.markdown(
-            'Please use one of the following commands:\n' +
-                ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively.\n' +
-                ' - `@lgtm /branch` to review changes between two branches\n' +
-                ' - `@lgtm /commit` to review changes in a single commit'
+            'Please use the /review command:\n' +
+                ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively. Use `/review staged` or `/review unstaged` to review uncommitted changes.'
         );
         return;
     }
 
-    const reviewRequest = await getReviewRequest(
-        config,
-        chatRequest.command,
-        chatRequest.prompt
-    );
+    const reviewRequest = await getReviewRequest(config, chatRequest.prompt);
     if (!reviewRequest) {
         return;
     }
 
-    if (chatRequest.command === 'commit') {
-        stream.markdown(
-            `Reviewing changes in commit \`${reviewRequest.scope.target}\`...\n\n`
-        );
-    } else if (!reviewRequest.scope.isCommitted) {
+    if (!reviewRequest.scope.isCommitted) {
         const targetLabel =
             reviewRequest.scope.target === UncommittedRef.Staged
                 ? 'staged'
@@ -80,72 +74,44 @@ async function handleChat(
 /** Constructs review request (prompting user if needed) */
 async function getReviewRequest(
     config: Config,
-    command: string,
     prompt: string
 ): Promise<ReviewRequest | undefined> {
     const parsedPrompt = await parseArguments(config.git, prompt);
 
-    let reviewScope: ReviewScope;
-    if (command === 'commit') {
-        let commit;
-        if (parsedPrompt.target) {
-            if (parsedPrompt.base) {
-                throw new Error(
-                    '/commit expects at most a single ref as argument'
-                );
-            }
-            commit = parsedPrompt.target;
-        } else {
-            commit = await pickCommit(config);
-        }
-        if (!commit) {
+    let refs;
+    if (parsedPrompt.target && parsedPrompt.base) {
+        // both refs are provided
+        refs = parsedPrompt;
+    } else if (
+        parsedPrompt.target &&
+        config.git.isUncommitted(parsedPrompt.target)
+    ) {
+        refs = parsedPrompt;
+    } else if (parsedPrompt.target && !parsedPrompt.base) {
+        // only target ref is provided
+        const base = await pickRef(
+            config,
+            'Select a branch/tag/commit to compare with (2/2)',
+            parsedPrompt.target
+        );
+        if (!base) {
             return;
         }
-
-        reviewScope = await config.git.getReviewScope(commit);
+        refs = { target: parsedPrompt.target, base };
     } else {
-        let refs;
-        if (parsedPrompt.target && parsedPrompt.base) {
-            // both refs are provided
-            refs = parsedPrompt;
-        } else if (
-            parsedPrompt.target &&
-            config.git.isUncommitted(parsedPrompt.target)
-        ) {
-            refs = parsedPrompt;
-        } else if (parsedPrompt.target && !parsedPrompt.base) {
-            // only target ref is provided
-            const base = await pickRef(
-                config,
-                'Select a branch/tag/commit to compare with (2/2)',
-                parsedPrompt.target
-            );
-            if (!base) {
-                return;
-            }
-            refs = { target: parsedPrompt.target, base };
-        } else if (command === 'review') {
-            refs = await pickRefs(config, undefined);
-        } else if (command === 'branch') {
-            refs = await pickRefs(config, 'branch');
-        }
+        refs = await pickRefs(config, undefined);
+    }
 
-        if (config.git.isValidRefPair(refs)) {
-            reviewScope = await config.git.getReviewScope(
-                refs.target,
-                refs.base
-            );
-        } else if (
-            refs?.target &&
-            (await config.git.isInitialCommit(refs.target))
-        ) {
-            reviewScope = await config.git.getReviewScope(
-                refs.target,
-                undefined
-            );
-        } else {
-            return;
-        }
+    let reviewScope: ReviewScope;
+    if (config.git.isValidRefPair(refs)) {
+        reviewScope = await config.git.getReviewScope(refs.target, refs.base);
+    } else if (
+        refs?.target &&
+        (await config.git.isInitialCommit(refs.target))
+    ) {
+        reviewScope = await config.git.getReviewScope(refs.target, undefined);
+    } else {
+        return;
     }
 
     return { scope: reviewScope };

@@ -91,14 +91,6 @@
                     {
                         "name": "review",
                         "description": "Review changes between two branches, commits, or tags.  You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively."
-                    },
-                    {
-                        "name": "branch",
-                        "description": "Review changes between two branches."
-                    },
-                    {
-                        "name": "commit",
-                        "description": "Review changes in a single commit."
                     }
                 ]
             }
