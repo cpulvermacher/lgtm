@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { UncommittedRef } from '@/types/Ref';
 import { Git } from '@/utils/git';
 import { parseArguments } from '@/utils/parseArguments';
 
@@ -10,6 +11,12 @@ describe('parseArguments', () => {
 
     it('parses empty arguments', async () => {
         const result = await parseArguments(mockGit, '');
+
+        expect(result).toEqual({ target: undefined, base: undefined });
+    });
+
+    it('parses only whitespace arguments', async () => {
+        const result = await parseArguments(mockGit, ' \t  \t');
 
         expect(result).toEqual({ target: undefined, base: undefined });
     });
@@ -77,6 +84,34 @@ describe('parseArguments', () => {
 
         await expect(parseArguments(mockGit, 'target extra')).rejects.toThrow(
             "Could not find base ref 'extra'."
+        );
+    });
+
+    it('parses "staged"', async () => {
+        const result = await parseArguments(mockGit, 'staged');
+
+        expect(result).toEqual({
+            target: UncommittedRef.Staged,
+            base: undefined,
+        });
+
+        expect(mockGit.getCommitRef).toHaveBeenCalledTimes(0);
+    });
+
+    it('parses "unstaged"', async () => {
+        const result = await parseArguments(mockGit, 'unstaged');
+
+        expect(result).toEqual({
+            target: UncommittedRef.Unstaged,
+            base: undefined,
+        });
+
+        expect(mockGit.getCommitRef).toHaveBeenCalledTimes(0);
+    });
+
+    it('throws for additional arguments after an uncomitted ref', async () => {
+        await expect(parseArguments(mockGit, 'staged extra')).rejects.toThrow(
+            "Expected no argument after 'staged'."
         );
     });
 });

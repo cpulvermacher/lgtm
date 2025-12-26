@@ -1,9 +1,9 @@
+import { UncommittedRef } from '@/types/Ref';
 import { Git } from './git';
 
-export type ParsedArguments = {
-    target?: string;
-    base?: string;
-};
+export type ParsedArguments =
+    | { target?: string; base?: string }
+    | { target: UncommittedRef; base?: never };
 
 /** parse given arguments to a /command in the format
  * [target [base]]
@@ -16,9 +16,6 @@ export async function parseArguments(
     args: string
 ): Promise<ParsedArguments> {
     args = args.trim();
-    if (!args || args.length === 0) {
-        return {};
-    }
 
     const [target, base, ...rest] = args.split(/\s+/);
     if (rest.length > 0) {
@@ -29,7 +26,19 @@ export async function parseArguments(
         return {};
     }
 
-    if (!(await isCommitRef(git, target))) {
+    if (target === 'staged' || target === 'unstaged') {
+        if (base) {
+            throw new Error(
+                `Expected no argument after '${target}'. ` + usageHint
+            );
+        }
+        return {
+            target:
+                target === 'staged'
+                    ? UncommittedRef.Staged
+                    : UncommittedRef.Unstaged,
+        };
+    } else if (!(await isCommitRef(git, target))) {
         throw new Error(`Could not find target ref '${target}'.` + usageHint);
     }
     if (!base) {

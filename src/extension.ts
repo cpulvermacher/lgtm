@@ -133,6 +133,11 @@ async function getReviewRequest(
         if (parsedPrompt.target && parsedPrompt.base) {
             // both refs are provided
             refs = parsedPrompt;
+        } else if (
+            parsedPrompt.target &&
+            config.git.isUncommitted(parsedPrompt.target)
+        ) {
+            refs = parsedPrompt;
         } else if (parsedPrompt.target && !parsedPrompt.base) {
             // only target ref is provided
             const base = await pickRef(
