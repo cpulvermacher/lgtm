@@ -4,6 +4,7 @@ import { UncommittedRef } from '@/types/Ref';
 import { getConfig } from '@/vscode/config';
 import { ReviewTool } from '@/vscode/ReviewTool';
 import { registerChatParticipant } from './vscode/chat';
+import { isUnSupportedModel } from './vscode/model';
 
 // called the first time a command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -96,28 +97,6 @@ function getModelQuickPickItems(
     models: vscode.LanguageModelChat[],
     currentModelId: string
 ): ModelQuickPickItem[] {
-    const unsupportedModelIds = [
-        //vendor: copilot
-        //these return code: model_not_supported
-        'claude-3.7-sonnet',
-        'claude-3.7-sonnet-thought',
-        // Endpoint not found for model auto
-        'auto',
-        //vendor: anthropic
-        // all fail with {"type":"invalid_request_error","message":"system: text content blocks must be non-empty"}
-        'claude-haiku-4-5-20251001',
-        'claude-opus-4-5-20251101',
-        'claude-sonnet-4-5-20250929',
-        'claude-opus-4-1-20250805',
-        'claude-opus-4-20250514',
-        'claude-sonnet-4-20250514',
-        'claude-3-7-sonnet-20250219',
-        'claude-3-5-sonnet-20241022',
-        'claude-3-5-haiku-20241022',
-        'claude-3-haiku-20240307',
-        'claude-3-opus-20240229',
-    ];
-
     const supportedModels: ModelQuickPickItem[] = [];
     const unsupportedModels: ModelQuickPickItem[] = [];
     models.forEach((model) => {
@@ -129,7 +108,7 @@ function getModelQuickPickItems(
             id: model.id, // Store the actual model.id
             name: modelName,
         };
-        if (unsupportedModelIds.includes(model.id)) {
+        if (isUnSupportedModel(model.id)) {
             unsupportedModels.push(item);
         } else {
             supportedModels.push(item);
