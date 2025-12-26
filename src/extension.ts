@@ -53,6 +53,15 @@ async function reviewUnstagedChangesCommand() {
 }
 
 async function startReviewChat(target: string = '', base: string = '') {
+    // if chat view is not focused, the command sometimes fizzles without doing anything, so focus it first before sending the command.
+    await vscode.commands.executeCommand(
+        'workbench.panel.chat.view.copilot.focus'
+    );
+
+    // wait for chat to initialize...
+    const delayMs = 200;
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+
     const query = `@lgtm /review ${target} ${base}`.trim();
 
     await vscode.commands.executeCommand('workbench.action.chat.open', {
