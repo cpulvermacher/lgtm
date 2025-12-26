@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.0.0] (pre-release)
+- (breaking change) `/branch` and `/commit` chat commands have been removed, please use `/review` or the new `LGTM: Start Code Review...` command from the command palette instead.
+
+- Add `Start Code Review...`, `Review Staged Changes`, and `Review Unstaged Changes` to command palette
+- Support `/review staged` and `/review unstaged` chat commands
+- Add review buttons for reviewing staged / unstaged changes on the Source Control view
+- Improve message shown when no changes are found.
+
 ## [0.23.0]
 Includes changes from 0.22.5 to 0.22.7.
 Highlights:

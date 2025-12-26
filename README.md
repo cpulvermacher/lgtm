@@ -14,9 +14,7 @@ LGTM is a Visual Studio Code extension that uses GitHub Copilot Chat to review s
 Switch to the Chat sidebar.
 
 - Type `/review` to review uncommitted changes or changes between two branches, commits, or tags.
-- You can specify git refs explicitly, e.g. `/review develop main`, or omit arguments to select refs interactively.
-- Use `/branch` to review changes between two branches.
-- Use `/commit` to review a single commit.
+- You can specify git refs as arguments, e.g. `/review develop main`, or omit arguments to select refs interactively.
 
 **View Results**
 
