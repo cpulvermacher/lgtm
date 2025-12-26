@@ -57,6 +57,7 @@ export async function reviewDiff(
 
     const result: ReviewResult = {
         request,
+        files,
         fileComments: sortFileCommentsBySeverity(fileComments),
         errors,
     };

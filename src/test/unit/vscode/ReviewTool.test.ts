@@ -42,6 +42,7 @@ describe('ReviewTool', () => {
     beforeEach(() => {
         vi.mocked(reviewDiff).mockResolvedValue({
             request: { scope: {} } as ReviewRequest,
+            files: [],
             fileComments: [
                 {
                     target: 'test-file.ts',

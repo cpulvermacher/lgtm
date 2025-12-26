@@ -46,6 +46,7 @@ async function handleChat(
 
     const reviewRequest = await getReviewRequest(config, chatRequest.prompt);
     if (!reviewRequest) {
+        stream.markdown(`Nothing to do.`);
         return;
     }
 
@@ -152,6 +153,11 @@ function showReviewResults(
     stream: vscode.ChatResponseStream,
     token: vscode.CancellationToken
 ) {
+    if (result.files.length === 0) {
+        stream.markdown('\nNo changes found.');
+        return;
+    }
+
     const options = config.getOptions();
     const isTargetCheckedOut = result.request.scope.isTargetCheckedOut;
     let noProblemsFound = true;
