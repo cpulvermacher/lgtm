@@ -1,19 +1,14 @@
 import simpleGit, { SimpleGit } from 'simple-git';
 
+import type { DiffFile } from '@/types/DiffFile';
 import { type Ref, UncommittedRef } from '@/types/Ref';
-import { ReviewScope } from '@/types/ReviewRequest';
+import type { ReviewScope } from '@/types/ReviewRequest';
 
 /** same as git's default length for short commit hashes */
 export const shortHashLength = 7;
 
 /** Git's empty tree object hash, useful when comparing against the initial commit. */
 export const GIT_EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
-
-export type DiffFile = {
-    file: string;
-    from?: string; //previous file name (if renamed)
-    status: string; // see --diff-filter in git-diff(1). Interesting for us: D (deleted), R (renamed)
-};
 
 /** Create a new Git instance */
 export async function createGit(workspaceRoot: string): Promise<Git> {

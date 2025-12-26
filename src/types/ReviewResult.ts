@@ -1,4 +1,4 @@
-import { DiffFile } from '@/utils/git';
+import { DiffFile } from './DiffFile';
 import { FileComments } from './FileComments';
 import { ReviewRequest } from './ReviewRequest';
 

@@ -1,6 +1,7 @@
 import type { CancellationToken, Progress } from 'vscode';
 
 import type { Config } from '@/types/Config';
+import type { DiffFile } from '@/types/DiffFile';
 import { ModelError } from '@/types/ModelError';
 import type { PromptType } from '@/types/PromptType';
 import type { ReviewComment } from '@/types/ReviewComment';
@@ -8,7 +9,6 @@ import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import { parallelLimit } from '@/utils/async';
 import { correctFilename } from '@/utils/filenames';
-import type { DiffFile } from '@/utils/git';
 import { isPathNotExcluded } from '@/utils/glob';
 import { saveToFile } from '@/utils/saveToFile';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
