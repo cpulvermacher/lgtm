@@ -1,10 +1,9 @@
 import type { PromptType } from '../types/PromptType';
-import { createReviewPromptV1 } from './promptV1';
 import { createReviewPromptV2 } from './promptV2';
 import { createReviewPromptV2Think } from './promptV2Think';
 
 export const defaultPromptType: PromptType = 'v2think';
-const promptTypes: PromptType[] = ['v1', 'v2', 'v2think'];
+const promptTypes: PromptType[] = ['v2', 'v2think'];
 
 export const reasoningTag = 'code_review_process';
 
@@ -32,13 +31,16 @@ export function createReviewPrompt(
     customPrompt: string,
     promptType?: PromptType
 ): string {
-    const type = promptType || defaultPromptType;
-    if (type === 'v2') {
-        return createReviewPromptV2(changeDescription, diff, customPrompt);
-    } else if (type === 'v2think') {
-        return createReviewPromptV2Think(changeDescription, diff, customPrompt);
-    } else {
-        return createReviewPromptV1(changeDescription, diff, customPrompt);
+    switch (promptType) {
+        case 'v2':
+            return createReviewPromptV2(changeDescription, diff, customPrompt);
+        case 'v2think':
+        default:
+            return createReviewPromptV2Think(
+                changeDescription,
+                diff,
+                customPrompt
+            );
     }
 }
 

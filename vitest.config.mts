@@ -22,7 +22,7 @@ export default defineConfig({
             ],
             thresholds: {
                 lines: 98.21,
-                functions: 97.67,
+                functions: 97.64,
                 autoUpdate: true,
             },
             reporter: ['text', 'lcov'],

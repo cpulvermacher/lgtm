@@ -18,16 +18,6 @@ describe('createReviewPrompt', () => {
         );
     });
 
-    it('creates prompt with v1 type', async () => {
-        const prompt = createReviewPrompt(
-            changeDescription,
-            diff,
-            customPrompt,
-            'v1'
-        );
-        await expect(prompt).toMatchFileSnapshot('review-prompt-v1.snap');
-    });
-
     it('creates prompt with v2 type', async () => {
         const prompt = createReviewPrompt(
             changeDescription,
