@@ -1,234 +1,277 @@
 {
-  "name": "lgtm",
-  "displayName": "LGTM - AI Code Review",
-  "description": "Review source code changes in Git using GitHub Copilot Chat",
-  "publisher": "cpulvermacher",
-  "version": "0.23.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/cpulvermacher/lgtm.git"
-  },
-  "engines": {
-    "vscode": "^1.104.0"
-  },
-  "categories": [
-    "AI",
-    "Chat",
-    "Machine Learning",
-    "Programming Languages"
-  ],
-  "keywords": [
-    "ai",
-    "chat",
-    "copilot",
-    "git",
-    "review"
-  ],
-  "icon": "images/icon.png",
-  "license": "SEE LICENSE IN LICENSE",
-  "activationEvents": [],
-  "main": "./out/extension.js",
-  "enabledApiProposals": [],
-  "contributes": {
-    "commands": [
-      {
-        "command": "lgtm.selectChatModel",
-        "title": "Select Chat Model",
-        "category": "LGTM"
-      }
+    "name": "lgtm",
+    "displayName": "LGTM - AI Code Review",
+    "description": "Review source code changes in Git using GitHub Copilot Chat",
+    "publisher": "cpulvermacher",
+    "version": "0.23.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/cpulvermacher/lgtm.git"
+    },
+    "engines": {
+        "vscode": "^1.104.0"
+    },
+    "categories": [
+        "AI",
+        "Chat",
+        "Machine Learning",
+        "Programming Languages"
     ],
-    "chatParticipants": [
-      {
-        "id": "lgtm",
-        "name": "lgtm",
-        "fullName": "LGTM",
-        "description": "Review source code changes",
-        "isSticky": false,
+    "keywords": [
+        "ai",
+        "chat",
+        "copilot",
+        "git",
+        "review"
+    ],
+    "icon": "images/icon.png",
+    "license": "SEE LICENSE IN LICENSE",
+    "activationEvents": [
+        "onChatParticipant:lgtm"
+    ],
+    "main": "./out/extension.js",
+    "enabledApiProposals": [],
+    "contributes": {
         "commands": [
-          {
-            "name": "review",
-            "description": "Review changes between two branches, commits, or tags.  You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively."
-          },
-          {
-            "name": "branch",
-            "description": "Review changes between two branches."
-          },
-          {
-            "name": "commit",
-            "description": "Review changes in a single commit."
-          }
-        ]
-      }
-    ],
-    "languageModelTools": [
-      {
-        "name": "review",
-        "displayName": "Review source code changes in Git using AI",
-        "modelDescription": "Reviews source code changes in Git using AI. Use this tool to review any changes on the `target` ref (compared to `base`) to discover potential issues. Returns a list of review comments with file names, line numbers, and severity.",
-        "canBeReferencedInPrompt": true,
-        "toolReferenceName": "review",
-        "icon": "images/icon.png",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "target": {
-              "type": "string",
-              "description": "Target git ref (branch, commit, or tag) to review. (e.g. 'main', 'abc1234', 'v0.1.0', 'HEAD')"
+            {
+                "command": "lgtm.selectChatModel",
+                "title": "Select Chat Model...",
+                "category": "LGTM"
             },
-            "base": {
-              "type": "string",
-              "description": "Base git ref (branch, commit, or tag) to compare against. (e.g. 'origin/main', 'abc1235', 'v0.0.9', 'HEAD~1')"
+            {
+                "command": "lgtm.startCodeReview",
+                "title": "Start Code Review...",
+                "category": "LGTM",
+                "icon": {
+                    "light": "images/icon.png",
+                    "dark": "images/icon.png"
+                }
+            },
+            {
+                "command": "lgtm.reviewStagedChanges",
+                "title": "Review Staged Changes",
+                "category": "LGTM",
+                "icon": {
+                    "light": "images/icon.png",
+                    "dark": "images/icon.png"
+                }
+            },
+            {
+                "command": "lgtm.reviewUnstagedChanges",
+                "title": "Review Unstaged Changes",
+                "category": "LGTM",
+                "icon": {
+                    "light": "images/icon.png",
+                    "dark": "images/icon.png"
+                }
             }
-          },
-          "required": [
-            "target",
-            "base"
-          ]
-        }
-      },
-      {
-        "name": "reviewStaged",
-        "displayName": "Review staged changes in Git using AI",
-        "modelDescription": "Reviews staged changes in Git using AI. Use this tool to review changes that have been staged with `git add` but not yet committed. Returns a list of review comments with file names, line numbers, and severity.",
-        "canBeReferencedInPrompt": true,
-        "toolReferenceName": "reviewStaged",
-        "icon": "images/icon.png",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "changeDescription": {
-              "type": "string",
-              "description": "Description of what the changes to review are expected to implement. Use this to provide context for the review and be explicit about requirements."
+        ],
+        "menus": {
+            "scm/resourceGroup/context": [
+                {
+                    "command": "lgtm.reviewStagedChanges",
+                    "when": "scmProvider == git && scmResourceGroup == index",
+                    "group": "inline@-3"
+                },
+                {
+                    "command": "lgtm.reviewUnstagedChanges",
+                    "when": "scmProvider == git && scmResourceGroup == workingTree",
+                    "group": "inline@-3"
+                }
+            ]
+        },
+        "chatParticipants": [
+            {
+                "id": "lgtm",
+                "name": "lgtm",
+                "fullName": "LGTM",
+                "description": "Review source code changes",
+                "isSticky": false,
+                "commands": [
+                    {
+                        "name": "review",
+                        "description": "Review changes between two branches, commits, or tags.  You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively."
+                    },
+                    {
+                        "name": "branch",
+                        "description": "Review changes between two branches."
+                    },
+                    {
+                        "name": "commit",
+                        "description": "Review changes in a single commit."
+                    }
+                ]
             }
-          }
-        }
-      },
-      {
-        "name": "reviewUnstaged",
-        "displayName": "Review unstaged changes in Git using AI",
-        "modelDescription": "Reviews unstaged changes in Git using AI. Use this tool to review changes in your working directory that haven't been staged yet. You can use this to check your work after completing a change requested by the user. Returns a list of review comments with file names, line numbers, and severity.",
-        "canBeReferencedInPrompt": true,
-        "toolReferenceName": "reviewUnstaged",
-        "icon": "images/icon.png",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "changeDescription": {
-              "type": "string",
-              "description": "Description of what the changes to review are expected to implement. Use this to provide context for the review and be explicit about requirements."
+        ],
+        "languageModelTools": [
+            {
+                "name": "review",
+                "displayName": "Review source code changes in Git using AI",
+                "modelDescription": "Reviews source code changes in Git using AI. Use this tool to review any changes on the `target` ref (compared to `base`) to discover potential issues. Returns a list of review comments with file names, line numbers, and severity.",
+                "canBeReferencedInPrompt": true,
+                "toolReferenceName": "review",
+                "icon": "images/icon.png",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "target": {
+                            "type": "string",
+                            "description": "Target git ref (branch, commit, or tag) to review. (e.g. 'main', 'abc1234', 'v0.1.0', 'HEAD')"
+                        },
+                        "base": {
+                            "type": "string",
+                            "description": "Base git ref (branch, commit, or tag) to compare against. (e.g. 'origin/main', 'abc1235', 'v0.0.9', 'HEAD~1')"
+                        }
+                    },
+                    "required": [
+                        "target",
+                        "base"
+                    ]
+                }
+            },
+            {
+                "name": "reviewStaged",
+                "displayName": "Review staged changes in Git using AI",
+                "modelDescription": "Reviews staged changes in Git using AI. Use this tool to review changes that have been staged with `git add` but not yet committed. Returns a list of review comments with file names, line numbers, and severity.",
+                "canBeReferencedInPrompt": true,
+                "toolReferenceName": "reviewStaged",
+                "icon": "images/icon.png",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "changeDescription": {
+                            "type": "string",
+                            "description": "Description of what the changes to review are expected to implement. Use this to provide context for the review and be explicit about requirements."
+                        }
+                    }
+                }
+            },
+            {
+                "name": "reviewUnstaged",
+                "displayName": "Review unstaged changes in Git using AI",
+                "modelDescription": "Reviews unstaged changes in Git using AI. Use this tool to review changes in your working directory that haven't been staged yet. You can use this to check your work after completing a change requested by the user. Returns a list of review comments with file names, line numbers, and severity.",
+                "canBeReferencedInPrompt": true,
+                "toolReferenceName": "reviewUnstaged",
+                "icon": "images/icon.png",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "changeDescription": {
+                            "type": "string",
+                            "description": "Description of what the changes to review are expected to implement. Use this to provide context for the review and be explicit about requirements."
+                        }
+                    }
+                }
             }
-          }
+        ],
+        "configuration": {
+            "title": "LGTM",
+            "properties": {
+                "lgtm.minSeverity": {
+                    "type": "number",
+                    "default": 2,
+                    "description": "Suppress comments with severity lower than the configured value. (1 to show all issues)",
+                    "minimum": 1,
+                    "maximum": 5
+                },
+                "lgtm.customPrompt": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Add custom text to the review prompt. For example, \"- In the final JSON output, use Spanish for the  `comment` field.\"",
+                    "editPresentation": "multilineText"
+                },
+                "lgtm.exclude": {
+                    "type": "array",
+                    "default": [
+                        "package-lock.json",
+                        "yarn.lock",
+                        "pnpm-lock.yaml",
+                        "*.min.js"
+                    ],
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Exclude paths from review using glob patterns. Binary files are not reviewed and do not need to be excluded."
+                },
+                "lgtm.enableDebugOutput": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Log debug output to Output Panel > LGTM."
+                },
+                "lgtm.chatModel": {
+                    "type": "string",
+                    "default": "gpt-4.1",
+                    "markdownDescription": "Chat model ID to use for generating review comments. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits. Use the 'LGTM: Select Chat Model' command to choose from available models."
+                },
+                "lgtm.mergeFileReviewRequests": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Review changes for multiple files in one request. This improves the model's understanding of the context of individual changes and speeds up reviews. Disabling this will lose these advantages, but can be useful for a very detailed line-by-line review."
+                },
+                "lgtm.maxInputTokensFraction": {
+                    "type": "number",
+                    "default": 0.95,
+                    "description": "Fraction of the chat model's input token limit to use for requests. Lower values may increase quality of e.g. function level comments, but reduce the available context; higher values may improve the models understanding on how different changes relate to each other. The maximum allowed value is 0.95 to avoid token limit errors.",
+                    "minimum": 0.05,
+                    "maximum": 0.95
+                },
+                "lgtm.maxConcurrentModelRequests": {
+                    "type": "number",
+                    "default": 4,
+                    "description": "Maximum number of concurrent requests to the chat model. Increase this to speed up reviews, but be aware that this may lead to rate limiting by the model provider.",
+                    "minimum": 1,
+                    "maximum": 10
+                },
+                "lgtm.saveOutputToFile": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Save ReviewResult to JSON file for debugging purposes. Files are saved to .lgtm-debug/ directory in workspace root."
+                }
+            }
         }
-      }
+    },
+    "scripts": {
+        "preinstall": "npx only-allow pnpm",
+        "check-exclusive": "ps aux | grep -v grep | grep -q 'esbuild.*--watch' && echo 'esbuild --watch running, aborting!' && exit 1 || exit 0",
+        "vscode:prepublish": "pnpm check-exclusive && rm -rf ./out && pnpm esbuild-base --minify --pure:console.debug",
+        "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --define:__GIT_VERSION__=\\\"$GIT_VERSION\\\"",
+        "watch": "pnpm esbuild-base --sourcemap --watch",
+        "dev": "GIT_VERSION=$(git describe  --tags --long) pnpm build",
+        "build": "npx vsce package --no-dependencies",
+        "format": "pnpm exec biome check --write src/",
+        "lint": "tsc --noEmit && pnpm exec biome check src/",
+        "test": "vitest run",
+        "coverage": "vitest run --coverage",
+        "checkall": "pnpm test && pnpm lint && pnpm build"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "2.2.4",
+        "@types/node": "22.x",
+        "@types/vscode": "^1.104.0",
+        "@vitest/coverage-v8": "^4.0.15",
+        "@vscode/vsce": "^3.7.1",
+        "esbuild": "^0.27.1",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.15"
+    },
+    "dependencies": {
+        "fastest-levenshtein": "^1.0.16",
+        "jsonc-parser": "^3.3.1",
+        "minimatch": "^10.1.1",
+        "simple-git": "^3.30.0"
+    },
+    "extensionDependencies": [
+        "github.copilot-chat"
     ],
-    "configuration": {
-      "title": "LGTM",
-      "properties": {
-        "lgtm.minSeverity": {
-          "type": "number",
-          "default": 2,
-          "description": "Suppress comments with severity lower than the configured value. (1 to show all issues)",
-          "minimum": 1,
-          "maximum": 5
-        },
-        "lgtm.customPrompt": {
-          "type": "string",
-          "default": "",
-          "description": "Add custom text to the review prompt. For example, \"- In the final JSON output, use Spanish for the  `comment` field.\"",
-          "editPresentation": "multilineText"
-        },
-        "lgtm.exclude": {
-          "type": "array",
-          "default": [
-            "package-lock.json",
-            "yarn.lock",
-            "pnpm-lock.yaml",
-            "*.min.js"
-          ],
-          "items": {
-            "type": "string"
-          },
-          "description": "Exclude paths from review using glob patterns. Binary files are not reviewed and do not need to be excluded."
-        },
-        "lgtm.enableDebugOutput": {
-          "type": "boolean",
-          "default": false,
-          "description": "Log debug output to Output Panel > LGTM."
-        },
-        "lgtm.chatModel": {
-          "type": "string",
-          "default": "gpt-4.1",
-          "markdownDescription": "Chat model ID to use for generating review comments. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits. Use the 'LGTM: Select Chat Model' command to choose from available models."
-        },
-        "lgtm.mergeFileReviewRequests": {
-          "type": "boolean",
-          "default": true,
-          "description": "Review changes for multiple files in one request. This improves the model's understanding of the context of individual changes and speeds up reviews. Disabling this will lose these advantages, but can be useful for a very detailed line-by-line review."
-        },
-        "lgtm.maxInputTokensFraction": {
-          "type": "number",
-          "default": 0.95,
-          "description": "Fraction of the chat model's input token limit to use for requests. Lower values may increase quality of e.g. function level comments, but reduce the available context; higher values may improve the models understanding on how different changes relate to each other. The maximum allowed value is 0.95 to avoid token limit errors.",
-          "minimum": 0.05,
-          "maximum": 0.95
-        },
-        "lgtm.maxConcurrentModelRequests": {
-          "type": "number",
-          "default": 4,
-          "description": "Maximum number of concurrent requests to the chat model. Increase this to speed up reviews, but be aware that this may lead to rate limiting by the model provider.",
-          "minimum": 1,
-          "maximum": 10
-        },
-        "lgtm.saveOutputToFile": {
-          "type": "boolean",
-          "default": false,
-          "description": "Save ReviewResult to JSON file for debugging purposes. Files are saved to .lgtm-debug/ directory in workspace root."
+    "pnpm": {
+        "overrides": {
+            "brace-expansion@>=1.0.0 <=1.1.11": ">=1.1.12",
+            "brace-expansion@>=2.0.0 <=2.0.1": ">=2.0.2",
+            "tar-fs@>=2.0.0 <2.1.4": ">=2.1.4",
+            "glob@>=10.2.0 <10.5.0": ">=10.5.0",
+            "glob@>=11.0.0 <11.1.0": ">=11.1.0",
+            "jws@=4.0.0": ">=4.0.1",
+            "jws@<3.2.3": ">=3.2.3"
         }
-      }
     }
-  },
-  "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "check-exclusive": "ps aux | grep -v grep | grep -q 'esbuild.*--watch' && echo 'esbuild --watch running, aborting!' && exit 1 || exit 0",
-    "vscode:prepublish": "pnpm check-exclusive && rm -rf ./out && pnpm esbuild-base --minify --pure:console.debug",
-    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --define:__GIT_VERSION__=\\\"$GIT_VERSION\\\"",
-    "watch": "pnpm esbuild-base --sourcemap --watch",
-    "dev": "GIT_VERSION=$(git describe  --tags --long) pnpm build",
-    "build": "npx vsce package --no-dependencies",
-    "format": "pnpm exec biome check --write src/",
-    "lint": "tsc --noEmit && pnpm exec biome check src/",
-    "test": "vitest run",
-    "coverage": "vitest run --coverage",
-    "checkall": "pnpm test && pnpm lint && pnpm build"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.2.4",
-    "@types/node": "22.x",
-    "@types/vscode": "^1.104.0",
-    "@vitest/coverage-v8": "^4.0.15",
-    "@vscode/vsce": "^3.7.1",
-    "esbuild": "^0.27.1",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.15"
-  },
-  "dependencies": {
-    "fastest-levenshtein": "^1.0.16",
-    "jsonc-parser": "^3.3.1",
-    "minimatch": "^10.1.1",
-    "simple-git": "^3.30.0"
-  },
-  "extensionDependencies": [
-    "github.copilot-chat"
-  ],
-  "pnpm": {
-    "overrides": {
-      "brace-expansion@>=1.0.0 <=1.1.11": ">=1.1.12",
-      "brace-expansion@>=2.0.0 <=2.0.1": ">=2.0.2",
-      "tar-fs@>=2.0.0 <2.1.4": ">=2.1.4",
-      "glob@>=10.2.0 <10.5.0": ">=10.5.0",
-      "glob@>=11.0.0 <11.1.0": ">=11.1.0",
-      "jws@=4.0.0": ">=4.0.1",
-      "jws@<3.2.3": ">=3.2.3"
-    }
-  }
 }

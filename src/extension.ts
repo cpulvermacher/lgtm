@@ -24,6 +24,18 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(
             'lgtm.selectChatModel',
             handleSelectChatModel
+        ),
+        vscode.commands.registerCommand(
+            'lgtm.startCodeReview',
+            startCodeReviewCommand
+        ),
+        vscode.commands.registerCommand(
+            'lgtm.reviewStagedChanges',
+            reviewStagedChangesCommand
+        ),
+        vscode.commands.registerCommand(
+            'lgtm.reviewUnstagedChanges',
+            reviewUnstagedChangesCommand
         )
     );
 
@@ -44,6 +56,25 @@ export function deactivate() {
     if (chatParticipant) {
         chatParticipant.dispose();
     }
+}
+
+async function startCodeReviewCommand() {
+    await startReviewChat();
+}
+async function reviewStagedChangesCommand() {
+    await startReviewChat('staged');
+}
+async function reviewUnstagedChangesCommand() {
+    await startReviewChat('unstaged');
+}
+
+async function startReviewChat(target: string = '', base: string = '') {
+    const query = `@lgtm /review ${target} ${base}`.trim();
+
+    await vscode.commands.executeCommand('workbench.action.chat.open', {
+        query,
+        // set `isPartialQuery: true` to not send directly
+    });
 }
 
 async function handleChat(
