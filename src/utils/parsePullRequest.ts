@@ -18,7 +18,7 @@ export function parsePullRequest(model: unknown): PullRequestTarget {
         bitbucketModel?.pr?.data?.destination?.branchName;
     if (bitbucketTargetBranch && bitbucketBaseBranch) {
         const remoteName =
-            bitbucketModel?.pr?.workspaceRepo?.mainSiteRemote?.remote.name;
+            bitbucketModel.pr.workspaceRepo?.mainSiteRemote?.remote?.name;
         return {
             remote: remoteName,
             target: bitbucketTargetBranch,
