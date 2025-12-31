@@ -91,7 +91,7 @@
             "view/item/context": [
                 {
                     "command": "lgtm.reviewPullRequest",
-                    "when": "focusedView == atlascode.views.bb.pullrequestsTreeView && viewItem == pullrequest",
+                    "when": "view == atlascode.views.bb.pullrequestsTreeView && viewItem == pullrequest",
                     "group": "inline@-3"
                 }
             ],
