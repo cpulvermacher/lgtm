@@ -3,9 +3,9 @@ import * as vscode from 'vscode';
 import { UncommittedRef } from '@/types/Ref';
 import { getConfig } from '@/vscode/config';
 import { ReviewTool } from '@/vscode/ReviewTool';
+import { parsePullRequest } from './utils/parsePullRequest';
 import { registerChatParticipant } from './vscode/chat';
 import { isUnSupportedModel } from './vscode/model';
-import { parsePullRequest } from './utils/parsePullRequest';
 
 // called the first time a command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -57,9 +57,12 @@ async function reviewUnstagedChangesCommand() {
     await startReviewChat('unstaged');
 }
 async function reviewPullRequestCommand(model: unknown) {
-    const { target, base } = parsePullRequest(model);
+    const { remote, target, base } = parsePullRequest(model);
 
-    await startReviewChat(target, base);
+    const targetBranch = remote ? `${remote}/${target}` : target;
+    const baseBranch = remote ? `${remote}/${base}` : base;
+
+    await startReviewChat(targetBranch, baseBranch);
 }
 
 async function startReviewChat(target: string = '', base: string = '') {
