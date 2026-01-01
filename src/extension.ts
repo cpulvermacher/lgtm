@@ -60,9 +60,11 @@ async function reviewUnstagedChangesCommand() {
     await startReviewChat('unstaged');
 }
 async function reviewPullRequestCommand(model: unknown) {
+    const config = await getConfig();
+
     let pullRequest;
     try {
-        pullRequest = parsePullRequest(model);
+        pullRequest = await parsePullRequest(config, model);
     } catch (error) {
         if (error instanceof UnsupportedModelError) {
             await vscode.window.showInformationMessage(
@@ -76,11 +78,8 @@ async function reviewPullRequestCommand(model: unknown) {
         }
     }
 
-    const { remote, target, base } = pullRequest;
-    const targetBranch = remote ? `${remote}/${target}` : target;
-    const baseBranch = remote ? `${remote}/${base}` : base;
-
-    await startReviewChat(targetBranch, baseBranch);
+    const { target, base } = pullRequest;
+    await startReviewChat(target, base);
 }
 
 async function startReviewChat(target: string = '', base: string = '') {

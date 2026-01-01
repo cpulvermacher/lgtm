@@ -1,21 +1,27 @@
 import { describe, expect, it } from 'vitest';
 
-import { BitBucketDataModel } from '@/types/BitBucketPullRequest';
+import type { BitBucketDataModel } from '@/types/BitBucketPullRequest';
+import type { Config } from '@/types/Config';
 import {
     parsePullRequest,
     UnsupportedModelError,
 } from '@/utils/parsePullRequest';
 
 describe('parsePullRequest', () => {
-    it('throws if model itself seems invalid', () => {
-        expect(() => parsePullRequest(null)).toThrow(UnsupportedModelError);
-        expect(() => parsePullRequest(undefined)).toThrow(
+    const config = {} as Config;
+    it('throws if model itself seems invalid', async () => {
+        await expect(() => parsePullRequest(config, null)).rejects.toThrow(
             UnsupportedModelError
         );
-        expect(() => parsePullRequest('abc')).toThrow(UnsupportedModelError);
+        await expect(() => parsePullRequest(config, undefined)).rejects.toThrow(
+            UnsupportedModelError
+        );
+        await expect(() => parsePullRequest(config, 'abc')).rejects.toThrow(
+            UnsupportedModelError
+        );
     });
 
-    it('parses bitbucket pull request model without remote', () => {
+    it('parses bitbucket pull request model without remote', async () => {
         const model = {
             pr: {
                 data: {
@@ -29,7 +35,7 @@ describe('parsePullRequest', () => {
             },
         } as BitBucketDataModel;
 
-        const result = parsePullRequest(model);
+        const result = await parsePullRequest(config, model);
 
         expect(result).toEqual({
             target: 'feature-branch',
@@ -37,7 +43,7 @@ describe('parsePullRequest', () => {
         });
     });
 
-    it('parses bitbucket pull request model with remote', () => {
+    it('parses bitbucket pull request model with remote', async () => {
         const model = {
             pr: {
                 data: {
@@ -58,18 +64,19 @@ describe('parsePullRequest', () => {
             },
         } as BitBucketDataModel;
 
-        const result = parsePullRequest(model);
+        const result = await parsePullRequest(config, model);
 
         expect(result).toEqual({
-            remote: 'abcdef',
-            target: 'feature-branch',
-            base: 'main',
+            target: 'abcdef/feature-branch',
+            base: 'abcdef/main',
         });
     });
 
-    it('throws if model is unsupported type', () => {
+    it('throws if model is unsupported type', async () => {
         const model = {};
 
-        expect(() => parsePullRequest(model)).toThrow(UnsupportedModelError);
+        await expect(() => parsePullRequest(config, model)).rejects.toThrow(
+            UnsupportedModelError
+        );
     });
 });

@@ -1,4 +1,10 @@
-import { BitBucketDataModel } from '@/types/BitBucketPullRequest';
+import type { BitBucketDataModel } from '@/types/BitBucketPullRequest';
+import type { Config } from '@/types/Config';
+import type {
+    GitHubPullRequestModel,
+    GitHubRef,
+} from '@/types/GitHubPullRequest';
+import type { Git } from './git';
 
 /** thrown when command is run on something that is not a supported pull request */
 export class UnsupportedModelError extends Error {
@@ -7,13 +13,22 @@ export class UnsupportedModelError extends Error {
     }
 }
 
+/** thrown when we can not find a git remote for the given repository */
+export class GitHubRemoteNotFound extends Error {
+    constructor(owner: string, repository: string) {
+        super(`Remote for ${owner}/${repository} not found`);
+    }
+}
+
 type PullRequestTarget = {
-    remote?: string; // remote name, e.g. "origin"
     target: string;
     base: string;
 };
 
-export function parsePullRequest(model: unknown): PullRequestTarget {
+export async function parsePullRequest(
+    config: Config,
+    model: unknown
+): Promise<PullRequestTarget> {
     if (!model || typeof model !== 'object') {
         throw new UnsupportedModelError('Invalid model object');
     }
@@ -30,13 +45,88 @@ export function parsePullRequest(model: unknown): PullRequestTarget {
         }
 
         return {
-            remote: remoteName,
-            target,
-            base,
+            target: getRemoteBranch(remoteName, target),
+            base: getRemoteBranch(remoteName, base),
+        };
+    }
+
+    //try parsing as GitHub PR
+    if ('pullRequestModel' in model) {
+        const pr = (model as GitHubPullRequestModel).pullRequestModel;
+        const targetRef = pr?.item?.head;
+        const baseRef = pr?.item?.base;
+
+        if (!targetRef || !baseRef) {
+            throw new Error('Could not parse GitHub pull request branches');
+        }
+
+        return {
+            target: await getRemoteBranchFromRef(config.git, targetRef),
+            base: await getRemoteBranchFromRef(config.git, baseRef),
         };
     }
 
     throw new UnsupportedModelError(
         "Unsupported model type. This doesn't look like a pull request."
     );
+}
+
+function getRemoteBranch(remote: string | undefined, branch: string): string {
+    return remote ? `${remote}/${branch}` : branch;
+}
+
+async function getRemoteBranchFromRef(
+    git: Git,
+    ref: GitHubRef
+): Promise<string> {
+    //TODO pass `localBranchName` and check if that branch matches the sha
+
+    //check if our workspace has a github remote for the given owner/repo
+    const remotes = await git.getRemotes();
+    const matchingRemote = remotes.find((remote) => {
+        const parsedRemote = parseGitHubRemoteUrl(remote.url);
+        return (
+            parsedRemote.owner === ref.repo.owner &&
+            parsedRemote.repo === ref.repo.name
+        );
+    });
+    if (!matchingRemote) {
+        throw new GitHubRemoteNotFound(ref.repo.owner, ref.repo.name);
+    }
+
+    //TODO consider checking with ls-remote so we don't need to fetch here
+
+    //construct branch name and check if it exists
+    const remoteBranchName = `${matchingRemote.name}/${ref.ref}`;
+    // try {
+    //     //throws on failure
+    //     await git.getCommitRef(remoteBranchName);
+    // } catch {
+    //     throw new GitHubBranchNotFound();
+    // }
+    //
+    return remoteBranchName;
+}
+
+function parseGitHubRemoteUrl(url: string) {
+    // HTTPS URL, e.g. https://github.com/user/repo.git
+    let separator = 'github.com/';
+    if (!url.startsWith('https://')) {
+        // SSH URL, e.g. git@github.com:user/repo.git
+
+        if (url.includes('github.com:')) separator = 'github.com:';
+    }
+    const ownerRepo = url.split(separator, 2)[1];
+
+    if (!ownerRepo) {
+        throw new Error(`Remote ${url} could not be parsed.`);
+    }
+
+    let [owner, repo] = ownerRepo.split('/', 2);
+    //remove .git from repo (if exists)
+    if (url.endsWith('.git')) {
+        repo = repo.slice(0, -4);
+    }
+
+    return { owner, repo };
 }
