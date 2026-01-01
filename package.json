@@ -91,8 +91,8 @@
             "view/item/context": [
                 {
                     "command": "lgtm.reviewPullRequest",
-                    "when": "view == atlascode.views.bb.pullrequestsTreeView && viewItem == pullrequest",
-                    "group": "inline@-3"
+                    "when": "view == atlascode.views.bb.pullrequestsTreeView && viewItem == pullrequest && !treeElementHasParent",
+                    "group": "inline"
                 }
             ],
             "commandPalette": [
