@@ -57,8 +57,17 @@ async function reviewUnstagedChangesCommand() {
     await startReviewChat('unstaged');
 }
 async function reviewPullRequestCommand(model: unknown) {
-    const { remote, target, base } = parsePullRequest(model);
+    let pullRequest;
+    try {
+        pullRequest = parsePullRequest(model);
+    } catch (error) {
+        await vscode.window.showInformationMessage(
+            'Click "Review Pull Request" on a pull request to start a review.'
+        );
+        return;
+    }
 
+    const { remote, target, base } = pullRequest;
     const targetBranch = remote ? `${remote}/${target}` : target;
     const baseBranch = remote ? `${remote}/${base}` : base;
 
