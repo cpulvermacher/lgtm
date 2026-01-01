@@ -25,6 +25,10 @@ export function parsePullRequest(model: unknown): PullRequestTarget {
         const base = pr?.data?.destination?.branchName;
         const remoteName = pr.workspaceRepo?.mainSiteRemote?.remote?.name;
 
+        if (!target || !base) {
+            throw new Error('Could not parse BitBucket pull request branches');
+        }
+
         return {
             remote: remoteName,
             target,
