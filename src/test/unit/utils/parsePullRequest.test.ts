@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { BitBucketDataModel } from '@/types/BitBucketPullRequest';
-import { parsePullRequest } from '@/utils/parsePullRequest';
+import {
+    parsePullRequest,
+    UnsupportedModelError,
+} from '@/utils/parsePullRequest';
 
 describe('parsePullRequest', () => {
     it('throws if model itself seems invalid', () => {
-        expect(() => parsePullRequest(null)).toThrow('Invalid model object');
+        expect(() => parsePullRequest(null)).toThrow(UnsupportedModelError);
         expect(() => parsePullRequest(undefined)).toThrow(
-            'Invalid model object'
+            UnsupportedModelError
         );
-        expect(() => parsePullRequest('abc')).toThrow('Invalid model object');
+        expect(() => parsePullRequest('abc')).toThrow(UnsupportedModelError);
     });
 
     it('parses bitbucket pull request model without remote', () => {
@@ -65,14 +68,8 @@ describe('parsePullRequest', () => {
     });
 
     it('throws if model is unsupported type', () => {
-        const model = {
-            pr: {
-                data: 'unexpected',
-            },
-        };
+        const model = {};
 
-        expect(() => parsePullRequest(model)).toThrow(
-            'Unsupported model type.'
-        );
+        expect(() => parsePullRequest(model)).toThrow(UnsupportedModelError);
     });
 });

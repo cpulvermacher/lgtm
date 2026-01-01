@@ -3,7 +3,10 @@ import * as vscode from 'vscode';
 import { UncommittedRef } from '@/types/Ref';
 import { getConfig } from '@/vscode/config';
 import { ReviewTool } from '@/vscode/ReviewTool';
-import { parsePullRequest } from './utils/parsePullRequest';
+import {
+    parsePullRequest,
+    UnsupportedModelError,
+} from './utils/parsePullRequest';
 import { registerChatParticipant } from './vscode/chat';
 import { isUnSupportedModel } from './vscode/model';
 
@@ -61,10 +64,16 @@ async function reviewPullRequestCommand(model: unknown) {
     try {
         pullRequest = parsePullRequest(model);
     } catch (error) {
-        await vscode.window.showInformationMessage(
-            'Click "Review Pull Request" on a pull request to start a review.'
-        );
-        return;
+        if (error instanceof UnsupportedModelError) {
+            await vscode.window.showInformationMessage(
+                'Click "Review Pull Request" on a pull request to start a review.'
+            );
+            return;
+        } else {
+            const msg = error instanceof Error ? error.message : String(error);
+            await vscode.window.showErrorMessage(msg);
+            return;
+        }
     }
 
     const { remote, target, base } = pullRequest;

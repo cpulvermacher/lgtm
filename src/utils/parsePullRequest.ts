@@ -1,5 +1,12 @@
 import { BitBucketDataModel } from '@/types/BitBucketPullRequest';
 
+/** thrown when command is run on something that is not a supported pull request */
+export class UnsupportedModelError extends Error {
+    constructor(message: string) {
+        super(message);
+    }
+}
+
 type PullRequestTarget = {
     remote?: string; // remote name, e.g. "origin"
     target: string;
@@ -8,25 +15,24 @@ type PullRequestTarget = {
 
 export function parsePullRequest(model: unknown): PullRequestTarget {
     if (!model || typeof model !== 'object') {
-        throw new Error('Invalid model object');
+        throw new UnsupportedModelError('Invalid model object');
     }
 
     //try parsing as BitBucket PR
-    const bitbucketModel = model as BitBucketDataModel;
-    const bitbucketTargetBranch = bitbucketModel?.pr?.data?.source?.branchName;
-    const bitbucketBaseBranch =
-        bitbucketModel?.pr?.data?.destination?.branchName;
-    if (bitbucketTargetBranch && bitbucketBaseBranch) {
-        const remoteName =
-            bitbucketModel.pr.workspaceRepo?.mainSiteRemote?.remote?.name;
+    if ('pr' in model) {
+        const pr = (model as BitBucketDataModel).pr;
+        const target = pr?.data?.source?.branchName;
+        const base = pr?.data?.destination?.branchName;
+        const remoteName = pr.workspaceRepo?.mainSiteRemote?.remote?.name;
+
         return {
             remote: remoteName,
-            target: bitbucketTargetBranch,
-            base: bitbucketBaseBranch,
+            target,
+            base,
         };
     }
 
-    throw new Error(
+    throw new UnsupportedModelError(
         "Unsupported model type. This doesn't look like a pull request."
     );
 }
