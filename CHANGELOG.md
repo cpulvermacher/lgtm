@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.1]
+Same as 1.0.0.
+
 ## [1.0.0] (pre-release)
 - (breaking change) `/branch` and `/commit` chat commands have been removed, please use `/review` or the new `LGTM: Start Code Review...` command from the command palette instead.
 

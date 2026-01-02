@@ -4,21 +4,20 @@
 [![Status](https://flat.badgen.net/github/checks/cpulvermacher/lgtm)](https://github.com/cpulvermacher/lgtm/actions/workflows/node.js.yml)
 [![License](https://flat.badgen.net/github/license/cpulvermacher/lgtm)](./LICENSE)
 
-LGTM is a Visual Studio Code extension that uses GitHub Copilot Chat to review source code changes in Git. It can help you catch bugs, areas for improvement, and other issues before merging.
+Use GitHub Copilot Chat to review source code changes in Git, and catch bugs, areas for improvement, and other issues before merging.
+Open the command palette and select `LGTM: Start Code Review...` to select what to review.
 
 ![Demo](./images/demo.gif)
 
 ## Getting Started
 
-**Start a Review**
-Switch to the Chat sidebar.
+After starting a review with `LGTM: Start Code Review...`, LGTM will print review comments grouped by file and sorted by severity in the Chat sidebar.
+Click on line numbers to jump to the location (if checked out).
 
-- Type `/review` to review uncommitted changes or changes between two branches, commits, or tags.
+### Starting a Review From Chat
+
+- Type `/review` followed by Return to bring up the same interactive menu as the `LGTM: Start Code Review...` menu command.
 - You can specify git refs as arguments, e.g. `/review develop main`, or omit arguments to select refs interactively.
-
-**View Results**
-
-LGTM will respond with review comments grouped by file and sorted by severity.
 
 ### Use in Agent Mode
 
@@ -28,7 +27,7 @@ Assuming you have staged changes, the agent will start a review using LGTM and t
 
 ## Features
 
-- **Only Copilot Required**: Uses Copilot Chat for reviewing changes.
+- **Only Copilot Required**: Uses Copilot Chat for reviewing changes. Both free and paid plans are supported.
 - **Model Selection**: Choose other language model available to VS Code via the **LGTM: Select Chat Model** command available in the Command Palette (press `Cmd+Shift+P` or `Ctrl+Shift+P`).
 - **Custom Instructions**: Add custom instructions via the `Lgtm: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the `comment` field.`).
 - **Agent Support**: Adds tools to enable automatic reviews in agent mode:
@@ -40,9 +39,9 @@ Assuming you have staged changes, the agent will start a review using LGTM and t
 
 ## Limitations
 
-- This project is a work in progress; comment quality may vary.
+- Chat models listed under "Unsupported Models" can be selected but reviews will fail at runtime.
+- Non-Copilot models (e.g. those added by directly adding an API key) may fail to work.
 - Large change sets may trigger chat model rate limits. Please wait before retrying.
-- Some non-Copilot models require setting a system prompt which is not possible just yet.
 
 ## Data Usage
 
