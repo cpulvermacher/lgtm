@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createReviewPrompt } from '@/review/prompt';
+import { PromptType } from '@/types/PromptType';
 
 const changeDescription = 'Various refactorings';
 const diff = 'diff\nhere';
@@ -34,6 +35,16 @@ describe('createReviewPrompt', () => {
             diff,
             customPrompt,
             'v2think'
+        );
+        await expect(prompt).toMatchFileSnapshot('review-prompt-v2think.snap');
+    });
+
+    it('falls back to default on unknown prompt type', async () => {
+        const prompt = createReviewPrompt(
+            changeDescription,
+            diff,
+            customPrompt,
+            'v1' as PromptType
         );
         await expect(prompt).toMatchFileSnapshot('review-prompt-v2think.snap');
     });
