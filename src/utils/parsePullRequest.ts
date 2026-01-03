@@ -86,6 +86,7 @@ async function getRemoteBranchFromRef(
     const matchingRemote = remotes.find((remote) => {
         const parsedRemote = parseGitHubRemoteUrl(remote.url);
         return (
+            parsedRemote &&
             parsedRemote.owner === ref.repo.owner &&
             parsedRemote.repo === ref.repo.name
         );
@@ -117,9 +118,8 @@ function parseGitHubRemoteUrl(url: string) {
         if (url.includes('github.com:')) separator = 'github.com:';
     }
     const ownerRepo = url.split(separator, 2)[1];
-
     if (!ownerRepo) {
-        throw new Error(`Remote ${url} could not be parsed.`);
+        return undefined;
     }
 
     let [owner, repo] = ownerRepo.split('/', 2);
