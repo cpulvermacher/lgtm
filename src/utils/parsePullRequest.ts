@@ -20,6 +20,16 @@ export class GitHubRemoteNotFound extends Error {
     }
 }
 
+/** thrown when we can not find a remote git branch */
+export class RemoteBranchNotFound extends Error {
+    constructor(
+        public remote: string,
+        branch: string
+    ) {
+        super(`Remote branch ${branch} not found`);
+    }
+}
+
 type PullRequestTarget = {
     target: string;
     base: string;
@@ -95,17 +105,15 @@ async function getRemoteBranchFromRef(
         throw new GitHubRemoteNotFound(ref.repo.owner, ref.repo.name);
     }
 
-    //TODO consider checking with ls-remote so we don't need to fetch here
-
     //construct branch name and check if it exists
     const remoteBranchName = `${matchingRemote.name}/${ref.ref}`;
-    // try {
-    //     //throws on failure
-    //     await git.getCommitRef(remoteBranchName);
-    // } catch {
-    //     throw new GitHubBranchNotFound();
-    // }
-    //
+    try {
+        //throws on failure
+        await git.getCommitRef(remoteBranchName);
+    } catch {
+        throw new RemoteBranchNotFound(matchingRemote.name, remoteBranchName);
+    }
+
     return remoteBranchName;
 }
 

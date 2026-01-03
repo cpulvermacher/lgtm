@@ -5,6 +5,7 @@ import { getConfig } from '@/vscode/config';
 import { ReviewTool } from '@/vscode/ReviewTool';
 import {
     parsePullRequest,
+    RemoteBranchNotFound,
     UnsupportedModelError,
 } from './utils/parsePullRequest';
 import { registerChatParticipant } from './vscode/chat';
@@ -70,14 +71,30 @@ async function reviewPullRequestCommand(model: unknown) {
             await vscode.window.showInformationMessage(
                 'Click "Review Pull Request" on a pull request to start a review.'
             );
-            return;
+        } else if (error instanceof RemoteBranchNotFound) {
+            const abortAction = { title: 'Abort' };
+            const fetchAction = { title: 'Fetch Remotes' };
+
+            const userSelection = await vscode.window.showErrorMessage(
+                error.message,
+                {},
+                abortAction,
+                fetchAction
+            );
+
+            if (userSelection === fetchAction) {
+                //refetch using vscode (should handle passphrase input if needed)
+                await vscode.commands.executeCommand('git.fetch');
+
+                await reviewPullRequestCommand(model);
+            }
         } else {
             const msg = error instanceof Error ? error.message : String(error);
             await vscode.window.showErrorMessage(msg);
-            return;
         }
-    }
 
+        return;
+    }
     const { target, base } = pullRequest;
     await startReviewChat(target, base);
 }
