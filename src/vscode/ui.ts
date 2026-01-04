@@ -183,3 +183,23 @@ export async function pickRefs(config: Config, type?: 'branch') {
 
     return { base, target };
 }
+
+/** offer Fetch Remotes action*/
+export async function promptToFetchRemotes(message: string) {
+    const abortAction = { title: 'Abort' };
+    const fetchAction = { title: 'Fetch Remotes' };
+
+    const userSelection = await vscode.window.showErrorMessage(
+        message,
+        {},
+        abortAction,
+        fetchAction
+    );
+
+    if (userSelection === fetchAction) {
+        //refetch using vscode (should handle passphrase input if needed)
+        await vscode.commands.executeCommand('git.fetch');
+        return 'fetch';
+    }
+    return 'abort';
+}
