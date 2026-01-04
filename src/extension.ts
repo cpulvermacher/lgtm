@@ -72,22 +72,7 @@ async function reviewPullRequestCommand(model: unknown) {
                 'Click "Review Pull Request" on a pull request to start a review.'
             );
         } else if (error instanceof RemoteBranchNotFound) {
-            const abortAction = { title: 'Abort' };
-            const fetchAction = { title: 'Fetch Remotes' };
-
-            const userSelection = await vscode.window.showErrorMessage(
-                error.message,
-                {},
-                abortAction,
-                fetchAction
-            );
-
-            if (userSelection === fetchAction) {
-                //refetch using vscode (should handle passphrase input if needed)
-                await vscode.commands.executeCommand('git.fetch');
-
-                await reviewPullRequestCommand(model);
-            }
+            await offerFetchingRemotes(error, model);
         } else {
             const msg = error instanceof Error ? error.message : String(error);
             await vscode.window.showErrorMessage(msg);
@@ -97,6 +82,29 @@ async function reviewPullRequestCommand(model: unknown) {
     }
     const { target, base } = pullRequest;
     await startReviewChat(target, base);
+}
+
+/** offer Fetch Remotes action, and retries review afterwards */
+async function offerFetchingRemotes(
+    error: RemoteBranchNotFound,
+    model: unknown
+) {
+    const abortAction = { title: 'Abort' };
+    const fetchAction = { title: 'Fetch Remotes' };
+
+    const userSelection = await vscode.window.showErrorMessage(
+        error.message,
+        {},
+        abortAction,
+        fetchAction
+    );
+
+    if (userSelection === fetchAction) {
+        //refetch using vscode (should handle passphrase input if needed)
+        await vscode.commands.executeCommand('git.fetch');
+
+        await reviewPullRequestCommand(model);
+    }
 }
 
 async function startReviewChat(target: string = '', base: string = '') {
