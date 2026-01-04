@@ -64,6 +64,15 @@
                     "light": "images/icon.png",
                     "dark": "images/icon.png"
                 }
+            },
+            {
+                "command": "lgtm.reviewPullRequest",
+                "title": "Review Pull Request",
+                "category": "LGTM",
+                "icon": {
+                    "light": "images/icon.png",
+                    "dark": "images/icon.png"
+                }
             }
         ],
         "menus": {
@@ -77,6 +86,19 @@
                     "command": "lgtm.reviewUnstagedChanges",
                     "when": "scmProvider == git && scmResourceGroup == workingTree",
                     "group": "inline@-3"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "lgtm.reviewPullRequest",
+                    "when": "(view == atlascode.views.bb.pullrequestsTreeView && viewItem == pullrequest && !treeElementHasParent) || (view == pr:github && viewItem =~ /pullrequest/)",
+                    "group": "inline"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "lgtm.reviewPullRequest",
+                    "when": "false"
                 }
             ]
         },

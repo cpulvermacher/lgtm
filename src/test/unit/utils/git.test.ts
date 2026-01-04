@@ -53,6 +53,7 @@ describe('git', () => {
         firstCommit: vi.fn(),
         status: vi.fn(),
         raw: vi.fn(),
+        getRemotes: vi.fn(),
     } as unknown as SimpleGit;
 
     const scope: ReviewScope = {
@@ -1127,6 +1128,34 @@ line3`;
             expect(result['a']).toBe(Infinity);
             expect(result['b']).toBe(4);
             expect(result['c']).toBe(2);
+        });
+    });
+
+    describe('getRemotes', () => {
+        it('returns name & url', async () => {
+            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue([
+                {
+                    name: 'abc',
+                    refs: {
+                        fetch: 'https://example.com/git.git',
+                        push: 'ignord',
+                    },
+                },
+            ]);
+
+            const result = await git.getRemotes();
+
+            expect(result).toStrictEqual([
+                { name: 'abc', url: 'https://example.com/git.git' },
+            ]);
+        });
+
+        it('handles empty list', async () => {
+            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue([]);
+
+            const result = await git.getRemotes();
+
+            expect(result).toStrictEqual([]);
         });
     });
 });

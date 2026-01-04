@@ -501,6 +501,15 @@ export class Git {
         });
         return numCommitsBehindMap;
     }
+
+    /** returns list of all remotes and their fetch URLs */
+    async getRemotes(): Promise<{ name: string; url: string }[]> {
+        const remotes = await this.git.getRemotes(true);
+        return remotes.map((remote) => ({
+            name: remote.name,
+            url: remote.refs.fetch,
+        }));
+    }
 }
 
 export type RefList = {
