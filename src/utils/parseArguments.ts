@@ -19,7 +19,7 @@ export async function parseArguments(
 
     const [target, base, ...rest] = args.split(/\s+/);
     if (rest.length > 0) {
-        throw new Error('Expected at most two refs as arguments.' + usageHint);
+        throw new Error(`Expected at most two refs as arguments. ${usageHint}`);
     }
 
     if (!target) {
@@ -29,7 +29,7 @@ export async function parseArguments(
     if (target === 'staged' || target === 'unstaged') {
         if (base) {
             throw new Error(
-                `Expected no argument after '${target}'. ` + usageHint
+                `Expected no argument after '${target}'. ${usageHint}`
             );
         }
         return {
@@ -39,14 +39,14 @@ export async function parseArguments(
                     : UncommittedRef.Unstaged,
         };
     } else if (!(await isCommitRef(git, target))) {
-        throw new Error(`Could not find target ref '${target}'.` + usageHint);
+        throw new Error(`Could not find target ref '${target}'. ${usageHint}`);
     }
     if (!base) {
         return { target };
     }
 
     if (!(await isCommitRef(git, base))) {
-        throw new Error(`Could not find base ref '${base}'.` + usageHint);
+        throw new Error(`Could not find base ref '${base}'. ${usageHint}`);
     }
 
     return { target, base };
