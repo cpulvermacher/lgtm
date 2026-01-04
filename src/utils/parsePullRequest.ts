@@ -7,11 +7,7 @@ import type {
 import type { Git } from './git';
 
 /** thrown when command is run on something that is not a supported pull request */
-export class UnsupportedModelError extends Error {
-    constructor(message: string) {
-        super(message);
-    }
-}
+export class UnsupportedModelError extends Error {}
 
 /** thrown when we can not find a git remote for the given repository */
 export class GitHubRemoteNotFound extends Error {
