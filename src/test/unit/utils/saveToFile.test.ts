@@ -1,5 +1,6 @@
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
+
 import type { Config } from '@/types/Config';
 import type { Logger } from '@/types/Logger';
 import type { ReviewResult } from '@/types/ReviewResult';
