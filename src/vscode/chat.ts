@@ -33,7 +33,7 @@ async function handleChat(
         if (['branch', 'commit'].includes(chatRequest.command ?? '')) {
             //TODO temporary, clean this up in ~Mar 2026
             stream.markdown(
-                'The /branch and /commit have been removed, please use /review instead.'
+                '/branch and /commit have been removed, please use /review instead.'
             );
             return;
         }
