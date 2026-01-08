@@ -510,6 +510,11 @@ export class Git {
             url: remote.refs.fetch,
         }));
     }
+
+    /** checkout the given ref (possibly detached) */
+    async checkout(ref: string) {
+        await this.git.checkout(ref);
+    }
 }
 
 export type RefList = {

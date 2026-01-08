@@ -7,7 +7,7 @@ import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
 import { parseArguments } from '@/utils/parseArguments';
 import { getConfig, toUri } from './config';
-import { pickRef, pickRefs } from './ui';
+import { pickRef, pickRefs, promptIfNotCheckedOut } from './ui';
 
 export function registerChatParticipant(context: vscode.ExtensionContext) {
     const chatParticipant = vscode.chat.createChatParticipant(
@@ -58,6 +58,12 @@ async function handleChat(
         stream.markdown(`Reviewing ${targetLabel} changes...\n\n`);
     } else {
         const { base, target } = reviewRequest.scope;
+        if (!reviewRequest.scope.isTargetCheckedOut) {
+            await promptIfNotCheckedOut(target);
+            //regardless of choice, recheck if ref is now checked out
+            reviewRequest.scope = await config.git.getReviewScope(target, base);
+        }
+
         const targetIsBranch = await config.git.isBranch(target);
         stream.markdown(
             `Reviewing changes ${targetIsBranch ? 'on' : 'at'} \`${target}\` compared to \`${base}\`...\n\n`

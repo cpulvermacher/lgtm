@@ -4,6 +4,7 @@ import type { Config } from '@/types/Config';
 import { type Ref, UncommittedRef } from '@/types/Ref';
 import { distributeItems } from '@/utils/distributeItems';
 import { shortHashLength } from '@/utils/git';
+import { getConfig } from './config';
 
 type RefQuickPickItem = vscode.QuickPickItem & {
     ref?: Ref;
@@ -202,4 +203,34 @@ export async function promptToFetchRemotes(message: string) {
         return 'fetch';
     }
     return 'abort';
+}
+
+export async function promptIfNotCheckedOut(target: string) {
+    const skipAction = { title: 'Skip' };
+    const checkoutAction = { title: 'Check out' };
+    //TODO do not ask again / always
+
+    const userSelection = await vscode.window.showInformationMessage(
+        'The target is not checked out. Check it out to enable code navigation?',
+        {},
+        skipAction,
+        checkoutAction
+    );
+
+    if (userSelection === checkoutAction) {
+        const config = await getConfig();
+        try {
+            await config.git.checkout(target);
+            return 'checkout';
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error ? error.message : String(error);
+            // show error (without waiting)
+            vscode.window.showWarningMessage(
+                `Failed to check out ${target}: ${errorMessage}`
+            );
+            return 'continue';
+        }
+    }
+    return 'continue';
 }
