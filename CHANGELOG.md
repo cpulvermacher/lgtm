@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.1.2]
+- Document pull request integration in README.
+
+## [1.1.1]
+Same as 1.1.0.
+
 ## [1.1.0] (pre-release)
 - Add button to review pull requests from the 'GitHub Pull Requests' and 'Atlassian: Jira, Rovo Dev, Bitbucket' (`atlassian.atlascode`) extensions.
 
