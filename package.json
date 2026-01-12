@@ -22,7 +22,9 @@
         "chat",
         "copilot",
         "git",
-        "review"
+        "review",
+        "pull request",
+        "bitbucket"
     ],
     "icon": "images/icon.png",
     "license": "SEE LICENSE IN LICENSE",
