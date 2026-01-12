@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.2]
+- Document pull request integration in README.
+
 ## [1.1.1]
 Same as 1.1.0.
 
