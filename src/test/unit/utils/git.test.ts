@@ -54,6 +54,7 @@ describe('git', () => {
         status: vi.fn(),
         raw: vi.fn(),
         getRemotes: vi.fn(),
+        checkout: vi.fn(),
     } as unknown as SimpleGit;
 
     const scope: ReviewScope = {
@@ -1156,6 +1157,24 @@ line3`;
             const result = await git.getRemotes();
 
             expect(result).toStrictEqual([]);
+        });
+    });
+
+    describe('checkout', () => {
+        it('calls git checkout with the given ref', async () => {
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            await git.checkout('feature-branch');
+
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith('feature-branch');
+        });
+
+        it('calls git checkout with commit hash', async () => {
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            await git.checkout('abc123def456');
+
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith('abc123def456');
         });
     });
 });
