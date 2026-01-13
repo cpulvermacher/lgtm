@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { Config, Options } from '@/types/Config';
+import type { AutoCheckoutTargetType, Config, Options } from '@/types/Config';
 import type { Logger } from '@/types/Logger';
 import type { Model } from '@/types/Model';
 import { createGit, type Git } from '@/utils/git';
@@ -153,6 +153,10 @@ function getOptions(): Options {
         4
     );
     const saveOutputToFile = config.get<boolean>('saveOutputToFile', false);
+    const autoCheckoutTarget = config.get<AutoCheckoutTargetType>(
+        'autoCheckoutTarget',
+        'ask'
+    );
 
     // hidden experimental setting for comparing prompts. Comma-separated list of prompt types to compare.
     // if empty, will only create a single review using the default prompt type.
@@ -169,5 +173,6 @@ function getOptions(): Options {
         maxConcurrentModelRequests,
         comparePromptTypes,
         saveOutputToFile,
+        autoCheckoutTarget,
     };
 }

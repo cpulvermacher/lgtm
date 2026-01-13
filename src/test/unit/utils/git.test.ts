@@ -1166,7 +1166,9 @@ line3`;
 
             await git.checkout('feature-branch');
 
-            expect(mockSimpleGit.checkout).toHaveBeenCalledWith('feature-branch');
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith(
+                'feature-branch'
+            );
         });
 
         it('calls git checkout with commit hash', async () => {

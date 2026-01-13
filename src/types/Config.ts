@@ -22,4 +22,7 @@ export type Options = {
     maxConcurrentModelRequests: number;
     comparePromptTypes?: string;
     saveOutputToFile: boolean;
+    autoCheckoutTarget: AutoCheckoutTargetType;
 };
+
+export type AutoCheckoutTargetType = 'ask' | 'always' | 'never';

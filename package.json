@@ -242,6 +242,21 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Save ReviewResult to JSON file for debugging purposes. Files are saved to .lgtm-debug/ directory in workspace root."
+                },
+                "lgtm.autoCheckoutTarget": {
+                    "type": "string",
+                    "enum": [
+                        "ask",
+                        "always",
+                        "never"
+                    ],
+                    "default": "ask",
+                    "enumDescriptions": [
+                        "Ask each time whether to check out the target ref",
+                        "Always check out the target ref automatically",
+                        "Never check out the target ref automatically"
+                    ],
+                    "description": "Controls whether to automatically check out the target ref when it's not currently checked out. Checking out enables code navigation."
                 }
             }
         }

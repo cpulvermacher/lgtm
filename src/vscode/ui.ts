@@ -206,31 +206,70 @@ export async function promptToFetchRemotes(message: string) {
 }
 
 export async function promptIfNotCheckedOut(target: string) {
-    const skipAction = { title: 'Skip' };
-    const checkoutAction = { title: 'Check out' };
-    //TODO do not ask again / always
+    const config = await getConfig();
+    const autoCheckoutTarget = config.getOptions().autoCheckoutTarget;
 
-    const userSelection = await vscode.window.showInformationMessage(
-        'The target is not checked out. Check it out to enable code navigation?',
-        {},
-        skipAction,
-        checkoutAction
-    );
-
-    if (userSelection === checkoutAction) {
-        const config = await getConfig();
+    const doCheckout = async () => {
         try {
             await config.git.checkout(target);
             return 'checkout';
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : String(error);
-            // show error (without waiting)
             vscode.window.showWarningMessage(
                 `Failed to check out ${target}: ${errorMessage}`
             );
             return 'continue';
         }
+    };
+
+    // Handle automatic behaviors based on setting
+    if (autoCheckoutTarget === 'always') {
+        return await doCheckout();
     }
+    if (autoCheckoutTarget === 'never') {
+        return 'continue';
+    }
+
+    // Show prompt with options to remember preference
+    const checkoutAction = { title: 'Check Out' };
+    const skipAction = { title: 'Skip' };
+    const alwaysCheckoutAction = { title: 'Always Check Out' };
+    const neverCheckoutAction = { title: 'Never' };
+
+    const userSelection = await vscode.window.showInformationMessage(
+        `Would you like to check out '${target}'? This enables code navigation.`,
+        { modal: false },
+        checkoutAction,
+        skipAction,
+        alwaysCheckoutAction,
+        neverCheckoutAction
+    );
+
+    if (userSelection === alwaysCheckoutAction) {
+        await vscode.workspace
+            .getConfiguration('lgtm')
+            .update(
+                'autoCheckoutTarget',
+                'always',
+                vscode.ConfigurationTarget.Global
+            );
+    } else if (userSelection === neverCheckoutAction) {
+        await vscode.workspace
+            .getConfiguration('lgtm')
+            .update(
+                'autoCheckoutTarget',
+                'never',
+                vscode.ConfigurationTarget.Global
+            );
+    }
+
+    if (
+        userSelection === checkoutAction ||
+        userSelection === alwaysCheckoutAction
+    ) {
+        return await doCheckout();
+    }
+
     return 'continue';
 }
