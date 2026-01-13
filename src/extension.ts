@@ -120,8 +120,11 @@ async function handleSelectChatModel() {
         quickPickItems,
         { placeHolder: 'Select a chat model for LGTM reviews' }
     );
-    if (selectedQuickPickItem?.id) {
-        await config.setOption('chatModel', selectedQuickPickItem.id);
+    if (selectedQuickPickItem?.modelIdWithVendor) {
+        await config.setOption(
+            'chatModel',
+            selectedQuickPickItem.modelIdWithVendor
+        );
         vscode.window.showInformationMessage(
             `LGTM chat model set to: ${selectedQuickPickItem.name}`
         );
@@ -129,23 +132,27 @@ async function handleSelectChatModel() {
 }
 
 type ModelQuickPickItem = vscode.QuickPickItem & {
-    id?: string;
+    modelIdWithVendor?: string; // in format "vendor:id"
     name?: string;
 };
 function getModelQuickPickItems(
     models: vscode.LanguageModelChat[],
-    currentModelId: string
+    currentModel: string // could be in format "vendor:id" or legacy "id" only
 ): ModelQuickPickItem[] {
     const supportedModels: ModelQuickPickItem[] = [];
     const unsupportedModels: ModelQuickPickItem[] = [];
     models.forEach((model) => {
-        const prefix = model.id === currentModelId ? '$(check)' : '\u2003 '; // em space
+        const modelIdWithVendor = `${model.vendor}:${model.id}`;
+        const isCurrentModel =
+            modelIdWithVendor === currentModel || model.id === currentModel;
+
+        const prefix = isCurrentModel ? '$(check)' : '\u2003 '; // em space
         const modelName = model.name ?? model.id;
         const item = {
             label: prefix + modelName,
             description: model.vendor,
-            id: model.id, // Store the actual model.id
             name: modelName,
+            modelIdWithVendor,
         };
         if (isUnSupportedModel(model)) {
             unsupportedModels.push(item);

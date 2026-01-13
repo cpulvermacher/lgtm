@@ -21,11 +21,15 @@ export async function getChatModel(
                 .join('')
         );
     }
-    // Use the modelId directly to select the specific model
-    const models = await vscode.lm.selectChatModels({ id: modelId });
+
+    const selector = parseToSelector(modelId);
+    const models = await vscode.lm.selectChatModels(selector);
 
     if (!models || models.length === 0 || models[0] === undefined) {
-        throw new Error(`No model found with ID "${modelId}".`);
+        const selectorDesc = selector.vendor
+            ? `vendor "${selector.vendor}" and ID "${selector.id}"`
+            : `ID "${modelId}"`;
+        throw new Error(`No model found with ${selectorDesc}.`);
     }
     const model = models[0];
     logger.debug('Selected model:', model);
@@ -40,6 +44,16 @@ export async function getChatModel(
             cancellationToken?: vscode.CancellationToken
         ) => sendRequest(model, prompt, cancellationToken),
     };
+}
+
+// can be either "vendor:id" or legacy "id"
+function parseToSelector(modelIdWithVendor: string) {
+    if (!modelIdWithVendor.includes(':')) {
+        return { vendor: undefined, id: modelIdWithVendor };
+    }
+
+    const [vendor, id] = modelIdWithVendor.split(':', 2);
+    return { vendor, id };
 }
 
 async function sendRequest(
