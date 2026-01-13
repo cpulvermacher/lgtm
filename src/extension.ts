@@ -120,14 +120,8 @@ async function handleSelectChatModel() {
         quickPickItems,
         { placeHolder: 'Select a chat model for LGTM reviews' }
     );
-    if (selectedQuickPickItem) {
-        await vscode.workspace
-            .getConfiguration('lgtm')
-            .update(
-                'chatModel',
-                selectedQuickPickItem.id,
-                vscode.ConfigurationTarget.Global
-            );
+    if (selectedQuickPickItem?.id) {
+        await config.setOption('chatModel', selectedQuickPickItem.id);
         vscode.window.showInformationMessage(
             `LGTM chat model set to: ${selectedQuickPickItem.name}`
         );

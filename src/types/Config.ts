@@ -8,6 +8,10 @@ export type Config = {
     git: Git;
     getModel: () => Promise<Model>;
     getOptions: () => Options;
+    setOption: <K extends keyof Options>(
+        key: K,
+        value: Options[K]
+    ) => Promise<void>;
     logger: Logger;
 };
 

@@ -247,21 +247,9 @@ export async function promptIfNotCheckedOut(target: string) {
     );
 
     if (userSelection === alwaysCheckoutAction) {
-        await vscode.workspace
-            .getConfiguration('lgtm')
-            .update(
-                'autoCheckoutTarget',
-                'always',
-                vscode.ConfigurationTarget.Global
-            );
+        await config.setOption('autoCheckoutTarget', 'always');
     } else if (userSelection === neverCheckoutAction) {
-        await vscode.workspace
-            .getConfiguration('lgtm')
-            .update(
-                'autoCheckoutTarget',
-                'never',
-                vscode.ConfigurationTarget.Global
-            );
+        await config.setOption('autoCheckoutTarget', 'never');
     }
 
     if (

@@ -58,6 +58,7 @@ async function initializeConfig(): Promise<Config> {
         gitRoot: git.getGitRoot(),
         getModel: () => loadModel(getOptions().chatModel, logger),
         getOptions,
+        setOption,
         logger,
     };
 
@@ -102,13 +103,7 @@ async function loadModel(modelId: string, logger: Logger): Promise<Model> {
         );
 
         if (option === resetToDefaultOption) {
-            await vscode.workspace
-                .getConfiguration('lgtm')
-                .update(
-                    'chatModel',
-                    defaultModelId,
-                    vscode.ConfigurationTarget.Global
-                );
+            await setOption('chatModel', defaultModelId);
             logger.info(`Chat model reset to default: ${defaultModelId}`);
             return await loadModel(defaultModelId, logger);
         } else if (option === selectChatModelOption) {
@@ -175,4 +170,13 @@ function getOptions(): Options {
         saveOutputToFile,
         autoCheckoutTarget,
     };
+}
+
+async function setOption<T extends keyof Options>(
+    option: T,
+    value: Options[T]
+) {
+    await vscode.workspace
+        .getConfiguration('lgtm')
+        .update(option, value, vscode.ConfigurationTarget.Global);
 }
