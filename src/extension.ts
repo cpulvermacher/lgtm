@@ -147,7 +147,7 @@ function getModelQuickPickItems(
             id: model.id, // Store the actual model.id
             name: modelName,
         };
-        if (isUnSupportedModel(model.id)) {
+        if (isUnSupportedModel(model)) {
             unsupportedModels.push(item);
         } else {
             supportedModels.push(item);

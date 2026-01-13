@@ -84,28 +84,22 @@ async function readStream(
     return text;
 }
 
-export function isUnSupportedModel(modelId: string): boolean {
-    const unsupportedModelIds = [
-        //vendor: copilot
-        //these return code: model_not_supported
-        'claude-3.7-sonnet',
-        'claude-3.7-sonnet-thought',
-        // Endpoint not found for model auto
-        'auto',
-        //vendor: anthropic
-        // all fail with {"type":"invalid_request_error","message":"system: text content blocks must be non-empty"}
-        'claude-haiku-4-5-20251001',
-        'claude-opus-4-5-20251101',
-        'claude-sonnet-4-5-20250929',
-        'claude-opus-4-1-20250805',
-        'claude-opus-4-20250514',
-        'claude-sonnet-4-20250514',
-        'claude-3-7-sonnet-20250219',
-        'claude-3-5-sonnet-20241022',
-        'claude-3-5-haiku-20241022',
-        'claude-3-haiku-20240307',
-        'claude-3-opus-20240229',
-    ];
+export function isUnSupportedModel(model: vscode.LanguageModelChat): boolean {
+    if (model.vendor === 'copilot') {
+        const unsupportedCopilotModelIds = [
+            //these return code: model_not_supported
+            'claude-3.7-sonnet',
+            'claude-3.7-sonnet-thought',
+            // Endpoint not found for model auto
+            'auto',
+        ];
 
-    return unsupportedModelIds.includes(modelId);
+        return unsupportedCopilotModelIds.includes(model.id);
+    } else if (model.vendor === 'anthropic') {
+        // all fail with {"type":"invalid_request_error","message":"system: text content blocks must be non-empty"}
+        return true;
+    }
+
+    // no data about other vendors/models yet, assume they work
+    return false;
 }
