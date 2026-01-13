@@ -20,7 +20,7 @@ export class LgtmLogger implements Logger {
 
         console.debug(message, ...optionalParams);
         this.outputChannel.appendLine(
-            '[DEBUG] ' + this.createMessage(message, optionalParams)
+            `[DEBUG] ${this.createMessage(message, optionalParams)}`
         );
     }
 
@@ -28,7 +28,7 @@ export class LgtmLogger implements Logger {
         console.info(message, ...optionalParams);
         if (this.outputChannel) {
             this.outputChannel.appendLine(
-                '[INFO] ' + this.createMessage(message, optionalParams)
+                `[INFO] ${this.createMessage(message, optionalParams)}`
             );
         }
     }
@@ -52,9 +52,9 @@ export class LgtmLogger implements Logger {
     private createMessage(message: string, optionalParams: unknown[]): string {
         for (const param of optionalParams) {
             if (typeof param === 'string') {
-                message += ' ' + param;
+                message += ` ${param}`;
             } else {
-                message += ' ' + JSON.stringify(param);
+                message += ` ${JSON.stringify(param)}`;
             }
         }
 

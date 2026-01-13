@@ -124,7 +124,7 @@ async function loadModel(modelId: string, logger: Logger): Promise<Model> {
 
 /** Converts file path relative to gitRoot to a vscode.Uri */
 export function toUri(config: Config, file: string): vscode.Uri {
-    return vscode.Uri.file(config.gitRoot + '/' + file);
+    return vscode.Uri.file(`${config.gitRoot}/${file}`);
 }
 
 function getOptions(): Options {

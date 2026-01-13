@@ -1089,8 +1089,8 @@ line3`;
             ]);
 
             expect(Object.keys(result)).toHaveLength(2);
-            expect(result['ref1']).toBe(7);
-            expect(result['ref2']).toBe(999);
+            expect(result.ref1).toBe(7);
+            expect(result.ref2).toBe(999);
         });
 
         it('skips values where git.raw call fails', async () => {
@@ -1106,8 +1106,8 @@ line3`;
             const result = await git.getNumCommitsBehindMap(refs, 'before');
 
             expect(Object.keys(result)).toHaveLength(2);
-            expect(result['ref1']).toBe(Infinity);
-            expect(result['ref2']).toBe(8);
+            expect(result.ref1).toBe(Infinity);
+            expect(result.ref2).toBe(8);
         });
 
         it('skips results on timeout ', async () => {
@@ -1126,9 +1126,9 @@ line3`;
             const result = await git.getNumCommitsBehindMap(refs, 'before', 8);
 
             expect(Object.keys(result)).toHaveLength(3);
-            expect(result['a']).toBe(Infinity);
-            expect(result['b']).toBe(4);
-            expect(result['c']).toBe(2);
+            expect(result.a).toBe(Infinity);
+            expect(result.b).toBe(4);
+            expect(result.c).toBe(2);
         });
     });
 

@@ -21,7 +21,7 @@ export function parseAsJsonArray(response: string): unknown[] {
     }
     if (!Array.isArray(rawComments)) {
         throw new Error(
-            'Expected an array of comments, got type: ' + typeof rawComments
+            `Expected an array of comments, got type: ${typeof rawComments}`
         );
     }
     return rawComments;

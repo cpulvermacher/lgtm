@@ -245,7 +245,7 @@ export class Git {
             return await this.git.revparse([
                 '--verify',
                 '--end-of-options',
-                ref + '^{}',
+                `${ref}^{}`,
             ]);
         } catch {
             throw new Error(
@@ -545,7 +545,7 @@ function formatExtra(otherBranches: string[]) {
     }
 
     const indentToRefName = '       ';
-    return indentToRefName + 'Same as: ' + otherBranches.join(', ');
+    return `${indentToRefName}Same as: ${otherBranches.join(', ')}`;
 }
 
 /** returns a numerical value for the branch priority to be used with sort().
@@ -561,7 +561,7 @@ function getBranchNamePriority(ref: string) {
 
     const index = ['develop', 'main', 'master', 'trunk'].indexOf(branchName);
     if (index >= 0) {
-        return !!remoteMatch ? -4 + index : -8 + index;
+        return remoteMatch ? -4 + index : -8 + index;
     }
     return 0;
 }
