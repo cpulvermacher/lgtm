@@ -92,7 +92,7 @@ async function maybeCheckoutTarget(
         stream.markdown(`Checking out target \`${target}\`...`);
         await config.git.checkout(target);
 
-        stream.markdown('done.\n');
+        stream.markdown(' done.\n');
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
