@@ -59,7 +59,7 @@ async function handleChat(
     } else {
         const { base, target } = reviewRequest.scope;
         if (!reviewRequest.scope.isTargetCheckedOut) {
-            await maybeCheckoutTarget(target);
+            await maybeCheckoutTarget(target, stream);
             //regardless of choice, recheck if ref is now checked out
             reviewRequest.scope = await config.git.getReviewScope(target, base);
         }
@@ -78,7 +78,10 @@ async function handleChat(
     showReviewResults(config, results, stream, token);
 }
 
-async function maybeCheckoutTarget(target: string) {
+async function maybeCheckoutTarget(
+    target: string,
+    stream: vscode.ChatResponseStream
+) {
     const config = await getConfig();
     const shouldCheckout = await promptToCheckout(config, target);
     if (!shouldCheckout) {
@@ -86,13 +89,14 @@ async function maybeCheckoutTarget(target: string) {
     }
 
     try {
+        stream.markdown(`Checking out target \`${target}\`...`);
         await config.git.checkout(target);
+
+        stream.markdown('done.\n');
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
-        vscode.window.showWarningMessage(
-            `Failed to check out ${target}: ${errorMessage}`
-        );
+        stream.markdown(`\n> Failed to check out ${target}: ${errorMessage}\n`);
     }
 }
 
