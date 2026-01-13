@@ -4,7 +4,6 @@ import type { Config } from '@/types/Config';
 import { type Ref, UncommittedRef } from '@/types/Ref';
 import { distributeItems } from '@/utils/distributeItems';
 import { shortHashLength } from '@/utils/git';
-import { getConfig } from './config';
 
 type RefQuickPickItem = vscode.QuickPickItem & {
     ref?: Ref;
@@ -205,44 +204,30 @@ export async function promptToFetchRemotes(message: string) {
     return 'abort';
 }
 
-export async function promptIfNotCheckedOut(target: string) {
-    const config = await getConfig();
+export async function promptToCheckout(
+    config: Config,
+    target: string
+): Promise<boolean> {
     const autoCheckoutTarget = config.getOptions().autoCheckoutTarget;
 
-    const doCheckout = async () => {
-        try {
-            await config.git.checkout(target);
-            return 'checkout';
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error ? error.message : String(error);
-            vscode.window.showWarningMessage(
-                `Failed to check out ${target}: ${errorMessage}`
-            );
-            return 'continue';
-        }
-    };
-
-    // Handle automatic behaviors based on setting
     if (autoCheckoutTarget === 'always') {
-        return await doCheckout();
-    }
-    if (autoCheckoutTarget === 'never') {
-        return 'continue';
+        return true;
+    } else if (autoCheckoutTarget === 'never') {
+        return false;
     }
 
     // Show prompt with options to remember preference
     const checkoutAction = { title: 'Check Out' };
-    const skipAction = { title: 'Skip' };
     const alwaysCheckoutAction = { title: 'Always Check Out' };
+    const skipAction = { title: 'Skip' };
     const neverCheckoutAction = { title: 'Never' };
 
     const userSelection = await vscode.window.showInformationMessage(
         `Would you like to check out '${target}'? This enables code navigation.`,
-        { modal: false },
+        {},
         checkoutAction,
-        skipAction,
         alwaysCheckoutAction,
+        skipAction,
         neverCheckoutAction
     );
 
@@ -252,12 +237,8 @@ export async function promptIfNotCheckedOut(target: string) {
         await config.setOption('autoCheckoutTarget', 'never');
     }
 
-    if (
+    return (
         userSelection === checkoutAction ||
         userSelection === alwaysCheckoutAction
-    ) {
-        return await doCheckout();
-    }
-
-    return 'continue';
+    );
 }

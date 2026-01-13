@@ -7,7 +7,7 @@ import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
 import { parseArguments } from '@/utils/parseArguments';
 import { getConfig, toUri } from './config';
-import { pickRef, pickRefs, promptIfNotCheckedOut } from './ui';
+import { pickRef, pickRefs, promptToCheckout } from './ui';
 
 export function registerChatParticipant(context: vscode.ExtensionContext) {
     const chatParticipant = vscode.chat.createChatParticipant(
@@ -59,7 +59,7 @@ async function handleChat(
     } else {
         const { base, target } = reviewRequest.scope;
         if (!reviewRequest.scope.isTargetCheckedOut) {
-            await promptIfNotCheckedOut(target);
+            await maybeCheckoutTarget(target);
             //regardless of choice, recheck if ref is now checked out
             reviewRequest.scope = await config.git.getReviewScope(target, base);
         }
@@ -76,6 +76,24 @@ async function handleChat(
     const results = await review(config, reviewRequest, stream, token);
 
     showReviewResults(config, results, stream, token);
+}
+
+async function maybeCheckoutTarget(target: string) {
+    const config = await getConfig();
+    const shouldCheckout = await promptToCheckout(config, target);
+    if (!shouldCheckout) {
+        return;
+    }
+
+    try {
+        await config.git.checkout(target);
+    } catch (error) {
+        const errorMessage =
+            error instanceof Error ? error.message : String(error);
+        vscode.window.showWarningMessage(
+            `Failed to check out ${target}: ${errorMessage}`
+        );
+    }
 }
 
 /** Constructs review request (prompting user if needed) */
