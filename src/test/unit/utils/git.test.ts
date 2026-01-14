@@ -913,8 +913,9 @@ line3`;
         it('filters out detached HEAD from branch list', async () => {
             // When detached, current is a commit hash not in branches.all
             vi.mocked(mockSimpleGit.branch).mockResolvedValue({
-                all: ['branch1', 'branch2'],
-                current: 'abc123def456', // detached HEAD - commit hash
+                all: ['abc123def456', 'branch1', 'branch2'],
+                detached: true,
+                current: 'abc123def456',
                 branches: {
                     branch1: {
                         current: false,
