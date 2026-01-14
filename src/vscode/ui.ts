@@ -18,19 +18,26 @@ export async function pickRef(
     totalCount: number = 30 // total amount of refs to show in picker
 ): Promise<Ref | undefined> {
     const showUncommitted = !type && !beforeRef;
+    const showDetachedHead = !beforeRef;
     const showBranches = !type || type === 'branch';
     const showCommits = !type || type === 'commit';
     const showTags = !type || type === 'tag';
 
-    const [uncommitted, branches, commits, tags] = await Promise.all([
-        showUncommitted ? config.git.getUncommittedChanges() : [],
-        showBranches ? config.git.getBranchList(beforeRef, totalCount + 1) : [],
-        showCommits ? config.git.getCommitList(beforeRef, totalCount + 1) : [],
-        showTags ? config.git.getTagList(beforeRef, totalCount + 1) : [],
-    ]);
+    const [uncommitted, detachedHead, branches, commits, tags] =
+        await Promise.all([
+            showUncommitted ? config.git.getUncommittedChanges() : [],
+            showDetachedHead ? config.git.getDetachedHead() : undefined,
+            showBranches
+                ? config.git.getBranchList(beforeRef, totalCount + 1)
+                : [],
+            showCommits
+                ? config.git.getCommitList(beforeRef, totalCount + 1)
+                : [],
+            showTags ? config.git.getTagList(beforeRef, totalCount + 1) : [],
+        ]);
 
     const [numBranches, numCommits, numTags] = distributeItems(
-        totalCount - uncommitted.length,
+        totalCount - uncommitted.length - (detachedHead ? 1 : 0),
         [branches.length, commits.length, tags.length]
     );
 
@@ -54,6 +61,19 @@ export async function pickRef(
                 iconPath: uncommittedIcon,
             });
         }
+    }
+    if (detachedHead) {
+        quickPickOptions.push({
+            label: 'Detached HEAD',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+        const detachedIcon = new vscode.ThemeIcon('git-commit');
+        quickPickOptions.push({
+            label: detachedHead.ref.substring(0, shortHashLength),
+            ref: detachedHead.ref,
+            description: detachedHead.description,
+            iconPath: detachedIcon,
+        });
     }
     if (branches.length > 0) {
         quickPickOptions.push({

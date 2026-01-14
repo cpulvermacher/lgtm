@@ -909,6 +909,130 @@ line3`;
             expect(result[0].description).toBe('abc2 (2 commits behind)');
             expect(result[1].description).toBe('abc1 (7 commits behind)');
         });
+
+        it('filters out detached HEAD from branch list', async () => {
+            // When detached, current is a commit hash not in branches.all
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['branch1', 'branch2'],
+                current: 'abc123def456', // detached HEAD - commit hash
+                branches: {
+                    branch1: {
+                        current: false,
+                        commit: 'def456',
+                    },
+                    branch2: {
+                        current: false,
+                        commit: 'ghi789',
+                    },
+                },
+            } as unknown as BranchSummary);
+
+            const result = await git.getBranchList(undefined, 3);
+
+            // Should only return branch1 and branch2, detached HEAD is not a branch
+            expect(result.map((ref) => ref.ref)).toEqual([
+                'branch1',
+                'branch2',
+            ]);
+        });
+
+        it('includes all branches when HEAD is not detached', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['branch1', 'branch2'],
+                current: 'branch1',
+                branches: {
+                    branch1: {
+                        current: true,
+                        commit: 'abc123',
+                    },
+                    branch2: {
+                        current: false,
+                        commit: 'def456',
+                    },
+                },
+            } as unknown as BranchSummary);
+
+            const result = await git.getBranchList(undefined, 3);
+
+            // Should return both branches normally
+            expect(result.map((ref) => ref.ref)).toEqual([
+                'branch1',
+                'branch2',
+            ]);
+        });
+    });
+
+    describe('getDetachedHead', () => {
+        beforeEach(() => {
+            vi.mocked(mockSimpleGit.branch).mockClear();
+        });
+
+        it('returns detached HEAD info when HEAD is detached', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['branch1', 'branch2'],
+                current: 'abc1234567890', // detached at this commit
+                detached: true,
+                branches: {
+                    branch1: { current: false, commit: 'def456' },
+                    branch2: { current: false, commit: 'ghi789' },
+                },
+            } as unknown as BranchSummary);
+
+            const result = await git.getDetachedHead();
+
+            expect(mockSimpleGit.branch).toHaveBeenCalledWith();
+            expect(result).toEqual({
+                ref: 'abc1234567890',
+                description: '(current) abc1234',
+            });
+        });
+
+        it('returns undefined when HEAD is not detached', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['branch1', 'branch2'],
+                current: 'branch1',
+                detached: false,
+                branches: {
+                    branch1: { current: true, commit: 'abc123' },
+                    branch2: { current: false, commit: 'def456' },
+                },
+            } as unknown as BranchSummary);
+
+            const result = await git.getDetachedHead();
+
+            expect(result).toBeUndefined();
+        });
+
+        it('returns undefined when detached is false', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['branch1'],
+                current: undefined,
+                detached: false,
+                branches: {
+                    branch1: { current: false, commit: 'abc123' },
+                },
+            } as unknown as BranchSummary);
+
+            const result = await git.getDetachedHead();
+
+            expect(result).toBeUndefined();
+        });
+
+        it('shortens commit hash in description', async () => {
+            const longHash = 'abc1234567890def';
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['branch1'],
+                current: longHash,
+                detached: true,
+                branches: {
+                    branch1: { current: false, commit: 'xyz123' },
+                },
+            } as unknown as BranchSummary);
+
+            const result = await git.getDetachedHead();
+
+            expect(result?.description).toBe('(current) abc1234');
+        });
     });
 
     describe('getTagList', () => {

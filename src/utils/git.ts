@@ -287,6 +287,10 @@ export class Git {
         const orderedUniqueRefs: string[] = [];
         branches.all.forEach((branch) => {
             const branchSummary = branches.branches[branch];
+            // Skip the detached HEAD entry if it appears in branches
+            if (branches.detached && branch === branches.current) {
+                return;
+            }
             if (branchSummary.commit in branchesByCommitRef) {
                 branchesByCommitRef[branchSummary.commit].push(branch);
             } else {
@@ -391,6 +395,27 @@ export class Git {
         });
 
         return refs.slice(0, maxCount);
+    }
+
+    /** Returns information about the current detached HEAD, if applicable.
+     * Returns undefined if HEAD is not detached
+     */
+    async getDetachedHead(): Promise<
+        { ref: string; description?: string } | undefined
+    > {
+        const branches = await this.git.branch();
+
+        if (!branches.detached) {
+            return undefined;
+        }
+
+        const commitHash = branches.current;
+        const description = formatDescription(true, commitHash, undefined);
+
+        return {
+            ref: commitHash,
+            description,
+        };
     }
 
     /** returns up to `maxCount` tags.
