@@ -96,34 +96,37 @@ describe('parsePullRequest', () => {
         );
     });
 
-    it('parses github pull request model', async () => {
-        const model = {
-            pullRequestModel: {
-                item: {
-                    head: {
-                        ref: 'feature-branch',
-                        repo: {
-                            owner: 'owner2',
-                            name: 'repo2',
-                        },
+    const githubModel = {
+        pullRequestModel: {
+            item: {
+                head: {
+                    ref: 'feature-branch',
+                    repo: {
+                        owner: 'owner2',
+                        name: 'branch2',
+                        cloneUrl: 'https://github.com/owner2/repo2',
                     },
-                    base: {
-                        ref: 'main',
-                        repo: {
-                            owner: 'owner1',
-                            name: 'repo1',
-                        },
+                },
+                base: {
+                    ref: 'main',
+                    repo: {
+                        owner: 'owner1',
+                        name: 'branch1',
+                        cloneUrl: 'https://github.com/owner1/repo1',
                     },
                 },
             },
-        } as GitHubPullRequestModel;
+        },
+    } as GitHubPullRequestModel;
+
+    it('parses github pull request model', async () => {
         getRemotes.mockResolvedValue([
             { name: 'github-origin', url: 'git@github.com:owner1/repo1.git' },
             { name: 'other-user', url: 'https://github.com/owner2/repo2.git' },
         ]);
         getCommitRef.mockResolvedValue('abc');
 
-        const result = await parsePullRequest(config, model);
+        const result = await parsePullRequest(config, githubModel);
 
         expect(result).toEqual({
             target: 'other-user/feature-branch',
@@ -132,65 +135,25 @@ describe('parsePullRequest', () => {
     });
 
     it('parses github pull request model (branch not found)', async () => {
-        const model = {
-            pullRequestModel: {
-                item: {
-                    head: {
-                        ref: 'feature-branch',
-                        repo: {
-                            owner: 'owner2',
-                            name: 'repo2',
-                        },
-                    },
-                    base: {
-                        ref: 'main',
-                        repo: {
-                            owner: 'owner1',
-                            name: 'repo1',
-                        },
-                    },
-                },
-            },
-        } as GitHubPullRequestModel;
         getRemotes.mockResolvedValue([
             { name: 'github-origin', url: 'git@github.com:owner1/repo1.git' },
             { name: 'other-user', url: 'https://github.com/owner2/repo2.git' },
         ]);
         getCommitRef.mockRejectedValue(new Error());
 
-        await expect(() => parsePullRequest(config, model)).rejects.toThrow(
-            RemoteBranchNotFound
-        );
+        await expect(() =>
+            parsePullRequest(config, githubModel)
+        ).rejects.toThrow(RemoteBranchNotFound);
     });
 
     it('parses github pull request model (remote not found)', async () => {
-        const model = {
-            pullRequestModel: {
-                item: {
-                    head: {
-                        ref: 'feature-branch',
-                        repo: {
-                            owner: 'owner2',
-                            name: 'repo2',
-                        },
-                    },
-                    base: {
-                        ref: 'main',
-                        repo: {
-                            owner: 'owner1',
-                            name: 'repo1',
-                        },
-                    },
-                },
-            },
-        } as GitHubPullRequestModel;
         getRemotes.mockResolvedValue([
             { name: 'github-origin', url: 'git@github.com:owner1/repo1.git' },
         ]);
 
-        await expect(() => parsePullRequest(config, model)).rejects.toThrow(
-            GitHubRemoteNotFound
-        );
+        await expect(() =>
+            parsePullRequest(config, githubModel)
+        ).rejects.toThrow(GitHubRemoteNotFound);
     });
 
     it('throws on github pull request with missing info', async () => {

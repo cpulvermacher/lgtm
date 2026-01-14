@@ -38,5 +38,5 @@ interface Repository {
     cloneUrl: string; // e.g. "https://github.com/ghuser/repo" (always https?)
     isInOrganization: boolean;
     owner: string;
-    name: string;
+    name: string; // this can be a branch name?
 }

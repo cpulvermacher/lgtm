@@ -89,12 +89,14 @@ async function getRemoteBranchFromRef(
 
     //check if our workspace has a github remote for the given owner/repo
     const remotes = await git.getRemotes();
+    const parsedRefCloneUrl = parseGitHubRemoteUrl(ref.repo.cloneUrl);
     const matchingRemote = remotes.find((remote) => {
         const parsedRemote = parseGitHubRemoteUrl(remote.url);
         return (
             parsedRemote &&
-            parsedRemote.owner === ref.repo.owner &&
-            parsedRemote.repo === ref.repo.name
+            parsedRefCloneUrl &&
+            parsedRemote.owner === parsedRefCloneUrl.owner &&
+            parsedRemote.repo === parsedRefCloneUrl.repo
         );
     });
     if (!matchingRemote) {
