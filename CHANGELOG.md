@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.3]
+- Fix for 'Remote for ... not found' errors with GitHub Pull Requests integration.
+
 ## [1.1.2]
 - Document pull request integration in README.
 
