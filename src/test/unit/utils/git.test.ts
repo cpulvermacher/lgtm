@@ -54,6 +54,7 @@ describe('git', () => {
         status: vi.fn(),
         raw: vi.fn(),
         getRemotes: vi.fn(),
+        checkout: vi.fn(),
     } as unknown as SimpleGit;
 
     const scope: ReviewScope = {
@@ -1088,8 +1089,8 @@ line3`;
             ]);
 
             expect(Object.keys(result)).toHaveLength(2);
-            expect(result['ref1']).toBe(7);
-            expect(result['ref2']).toBe(999);
+            expect(result.ref1).toBe(7);
+            expect(result.ref2).toBe(999);
         });
 
         it('skips values where git.raw call fails', async () => {
@@ -1105,8 +1106,8 @@ line3`;
             const result = await git.getNumCommitsBehindMap(refs, 'before');
 
             expect(Object.keys(result)).toHaveLength(2);
-            expect(result['ref1']).toBe(Infinity);
-            expect(result['ref2']).toBe(8);
+            expect(result.ref1).toBe(Infinity);
+            expect(result.ref2).toBe(8);
         });
 
         it('skips results on timeout ', async () => {
@@ -1125,9 +1126,9 @@ line3`;
             const result = await git.getNumCommitsBehindMap(refs, 'before', 8);
 
             expect(Object.keys(result)).toHaveLength(3);
-            expect(result['a']).toBe(Infinity);
-            expect(result['b']).toBe(4);
-            expect(result['c']).toBe(2);
+            expect(result.a).toBe(Infinity);
+            expect(result.b).toBe(4);
+            expect(result.c).toBe(2);
         });
     });
 
@@ -1156,6 +1157,114 @@ line3`;
             const result = await git.getRemotes();
 
             expect(result).toStrictEqual([]);
+        });
+    });
+
+    describe('getLocalBranchForRemote', () => {
+        it('returns local branch name when it exists at same commit as remote branch', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['feature-branch'],
+            } as BranchSummary);
+            vi.mocked(mockSimpleGit.revparse)
+                .mockResolvedValueOnce('abc123') // local branch commit
+                .mockResolvedValueOnce('abc123'); // remote branch commit
+
+            const result = await git.getLocalBranchForRemote(
+                'origin/feature-branch'
+            );
+
+            expect(mockSimpleGit.branch).toHaveBeenCalledWith([
+                '--list',
+                'feature-branch',
+            ]);
+            expect(result).toBe('feature-branch');
+        });
+
+        it('handles remotes/ prefix format', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['feature-branch'],
+            } as BranchSummary);
+            vi.mocked(mockSimpleGit.revparse)
+                .mockResolvedValueOnce('abc123')
+                .mockResolvedValueOnce('abc123');
+
+            const result = await git.getLocalBranchForRemote(
+                'remotes/origin/feature-branch'
+            );
+
+            expect(mockSimpleGit.branch).toHaveBeenCalledWith([
+                '--list',
+                'feature-branch',
+            ]);
+            expect(result).toBe('feature-branch');
+        });
+
+        it('returns undefined when local branch does not exist', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: [],
+            } as unknown as BranchSummary);
+
+            const result = await git.getLocalBranchForRemote(
+                'origin/feature-branch'
+            );
+
+            expect(result).toBeUndefined();
+        });
+
+        it('returns undefined when local branch is at different commit', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['feature-branch'],
+            } as BranchSummary);
+            vi.mocked(mockSimpleGit.revparse)
+                .mockResolvedValueOnce('abc123') // local branch commit
+                .mockResolvedValueOnce('def456'); // remote branch commit (different)
+
+            const result = await git.getLocalBranchForRemote(
+                'origin/feature-branch'
+            );
+
+            expect(result).toBeUndefined();
+        });
+
+        it('returns undefined when commit comparison fails', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['feature-branch'],
+            } as BranchSummary);
+            vi.mocked(mockSimpleGit.revparse).mockRejectedValue(
+                new Error('Invalid ref')
+            );
+
+            const result = await git.getLocalBranchForRemote(
+                'origin/feature-branch'
+            );
+
+            expect(result).toBeUndefined();
+        });
+
+        it('returns undefined for non-remote refs', async () => {
+            const result = await git.getLocalBranchForRemote('feature-branch');
+
+            expect(result).toBeUndefined();
+        });
+    });
+
+    describe('checkout', () => {
+        it('calls git checkout with the given ref', async () => {
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            await git.checkout('feature-branch');
+
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith(
+                'feature-branch'
+            );
+        });
+
+        it('calls git checkout with commit hash', async () => {
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            await git.checkout('abc123def456');
+
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith('abc123def456');
         });
     });
 });

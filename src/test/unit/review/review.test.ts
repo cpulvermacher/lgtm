@@ -219,6 +219,7 @@ describe('reviewDiff', () => {
             maxInputTokensFraction: 0.95,
             maxConcurrentModelRequests: 1,
             saveOutputToFile: false,
+            autoCheckoutTarget: 'always',
         });
 
         const result = await reviewDiff(

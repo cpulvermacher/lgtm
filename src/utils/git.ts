@@ -245,7 +245,7 @@ export class Git {
             return await this.git.revparse([
                 '--verify',
                 '--end-of-options',
-                ref + '^{}',
+                `${ref}^{}`,
             ]);
         } catch {
             throw new Error(
@@ -510,6 +510,40 @@ export class Git {
             url: remote.refs.fetch,
         }));
     }
+
+    /**
+     * If ref is a remote branch, returns the local branch name if it exists at the same commit.
+     * Otherwise returns undefined.
+     */
+    async getLocalBranchForRemote(ref: string): Promise<string | undefined> {
+        const remoteBranchMatch = ref.match(/^(?:remotes\/)?([^/]+)\/(.+)$/);
+        if (!remoteBranchMatch) {
+            return undefined;
+        }
+
+        const [, , branchName] = remoteBranchMatch;
+
+        // Check if local branch exists
+        const branches = await this.git.branch(['--list', branchName]);
+        if (!branches.all.includes(branchName)) {
+            return undefined;
+        }
+
+        try {
+            if (await this.isSameRef(branchName, ref)) {
+                return branchName;
+            }
+        } catch {
+            // If comparison fails, return undefined
+        }
+
+        return undefined;
+    }
+
+    /** checkout the given ref (possibly detached) */
+    async checkout(ref: string) {
+        await this.git.checkout(ref);
+    }
 }
 
 export type RefList = {
@@ -540,7 +574,7 @@ function formatExtra(otherBranches: string[]) {
     }
 
     const indentToRefName = '       ';
-    return indentToRefName + 'Same as: ' + otherBranches.join(', ');
+    return `${indentToRefName}Same as: ${otherBranches.join(', ')}`;
 }
 
 /** returns a numerical value for the branch priority to be used with sort().
@@ -556,7 +590,7 @@ function getBranchNamePriority(ref: string) {
 
     const index = ['develop', 'main', 'master', 'trunk'].indexOf(branchName);
     if (index >= 0) {
-        return !!remoteMatch ? -4 + index : -8 + index;
+        return remoteMatch ? -4 + index : -8 + index;
     }
     return 0;
 }

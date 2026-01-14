@@ -7,7 +7,7 @@ import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
 import { parseArguments } from '@/utils/parseArguments';
 import { getConfig, toUri } from './config';
-import { pickRef, pickRefs } from './ui';
+import { pickRef, pickRefs, promptToCheckout } from './ui';
 
 export function registerChatParticipant(context: vscode.ExtensionContext) {
     const chatParticipant = vscode.chat.createChatParticipant(
@@ -58,6 +58,12 @@ async function handleChat(
         stream.markdown(`Reviewing ${targetLabel} changes...\n\n`);
     } else {
         const { base, target } = reviewRequest.scope;
+        if (!reviewRequest.scope.isTargetCheckedOut) {
+            await maybeCheckoutTarget(target, stream);
+            //regardless of choice, recheck if ref is now checked out
+            reviewRequest.scope = await config.git.getReviewScope(target, base);
+        }
+
         const targetIsBranch = await config.git.isBranch(target);
         stream.markdown(
             `Reviewing changes ${targetIsBranch ? 'on' : 'at'} \`${target}\` compared to \`${base}\`...\n\n`
@@ -70,6 +76,31 @@ async function handleChat(
     const results = await review(config, reviewRequest, stream, token);
 
     showReviewResults(config, results, stream, token);
+}
+
+async function maybeCheckoutTarget(
+    target: string,
+    stream: vscode.ChatResponseStream
+) {
+    const config = await getConfig();
+    const shouldCheckout = await promptToCheckout(config, target);
+    if (!shouldCheckout) {
+        return;
+    }
+
+    const localBranch = await config.git.getLocalBranchForRemote(target);
+    target = localBranch || target;
+
+    try {
+        stream.markdown(`Checking out \`${target}\`...`);
+        await config.git.checkout(target);
+
+        stream.markdown(' done.\n');
+    } catch (error) {
+        const errorMessage =
+            error instanceof Error ? error.message : String(error);
+        stream.markdown(`\n> Failed to check out ${target}: ${errorMessage}\n`);
+    }
 }
 
 /** Constructs review request (prompting user if needed) */

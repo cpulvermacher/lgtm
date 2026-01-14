@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { Config, Options } from '@/types/Config';
+import type { AutoCheckoutTargetType, Config, Options } from '@/types/Config';
 import type { Logger } from '@/types/Logger';
 import type { Model } from '@/types/Model';
 import { createGit, type Git } from '@/utils/git';
@@ -58,6 +58,7 @@ async function initializeConfig(): Promise<Config> {
         gitRoot: git.getGitRoot(),
         getModel: () => loadModel(getOptions().chatModel, logger),
         getOptions,
+        setOption,
         logger,
     };
 
@@ -102,13 +103,7 @@ async function loadModel(modelId: string, logger: Logger): Promise<Model> {
         );
 
         if (option === resetToDefaultOption) {
-            await vscode.workspace
-                .getConfiguration('lgtm')
-                .update(
-                    'chatModel',
-                    defaultModelId,
-                    vscode.ConfigurationTarget.Global
-                );
+            await setOption('chatModel', defaultModelId);
             logger.info(`Chat model reset to default: ${defaultModelId}`);
             return await loadModel(defaultModelId, logger);
         } else if (option === selectChatModelOption) {
@@ -124,7 +119,7 @@ async function loadModel(modelId: string, logger: Logger): Promise<Model> {
 
 /** Converts file path relative to gitRoot to a vscode.Uri */
 export function toUri(config: Config, file: string): vscode.Uri {
-    return vscode.Uri.file(config.gitRoot + '/' + file);
+    return vscode.Uri.file(`${config.gitRoot}/${file}`);
 }
 
 function getOptions(): Options {
@@ -153,6 +148,10 @@ function getOptions(): Options {
         4
     );
     const saveOutputToFile = config.get<boolean>('saveOutputToFile', false);
+    const autoCheckoutTarget = config.get<AutoCheckoutTargetType>(
+        'autoCheckoutTarget',
+        'ask'
+    );
 
     // hidden experimental setting for comparing prompts. Comma-separated list of prompt types to compare.
     // if empty, will only create a single review using the default prompt type.
@@ -169,5 +168,15 @@ function getOptions(): Options {
         maxConcurrentModelRequests,
         comparePromptTypes,
         saveOutputToFile,
+        autoCheckoutTarget,
     };
+}
+
+async function setOption<T extends keyof Options>(
+    option: T,
+    value: Options[T]
+) {
+    await vscode.workspace
+        .getConfiguration('lgtm')
+        .update(option, value, vscode.ConfigurationTarget.Global);
 }

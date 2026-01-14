@@ -203,3 +203,42 @@ export async function promptToFetchRemotes(message: string) {
     }
     return 'abort';
 }
+
+export async function promptToCheckout(
+    config: Config,
+    target: string
+): Promise<boolean> {
+    const autoCheckoutTarget = config.getOptions().autoCheckoutTarget;
+
+    if (autoCheckoutTarget === 'always') {
+        return true;
+    } else if (autoCheckoutTarget === 'never') {
+        return false;
+    }
+
+    // Show prompt with options to remember preference
+    const checkoutAction = { title: 'Check Out' };
+    const alwaysCheckoutAction = { title: 'Always Check Out' };
+    const skipAction = { title: 'Skip' };
+    const neverCheckoutAction = { title: 'Never' };
+
+    const userSelection = await vscode.window.showInformationMessage(
+        `Would you like to check out '${target}'? This enables code navigation.`,
+        {},
+        checkoutAction,
+        alwaysCheckoutAction,
+        skipAction,
+        neverCheckoutAction
+    );
+
+    if (userSelection === alwaysCheckoutAction) {
+        await config.setOption('autoCheckoutTarget', 'always');
+    } else if (userSelection === neverCheckoutAction) {
+        await config.setOption('autoCheckoutTarget', 'never');
+    }
+
+    return (
+        userSelection === checkoutAction ||
+        userSelection === alwaysCheckoutAction
+    );
+}
