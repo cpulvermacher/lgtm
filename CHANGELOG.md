@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.1.4] (pre-release)
+- If target is not checked out, offer to do so. Configurable via `lgtm.autoCheckoutTarget` setting.
+- Handle multiple language model vendors offering a model with the same ID. This changes the `lgtm.chatModel` setting to include `$VENDOR:` prefix in a backward-compatible way.
+- Fix display for detached HEAD.
+
 ## [1.1.3]
 - Fix for 'Remote for ... not found' errors with GitHub Pull Requests integration.
 
