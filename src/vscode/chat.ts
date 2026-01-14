@@ -88,8 +88,11 @@ async function maybeCheckoutTarget(
         return;
     }
 
+    const localBranch = await config.git.getLocalBranchForRemote(target);
+    target = localBranch || target;
+
     try {
-        stream.markdown(`Checking out target \`${target}\`...`);
+        stream.markdown(`Checking out \`${target}\`...`);
         await config.git.checkout(target);
 
         stream.markdown(' done.\n');

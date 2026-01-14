@@ -511,6 +511,35 @@ export class Git {
         }));
     }
 
+    /**
+     * If ref is a remote branch, returns the local branch name if it exists at the same commit.
+     * Otherwise returns undefined.
+     */
+    async getLocalBranchForRemote(ref: string): Promise<string | undefined> {
+        const remoteBranchMatch = ref.match(/^(?:remotes\/)?([^/]+)\/(.+)$/);
+        if (!remoteBranchMatch) {
+            return undefined;
+        }
+
+        const [, , branchName] = remoteBranchMatch;
+
+        // Check if local branch exists
+        const branches = await this.git.branch(['--list', branchName]);
+        if (!branches.all.includes(branchName)) {
+            return undefined;
+        }
+
+        try {
+            if (await this.isSameRef(branchName, ref)) {
+                return branchName;
+            }
+        } catch {
+            // If comparison fails, return undefined
+        }
+
+        return undefined;
+    }
+
     /** checkout the given ref (possibly detached) */
     async checkout(ref: string) {
         await this.git.checkout(ref);
