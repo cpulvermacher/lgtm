@@ -9,6 +9,7 @@ import {
     UnsupportedModelError,
 } from './utils/parsePullRequest';
 import { registerChatParticipant } from './vscode/chat';
+import { fixComment } from './vscode/fix';
 import { isUnSupportedModel } from './vscode/model';
 import { promptToFetchRemotes } from './vscode/ui';
 
@@ -36,7 +37,8 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(
             'lgtm.reviewPullRequest',
             reviewPullRequestCommand
-        )
+        ),
+        vscode.commands.registerCommand('lgtm.fixComment', fixComment)
     );
 
     context.subscriptions.push(

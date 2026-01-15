@@ -2,11 +2,14 @@ import * as vscode from 'vscode';
 
 import { reviewDiff } from '@/review/review';
 import { Config } from '@/types/Config';
+import { FileComments } from '@/types/FileComments';
 import { UncommittedRef } from '@/types/Ref';
+import { ReviewComment } from '@/types/ReviewComment';
 import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
 import { parseArguments } from '@/utils/parseArguments';
 import { getConfig, toUri } from './config';
+import { FixCommentArgs } from './fix';
 import { pickRef, pickRefs, promptToCheckout } from './ui';
 
 export function registerChatParticipant(context: vscode.ExtensionContext) {
@@ -207,26 +210,10 @@ function showReviewResults(
         }
 
         for (const comment of filteredFileComments) {
-            const isValidLineNumber = isTargetCheckedOut && comment.line > 0;
-            const location = isValidLineNumber
-                ? new vscode.Location(
-                      toUri(config, file.target),
-                      new vscode.Position(comment.line - 1, 0)
-                  )
-                : null;
-
-            stream.markdown(`\n - `);
-            if (location) {
-                stream.anchor(location);
-            } else {
-                stream.markdown(`Line ${comment.line}: `);
-            }
-            if (comment.promptType) {
-                stream.markdown(`**${comment.promptType}**: `);
-            }
             stream.markdown(
-                `${comment.comment} (Severity: ${comment.severity}/5)`
+                buildCommentMarkdown(config, file, comment, isTargetCheckedOut)
             );
+
             noProblemsFound = false;
         }
 
@@ -255,4 +242,62 @@ function showReviewResults(
             `${result.errors.length} error(s) occurred during review:\n${errorString}`
         );
     }
+}
+
+function buildCommentMarkdown(
+    config: Config,
+    file: FileComments,
+    comment: ReviewComment,
+    isTargetCheckedOut: boolean
+) {
+    const isValidLineNumber = isTargetCheckedOut && comment.line > 0;
+
+    // some things learned about the markdown parsing:
+    // - pushing multiple items to the stream with different isTrusted values will add newlines between them
+    // - using theme icons can break other markdown (links) following it (also can cause display issues if main comment contains $(var) type text)
+
+    // Build the entire comment as a single markdown string
+    const commentMarkdown = new vscode.MarkdownString();
+    commentMarkdown.appendMarkdown('\n - ');
+
+    // Add anchor or plain text line number
+    if (isValidLineNumber) {
+        // build something like this in plain markdown to avoid having newline after anchor
+        const uri = toUri(config, file.target, comment.line);
+        commentMarkdown.appendMarkdown(
+            `[Line ${comment.line}](${uri.toString()}): `
+        );
+    } else {
+        commentMarkdown.appendText(`Line ${comment.line}: `);
+    }
+
+    // (debug: prompt type)
+    if (comment.promptType) {
+        commentMarkdown.appendMarkdown(`**${comment.promptType}**: `);
+    }
+
+    // actual comment + severity
+    commentMarkdown.appendMarkdown(`${comment.comment}`);
+    commentMarkdown.appendText(` (Severity: ${comment.severity}/5)`);
+
+    // Add fix button if location is valid
+    if (isValidLineNumber) {
+        const args: FixCommentArgs = {
+            file: file.target,
+            line: comment.line,
+            comment: comment.comment,
+        };
+
+        commentMarkdown.appendMarkdown(
+            ` | [**✨ Fix**](${toCommandLink('lgtm.fixComment', args)})`
+        );
+        commentMarkdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
+    }
+
+    return commentMarkdown;
+}
+
+function toCommandLink(command: string, args: unknown) {
+    const encodedArgs = encodeURIComponent(JSON.stringify(args));
+    return `command:${command}?${encodedArgs}`;
 }
