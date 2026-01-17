@@ -287,9 +287,9 @@ function buildCommentMarkdown(
             line: comment.line,
             comment: comment.comment,
         };
-
+        const icon = '✦';
         commentMarkdown.appendMarkdown(
-            ` | [**✨ Fix**](${toCommandLink('lgtm.fixComment', args)})`
+            ` | [**${icon} Fix**](${toCommandLink('lgtm.fixComment', args)})`
         );
         commentMarkdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
     }
