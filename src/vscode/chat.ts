@@ -288,8 +288,9 @@ function buildCommentMarkdown(
             comment: comment.comment,
         };
         const icon = '✦';
+        const nbsp = '\u00A0';
         commentMarkdown.appendMarkdown(
-            ` | [**${icon} Fix**](${toCommandLink('lgtm.fixComment', args)})`
+            ` | [**${icon}${nbsp}Fix**](${toCommandLink('lgtm.fixComment', args)})`
         );
         commentMarkdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
     }
