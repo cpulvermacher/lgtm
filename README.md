@@ -47,6 +47,7 @@ Assuming you have staged changes, the agent will start a review using LGTM and t
     - `#reviewUnstaged`: Reviews only unstaged changes in your working directory
     - Example usage: `After your changes, run all tests and run #reviewUnstaged to check your work.`
 - **Chat Integration**: Review content remains in chat history for follow-up questions by omitting `@lgtm`.
+- **Automatic Fixes**: Use the `Fix` action on a review comment to fix it automatically. This will use the language model configured for inline chat.
 
 ## Limitations
 
