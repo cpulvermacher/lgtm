@@ -92,17 +92,19 @@ async function maybeCheckoutTarget(
     }
 
     const localBranch = await config.git.getLocalBranchForRemote(target);
-    target = localBranch || target;
+    const checkoutRef = localBranch || target;
 
     try {
-        stream.markdown(`Checking out \`${target}\`...`);
-        await config.git.checkout(target);
+        stream.markdown(`Checking out \`${checkoutRef}\`...`);
+        await config.git.checkout(checkoutRef);
 
         stream.markdown(' done.\n');
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
-        stream.markdown(`\n> Failed to check out ${target}: ${errorMessage}\n`);
+        stream.markdown(
+            `\n> Failed to check out ${checkoutRef}: ${errorMessage}\n`
+        );
     }
 }
 
