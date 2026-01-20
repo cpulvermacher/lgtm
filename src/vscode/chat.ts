@@ -279,7 +279,7 @@ function buildCommentMarkdown(
     }
 
     // actual comment + severity
-    commentMarkdown.appendMarkdown(`${comment.comment}`);
+    commentMarkdown.appendMarkdown(comment.comment);
     commentMarkdown.appendText(` (Severity: ${comment.severity}/5)`);
 
     // Add fix button if location is valid
