@@ -10,7 +10,7 @@ import { getChatModel } from './model';
 // defined when built via `npm run dev`
 declare const __GIT_VERSION__: string | undefined;
 
-const defaultModelId = 'copilot:gpt-4.1';
+export const defaultModelId = 'copilot:gpt-4.1';
 
 let config: Config | undefined;
 

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { UncommittedRef } from '@/types/Ref';
-import { getConfig } from '@/vscode/config';
+import { defaultModelId, getConfig } from '@/vscode/config';
 import { ReviewTool } from '@/vscode/ReviewTool';
 import {
     parsePullRequest,
@@ -10,7 +10,7 @@ import {
 } from './utils/parsePullRequest';
 import { registerChatParticipant } from './vscode/chat';
 import { fixComment } from './vscode/fix';
-import { isUnSupportedModel } from './vscode/model';
+import { isRecommendedModel, isUnSupportedModel } from './vscode/model';
 import { promptToFetchRemotes } from './vscode/ui';
 
 // called the first time a command is executed
@@ -141,28 +141,49 @@ function getModelQuickPickItems(
     models: vscode.LanguageModelChat[],
     currentModel: string // could be in format "vendor:id" or legacy "id" only
 ): ModelQuickPickItem[] {
-    const supportedModels: ModelQuickPickItem[] = [];
+    const recommendedModels: ModelQuickPickItem[] = [];
+    const otherModels: ModelQuickPickItem[] = [];
     const unsupportedModels: ModelQuickPickItem[] = [];
     models.forEach((model) => {
         const modelIdWithVendor = `${model.vendor}:${model.id}`;
         const isCurrentModel =
             modelIdWithVendor === currentModel || model.id === currentModel;
+        const isDefaultModel = modelIdWithVendor === defaultModelId;
 
         const prefix = isCurrentModel ? '$(check)' : '\u2003 '; // em space
+        const suffix = isDefaultModel ? ' (default)' : '';
         const modelName = model.name ?? model.id;
         const item = {
-            label: prefix + modelName,
+            label: prefix + modelName + suffix,
             description: model.vendor,
             name: modelName,
             modelIdWithVendor,
         };
-        if (isUnSupportedModel(model)) {
+
+        if (isDefaultModel) {
+            //place default model at the top
+            recommendedModels.unshift(item);
+        } else if (isUnSupportedModel(model)) {
             unsupportedModels.push(item);
+        } else if (isRecommendedModel(model)) {
+            recommendedModels.push(item);
         } else {
-            supportedModels.push(item);
+            otherModels.push(item);
         }
     });
 
+    if (recommendedModels.length > 0) {
+        recommendedModels.unshift({
+            label: 'Recommended Models',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
+    if (otherModels.length > 0) {
+        otherModels.unshift({
+            label: 'Other Models',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
     if (unsupportedModels.length > 0) {
         unsupportedModels.unshift({
             label: 'Unsupported Models',
@@ -170,5 +191,5 @@ function getModelQuickPickItems(
         });
     }
 
-    return [...supportedModels, ...unsupportedModels];
+    return [...recommendedModels, ...otherModels, ...unsupportedModels];
 }

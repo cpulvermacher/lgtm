@@ -98,6 +98,18 @@ async function readStream(
     return text;
 }
 
+export function isRecommendedModel(model: vscode.LanguageModelChat): boolean {
+    if (
+        (model.vendor === 'copilot' && model.id === 'gpt-4.1') ||
+        (model.vendor === 'claude-model-provider' &&
+            model.id.startsWith('claude-sonnet-4-5'))
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
 export function isUnSupportedModel(model: vscode.LanguageModelChat): boolean {
     if (model.vendor === 'copilot') {
         const unsupportedCopilotModelIds = [
