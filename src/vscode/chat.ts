@@ -213,7 +213,7 @@ function showReviewResults(
 
         for (const comment of filteredFileComments) {
             stream.markdown(
-                buildCommentMarkdown(config, file, comment, isTargetCheckedOut)
+                buildComment(config, file, comment, isTargetCheckedOut)
             );
 
             noProblemsFound = false;
@@ -246,7 +246,7 @@ function showReviewResults(
     }
 }
 
-function buildCommentMarkdown(
+function buildComment(
     config: Config,
     file: FileComments,
     comment: ReviewComment,
@@ -257,30 +257,26 @@ function buildCommentMarkdown(
     // some things learned about the markdown parsing:
     // - pushing multiple items to the stream with different isTrusted values will add newlines between them
     // - using theme icons can break other markdown (links) following it (also can cause display issues if main comment contains $(var) type text)
+    // - using quotes (>) helps isolate unclosed markdown elements from the following unquoted text
 
     // Build the entire comment as a single markdown string
-    const commentMarkdown = new vscode.MarkdownString();
-    commentMarkdown.appendMarkdown('\n - ');
+    const markdown = new vscode.MarkdownString();
+    markdown.appendMarkdown('\n - ');
 
     // Add anchor or plain text line number
     if (isValidLineNumber) {
         // build something like this in plain markdown to avoid having newline after anchor
         const uri = toUri(config, file.target, comment.line);
-        commentMarkdown.appendMarkdown(
-            `[Line ${comment.line}](${uri.toString()}): `
-        );
+        markdown.appendMarkdown(`[Line ${comment.line}](${uri.toString()})`);
     } else {
-        commentMarkdown.appendText(`Line ${comment.line}: `);
+        markdown.appendText(`Line ${comment.line}`);
     }
 
     // (debug: prompt type)
     if (comment.promptType) {
-        commentMarkdown.appendMarkdown(`**${comment.promptType}**: `);
+        markdown.appendMarkdown(` | **${comment.promptType}**`);
     }
-
-    // actual comment + severity
-    commentMarkdown.appendMarkdown(comment.comment);
-    commentMarkdown.appendText(` (Severity: ${comment.severity}/5)`);
+    markdown.appendText(` | Severity ${comment.severity}/5`);
 
     // Add fix button if location is valid
     if (isValidLineNumber) {
@@ -291,13 +287,20 @@ function buildCommentMarkdown(
         };
         const icon = '✦';
         const nbsp = '\u00A0';
-        commentMarkdown.appendMarkdown(
+        markdown.appendMarkdown(
             ` | [**${icon}${nbsp}Fix**](${toCommandLink('lgtm.fixComment', args)})`
         );
-        commentMarkdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
+        markdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
     }
 
-    return commentMarkdown;
+    // Properly quote multi-line comments
+    const quotedComment = comment.comment
+        .split('\n')
+        .map((line) => `> ${line}`)
+        .join('\n');
+    markdown.appendMarkdown(`\n${quotedComment}`);
+
+    return markdown;
 }
 
 function toCommandLink(command: string, args: unknown) {
