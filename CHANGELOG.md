@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.6] (pre-release)
+- Adjust review comment formatting to be more robust.
+- Show well-tested, reasonably fast models in Recommended Models list in model selector. (currently: GPT 4.1 and Claude Sonnet 4.5)
+
 ## [1.1.5] (pre-release)
 - Add "Fix" action to review comments when target is checked out.
 
