@@ -275,16 +275,7 @@ function buildComment(
 
     // Add fix button if location is valid
     if (isValidLineNumber) {
-        const args: FixCommentArgs = {
-            file: file.target,
-            line: comment.line,
-            comment: comment.comment,
-        };
-        const icon = '✦';
-        const nbsp = '\u00A0';
-        markdown.appendMarkdown(
-            ` | [**${icon}${nbsp}Fix**](${toCommandLink('lgtm.fixComment', args)})`
-        );
+        markdown.appendMarkdown(` | ${createFixLinkMarkdown(file, comment)}`);
         markdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
     }
 
@@ -298,7 +289,21 @@ function buildComment(
     return markdown;
 }
 
+function createFixLinkMarkdown(file: FileComments, comment: ReviewComment) {
+    const args: FixCommentArgs = {
+        file: file.target,
+        line: comment.line,
+        comment: comment.comment,
+    };
+    const icon = '✦';
+    const nbsp = '\u00A0';
+    return `[**${icon}${nbsp}Fix**](${toCommandLink('lgtm.fixComment', args)})`;
+}
+
 function toCommandLink(command: string, args: unknown) {
-    const encodedArgs = encodeURIComponent(JSON.stringify(args));
+    // needs both URL encoding and escaping for markdown link
+    const encodedArgs = encodeURIComponent(JSON.stringify(args))
+        .replace(/\(/g, '%28')
+        .replace(/\)/g, '%29');
     return `command:${command}?${encodedArgs}`;
 }
