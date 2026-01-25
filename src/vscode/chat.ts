@@ -263,14 +263,9 @@ function buildComment(
     const markdown = new vscode.MarkdownString();
     markdown.appendMarkdown('\n - ');
 
-    // Add anchor or plain text line number
-    if (isValidLineNumber) {
-        // build something like this in plain markdown to avoid having newline after anchor
-        const uri = toUri(config, file.target, comment.line);
-        markdown.appendMarkdown(`[Line ${comment.line}](${uri.toString()})`);
-    } else {
-        markdown.appendText(`Line ${comment.line}`);
-    }
+    // Add line number anchor
+    const uri = toUri(config, file.target, comment.line);
+    markdown.appendMarkdown(`[Line ${comment.line}](${uri.toString()})`);
 
     // (debug: prompt type)
     if (comment.promptType) {
