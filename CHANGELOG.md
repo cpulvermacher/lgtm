@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.8] (pre-release)
+- Fix escaping for 'Fix' links.
+
 ## [1.1.7] (pre-release)
 - Fix model ID for Copilot's Claude Sonnet 4.5.
 
