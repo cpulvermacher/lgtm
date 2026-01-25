@@ -256,7 +256,7 @@
                         "Always check out the target ref automatically",
                         "Never check out the target ref automatically"
                     ],
-                    "description": "Controls whether to automatically check out the target ref when it's not currently checked out. Checking out enables code navigation."
+                    "description": "Controls whether to automatically check out the target ref when it's not currently checked out. Checking out enables code navigation and fixes."
                 }
             }
         }

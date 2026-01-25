@@ -243,7 +243,7 @@ export async function promptToCheckout(
     const neverCheckoutAction = { title: 'Never' };
 
     const userSelection = await vscode.window.showInformationMessage(
-        `Would you like to check out '${target}'? This enables code navigation.`,
+        `Would you like to check out '${target}'? This enables code navigation and fixes.`,
         {},
         checkoutAction,
         alwaysCheckoutAction,
