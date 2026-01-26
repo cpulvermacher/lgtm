@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.2.0]
+Includes changes from 1.1.4 to 1.1.8. Highlights:
+- Offer to automatically check out the target ref. Configurable via the `Lgtm: Auto Checkout Target` setting.
+- Show "Fix" link on each review comment (if target checked out).
+
 ## [1.1.8] (pre-release)
 - Fix escaping for 'Fix' links.
 
