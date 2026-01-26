@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
-import { getConfig, toUri } from './config';
+import { getConfig } from './config';
+import { toUri } from './uri';
 
 export type FixCommentArgs = {
     file: string;

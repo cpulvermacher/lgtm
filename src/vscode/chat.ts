@@ -8,9 +8,10 @@ import { ReviewComment } from '@/types/ReviewComment';
 import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
 import { parseArguments } from '@/utils/parseArguments';
-import { getConfig, toUri } from './config';
+import { getConfig } from './config';
 import { FixCommentArgs } from './fix';
 import { pickRef, pickRefs, promptToCheckout } from './ui';
+import { toCommandLink, toUri } from './uri';
 
 export function registerChatParticipant(context: vscode.ExtensionContext) {
     const chatParticipant = vscode.chat.createChatParticipant(
@@ -298,12 +299,4 @@ function createFixLinkMarkdown(file: FileComments, comment: ReviewComment) {
     const icon = '✦';
     const nbsp = '\u00A0';
     return `[**${icon}${nbsp}Fix**](${toCommandLink('lgtm.fixComment', args)})`;
-}
-
-function toCommandLink(command: string, args: unknown) {
-    // needs both URL encoding and escaping for markdown link
-    const encodedArgs = encodeURIComponent(JSON.stringify(args))
-        .replace(/\(/g, '%28')
-        .replace(/\)/g, '%29');
-    return `command:${command}?${encodedArgs}`;
 }
