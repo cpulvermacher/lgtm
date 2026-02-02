@@ -274,6 +274,7 @@ function getModelQuickPickItems(
             label: prefix + modelName + suffix,
             description: model.vendor,
             modelIdWithVendor,
+            picked: isCurrentModel, // Pre-select current model for canPickMany
         };
 
         if (isDefaultModel) {
