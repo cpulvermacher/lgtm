@@ -69,7 +69,7 @@ async function handleChat(
         }
 
         const modelId = config.getCurrentModelId();
-        const modelName = formatModelName(modelId);
+        const modelName = await getModelDisplayName(modelId);
 
         if (!reviewRequest.scope.isCommitted) {
             const targetLabel =
@@ -328,10 +328,27 @@ function createFixLinkMarkdown(file: FileComments, comment: ReviewComment) {
 }
 
 /**
- * Format a model ID (e.g. "copilot:gpt-4.1") into a display name (e.g. "gpt-4.1")
+ * Get the display name for a model ID by looking it up in the available models.
+ * Falls back to the ID part if the model is not found.
  */
-function formatModelName(modelId: string): string {
-    // Model IDs are in format "vendor:id", we display just the id part
+async function getModelDisplayName(modelId: string): Promise<string> {
+    const models = await vscode.lm.selectChatModels();
+    if (models && models.length > 0) {
+        // Model IDs are in format "vendor:id"
+        const [vendor, id] = modelId.includes(':')
+            ? modelId.split(':', 2)
+            : [undefined, modelId];
+
+        const matchingModel = models.find((m) =>
+            vendor ? m.vendor === vendor && m.id === id : m.id === id,
+        );
+
+        if (matchingModel) {
+            return matchingModel.name ?? matchingModel.id;
+        }
+    }
+
+    // Fallback: just return the id part
     if (modelId.includes(':')) {
         return modelId.split(':')[1];
     }
