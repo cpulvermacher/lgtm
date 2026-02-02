@@ -361,7 +361,7 @@ function showSeparateReviewResults(
 
         // Add section heading if there are multiple models
         if (results.length > 1) {
-            stream.markdown(`\n---\n### Results from ${modelName}\n\n`);
+            stream.markdown(`\n---\n*${modelName}*\n---\n`);
         }
 
         if (result.files.length === 0) {
