@@ -17,11 +17,11 @@ import { toCommandLink, toUri } from './uri';
 export function registerChatParticipant(context: vscode.ExtensionContext) {
     const chatParticipant = vscode.chat.createChatParticipant(
         'lgtm',
-        handleChat
+        handleChat,
     );
     chatParticipant.iconPath = vscode.Uri.joinPath(
         context.extensionUri,
-        'images/chat_icon.png'
+        'images/chat_icon.png',
     );
     return chatParticipant;
 }
@@ -30,19 +30,19 @@ async function handleChat(
     chatRequest: vscode.ChatRequest,
     _context: vscode.ChatContext,
     stream: vscode.ChatResponseStream,
-    token: vscode.CancellationToken
+    token: vscode.CancellationToken,
 ): Promise<void> {
     if (chatRequest.command !== 'review') {
         if (['branch', 'commit'].includes(chatRequest.command ?? '')) {
             //TODO temporary, clean this up in ~Mar 2026
             stream.markdown(
-                '/branch and /commit have been removed, please use /review instead.'
+                '/branch and /commit have been removed, please use /review instead.',
             );
             return;
         }
         stream.markdown(
             'Please use the /review command:\n' +
-                ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively. Use `/review staged` or `/review unstaged` to review uncommitted changes.'
+                ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively. Use `/review staged` or `/review unstaged` to review uncommitted changes.',
         );
         return;
     }
@@ -62,7 +62,7 @@ async function handleChat(
     try {
         const reviewRequest = await getReviewRequest(
             config,
-            chatRequest.prompt
+            chatRequest.prompt,
         );
         if (!reviewRequest) {
             stream.markdown(`Nothing to do.`);
@@ -73,7 +73,7 @@ async function handleChat(
         // Fetch model list once to avoid repeated API calls
         const availableModels = await vscode.lm.selectChatModels();
         const modelNames = modelIds.map((id) =>
-            getModelDisplayName(id, availableModels)
+            getModelDisplayName(id, availableModels),
         );
         const modelNamesDisplay =
             modelNames.length === 1
@@ -86,7 +86,7 @@ async function handleChat(
                     ? 'staged'
                     : 'unstaged';
             stream.markdown(
-                `Reviewing ${targetLabel} changes using ${modelNamesDisplay}...\n\n`
+                `Reviewing ${targetLabel} changes using ${modelNamesDisplay}...\n\n`,
             );
         } else {
             const { base, target } = reviewRequest.scope;
@@ -95,7 +95,7 @@ async function handleChat(
                 //regardless of choice, recheck if ref is now checked out
                 reviewRequest.scope = await config.git.getReviewScope(
                     target,
-                    base
+                    base,
                 );
             }
 
@@ -103,7 +103,7 @@ async function handleChat(
             stream.markdown(
                 `Reviewing changes ${
                     targetIsBranch ? 'on' : 'at'
-                } \`${target}\` compared to \`${base}\` using ${modelNamesDisplay}...\n\n`
+                } \`${target}\` compared to \`${base}\` using ${modelNamesDisplay}...\n\n`,
             );
             if (await config.git.isSameRef(base, target)) {
                 stream.markdown('No changes found.');
@@ -122,8 +122,8 @@ async function handleChat(
                 modelId,
                 modelNames[index],
                 sharedProgress,
-                token
-            )
+                token,
+            ),
         );
         const settledResults = await Promise.allSettled(reviewPromises);
 
@@ -136,7 +136,7 @@ async function handleChat(
             } else {
                 config.logger.info(
                     `Model ${modelNames[i]} failed:`,
-                    settled.reason
+                    settled.reason,
                 );
             }
         }
@@ -158,7 +158,7 @@ async function handleChat(
 
 async function maybeCheckoutTarget(
     target: string,
-    stream: vscode.ChatResponseStream
+    stream: vscode.ChatResponseStream,
 ) {
     const config = await getConfig();
     const shouldCheckout = await promptToCheckout(config, target);
@@ -178,7 +178,7 @@ async function maybeCheckoutTarget(
         const errorMessage =
             error instanceof Error ? error.message : String(error);
         stream.markdown(
-            `\n> Failed to check out ${checkoutRef}: ${errorMessage}\n`
+            `\n> Failed to check out ${checkoutRef}: ${errorMessage}\n`,
         );
     }
 }
@@ -186,7 +186,7 @@ async function maybeCheckoutTarget(
 /** Constructs review request (prompting user if needed) */
 async function getReviewRequest(
     config: Config,
-    prompt: string
+    prompt: string,
 ): Promise<ReviewRequest | undefined> {
     const parsedPrompt = await parseArguments(config.git, prompt);
 
@@ -204,7 +204,7 @@ async function getReviewRequest(
         const base = await pickRef(
             config,
             'Select a branch/tag/commit to compare with (2/2)',
-            parsedPrompt.target
+            parsedPrompt.target,
         );
         if (!base) {
             return;
@@ -233,7 +233,7 @@ function buildComment(
     config: Config,
     file: FileComments,
     comment: ReviewComment,
-    isTargetCheckedOut: boolean
+    isTargetCheckedOut: boolean,
 ) {
     const isValidLineNumber = isTargetCheckedOut && comment.line > 0;
 
@@ -259,7 +259,11 @@ function buildComment(
     // Add fix button if location is valid
     if (isValidLineNumber) {
         markdown.appendMarkdown(
-            ` | ${createFixLinkMarkdown(file.target, comment.line, comment.comment)}`
+            ` | ${createFixLinkMarkdown(
+                file.target,
+                comment.line,
+                comment.comment,
+            )}`,
         );
         markdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
     }
@@ -277,7 +281,7 @@ function buildComment(
 function createFixLinkMarkdown(
     filePath: string,
     line: number,
-    commentText: string
+    commentText: string,
 ) {
     const args: FixCommentArgs = {
         file: filePath,
@@ -297,7 +301,7 @@ function createFixLinkMarkdown(
  */
 function getModelDisplayName(
     modelId: string,
-    cachedModels: vscode.LanguageModelChat[]
+    cachedModels: vscode.LanguageModelChat[],
 ): string {
     if (cachedModels && cachedModels.length > 0) {
         // Model IDs are in format "vendor:id"
@@ -306,7 +310,7 @@ function getModelDisplayName(
             : [undefined, modelId];
 
         const matchingModel = cachedModels.find((m) =>
-            vendor ? m.vendor === vendor && m.id === id : m.id === id
+            vendor ? m.vendor === vendor && m.id === id : m.id === id,
         );
 
         if (matchingModel) {
@@ -353,7 +357,7 @@ async function reviewWithModel(
     modelId: string,
     modelName: string,
     progress: Progress,
-    token: vscode.CancellationToken
+    token: vscode.CancellationToken,
 ): Promise<ModelReviewResult> {
     // Create a config that uses the specific model
     const modelConfig: Config = {
@@ -365,7 +369,7 @@ async function reviewWithModel(
         modelConfig,
         reviewRequest,
         progress,
-        token
+        token,
     );
 
     return { modelId, modelName, result };
@@ -376,11 +380,25 @@ function showSeparateReviewResults(
     config: Config,
     results: ModelReviewResult[],
     stream: vscode.ChatResponseStream,
-    token: vscode.CancellationToken
+    token: vscode.CancellationToken,
 ) {
+    // Guard against empty results array
+    if (results.length === 0) {
+        if (token.isCancellationRequested) {
+            stream.markdown(
+                '\nCancelled. All models failed to complete the review; no results are available.\n',
+            );
+        } else {
+            stream.markdown(
+                '\nAll models failed to complete the review; no results are available.\n',
+            );
+        }
+        return;
+    }
+
     if (token.isCancellationRequested) {
         const hasAnyComments = results.some(
-            (r) => r.result.fileComments.length > 0
+            (r) => r.result.fileComments.length > 0,
         );
         if (hasAnyComments) {
             stream.markdown('\nCancelled, showing partial results.\n');
@@ -418,7 +436,7 @@ function showSeparateReviewResults(
 
             const filteredFileComments = file.comments.filter(
                 (comment) =>
-                    comment.severity >= options.minSeverity && comment.line > 0
+                    comment.severity >= options.minSeverity && comment.line > 0,
             );
 
             if (filteredFileComments.length > 0) {
@@ -427,7 +445,7 @@ function showSeparateReviewResults(
 
             for (const comment of filteredFileComments) {
                 stream.markdown(
-                    buildComment(config, file, comment, isTargetCheckedOut)
+                    buildComment(config, file, comment, isTargetCheckedOut),
                 );
                 noProblemsFound = false;
             }
@@ -439,9 +457,11 @@ function showSeparateReviewResults(
 
         if (noProblemsFound && result.errors.length === 0) {
             stream.markdown('No problems found.\n');
-        } else if (!isTargetCheckedOut) {
+        }
+
+        if (!isTargetCheckedOut) {
             stream.markdown(
-                '\nNote: The target branch or commit is not checked out, so line numbers may not match the current state.\n'
+                '\nNote: The target branch or commit is not checked out, so line numbers may not match the current state.\n',
             );
         }
 
@@ -457,7 +477,7 @@ function showSeparateReviewResults(
             .map((error) => ` - ${error.message}`)
             .join('\n');
         throw new Error(
-            `${allErrors.length} error(s) occurred during review:\n${errorString}`
+            `${allErrors.length} error(s) occurred during review:\n${errorString}`,
         );
     }
 }
@@ -477,7 +497,7 @@ function showMergedReviewResults(
     config: Config,
     results: ModelReviewResult[],
     stream: vscode.ChatResponseStream,
-    token: vscode.CancellationToken
+    token: vscode.CancellationToken,
 ) {
     // Guard against empty results array
     if (results.length === 0) {
@@ -487,7 +507,7 @@ function showMergedReviewResults(
 
     if (token.isCancellationRequested) {
         const hasAnyComments = results.some(
-            (r) => r.result.fileComments.length > 0
+            (r) => r.result.fileComments.length > 0,
         );
         if (hasAnyComments) {
             stream.markdown('\nCancelled, showing partial results.\n');
@@ -514,17 +534,17 @@ function showMergedReviewResults(
 
                 // Create a key based on file, line, and similar comment text
                 const key = `${comment.file}:${comment.line}:${normalizeComment(
-                    comment.comment
+                    comment.comment,
                 )}`;
 
-                if (commentMap.has(key)) {
+                const existing = commentMap.get(key);
+                if (existing) {
                     // Add model to existing comment
-                    const existing = commentMap.get(key);
-                    if (existing && !existing.models.includes(modelName)) {
+                    if (!existing.models.includes(modelName)) {
                         existing.models.push(modelName);
                     }
                     // Keep the higher severity
-                    if (existing && comment.severity > existing.severity) {
+                    if (comment.severity > existing.severity) {
                         existing.severity = comment.severity;
                     }
                 } else {
@@ -562,7 +582,7 @@ function showMergedReviewResults(
                 .map((error) => ` - ${error.message}`)
                 .join('\n');
             throw new Error(
-                `${allErrors.length} error(s) occurred during review:\n${errorString}`
+                `${allErrors.length} error(s) occurred during review:\n${errorString}`,
             );
         }
         return;
@@ -602,8 +622,8 @@ function showMergedReviewResults(
                     config,
                     comment,
                     isTargetCheckedOut,
-                    results.length > 1
-                )
+                    results.length > 1,
+                ),
             );
         }
 
@@ -612,7 +632,7 @@ function showMergedReviewResults(
 
     if (!isTargetCheckedOut) {
         stream.markdown(
-            '\nNote: The target branch or commit is not checked out, so line numbers may not match the current state.\n'
+            '\nNote: The target branch or commit is not checked out, so line numbers may not match the current state.\n',
         );
     }
 
@@ -626,7 +646,7 @@ function showMergedReviewResults(
             .map((error) => ` - ${error.message}`)
             .join('\n');
         throw new Error(
-            `${allErrors.length} error(s) occurred during review:\n${errorString}`
+            `${allErrors.length} error(s) occurred during review:\n${errorString}`,
         );
     }
 }
@@ -636,7 +656,7 @@ function buildMergedComment(
     config: Config,
     comment: AttributedComment,
     isTargetCheckedOut: boolean,
-    showAttribution: boolean
+    showAttribution: boolean,
 ) {
     const isValidLineNumber = isTargetCheckedOut && comment.line > 0;
 
@@ -665,7 +685,11 @@ function buildMergedComment(
     // Add fix button if location is valid
     if (isValidLineNumber) {
         markdown.appendMarkdown(
-            ` | ${createFixLinkMarkdown(comment.file, comment.line, comment.comment)}`
+            ` | ${createFixLinkMarkdown(
+                comment.file,
+                comment.line,
+                comment.comment,
+            )}`,
         );
         markdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
     }
