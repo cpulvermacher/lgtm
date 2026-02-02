@@ -61,22 +61,30 @@ async function handleChat(
     try {
         const reviewRequest = await getReviewRequest(
             config,
-            chatRequest.prompt,
+            chatRequest.prompt
         );
         if (!reviewRequest) {
             stream.markdown(`Nothing to do.`);
             return;
         }
 
-        const modelId = config.getCurrentModelId();
-        const modelName = await getModelDisplayName(modelId);
+        const modelIds = config.getSessionModelIds();
+        const modelNames = await Promise.all(
+            modelIds.map((id) => getModelDisplayName(id))
+        );
+        const modelNamesDisplay =
+            modelNames.length === 1
+                ? `**${modelNames[0]}**`
+                : modelNames.map((n) => `**${n}**`).join(', ');
 
         if (!reviewRequest.scope.isCommitted) {
             const targetLabel =
                 reviewRequest.scope.target === UncommittedRef.Staged
                     ? 'staged'
                     : 'unstaged';
-            stream.markdown(`Reviewing ${targetLabel} changes using **${modelName}**...\n\n`);
+            stream.markdown(
+                `Reviewing ${targetLabel} changes using ${modelNamesDisplay}...\n\n`
+            );
         } else {
             const { base, target } = reviewRequest.scope;
             if (!reviewRequest.scope.isTargetCheckedOut) {
@@ -84,7 +92,7 @@ async function handleChat(
                 //regardless of choice, recheck if ref is now checked out
                 reviewRequest.scope = await config.git.getReviewScope(
                     target,
-                    base,
+                    base
                 );
             }
 
@@ -92,16 +100,34 @@ async function handleChat(
             stream.markdown(
                 `Reviewing changes ${
                     targetIsBranch ? 'on' : 'at'
-                } \`${target}\` compared to \`${base}\` using **${modelName}**...\n\n`,
+                } \`${target}\` compared to \`${base}\` using ${modelNamesDisplay}...\n\n`
             );
             if (await config.git.isSameRef(base, target)) {
                 stream.markdown('No changes found.');
                 return;
             }
         }
-        const results = await review(config, reviewRequest, stream, token);
 
-        showReviewResults(config, results, stream, token);
+        // Run reviews for all selected models in parallel
+        const reviewPromises = modelIds.map((modelId, index) =>
+            reviewWithModel(
+                config,
+                reviewRequest,
+                modelId,
+                modelNames[index],
+                stream,
+                token
+            )
+        );
+        const results = await Promise.all(reviewPromises);
+
+        // Display results based on reviewFlow setting
+        if (options.reviewFlow === 'mergedWithAttribution') {
+            showMergedReviewResults(config, results, stream, token);
+        } else {
+            // separateSections (default)
+            showSeparateReviewResults(config, results, stream, token);
+        }
     } finally {
         // Always clear the session model so the next session prompts again
         config.clearSessionModel();
@@ -181,98 +207,6 @@ async function getReviewRequest(
     return { scope: reviewScope };
 }
 
-/** Reviews changes and displays progress bar */
-async function review(
-    config: Config,
-    reviewRequest: ReviewRequest,
-    stream: vscode.ChatResponseStream,
-    token: vscode.CancellationToken
-) {
-    const progress = {
-        lastMessage: '',
-        report: ({ message }: { message: string }) => {
-            if (message && message !== progress.lastMessage) {
-                stream.progress(message);
-                progress.lastMessage = message;
-            }
-        },
-    };
-
-    const result = await reviewDiff(config, reviewRequest, progress, token);
-    if (token.isCancellationRequested) {
-        if (result.fileComments.length > 0) {
-            stream.markdown('\nCancelled, showing partial results.');
-        } else {
-            stream.markdown('\nCancelled.');
-        }
-    }
-
-    return result;
-}
-
-function showReviewResults(
-    config: Config,
-    result: ReviewResult,
-    stream: vscode.ChatResponseStream,
-    token: vscode.CancellationToken
-) {
-    if (result.files.length === 0) {
-        stream.markdown('\nNo changes found.');
-        return;
-    }
-
-    const options = config.getOptions();
-    const isTargetCheckedOut = result.request.scope.isTargetCheckedOut;
-    let noProblemsFound = true;
-    for (const file of result.fileComments) {
-        if (token.isCancellationRequested) {
-            return;
-        }
-
-        const filteredFileComments = file.comments.filter(
-            (comment) =>
-                comment.severity >= options.minSeverity && comment.line > 0
-        );
-
-        if (filteredFileComments.length > 0) {
-            stream.anchor(toUri(config, file.target));
-        }
-
-        for (const comment of filteredFileComments) {
-            stream.markdown(
-                buildComment(config, file, comment, isTargetCheckedOut)
-            );
-
-            noProblemsFound = false;
-        }
-
-        if (filteredFileComments.length > 0) {
-            stream.markdown('\n\n');
-        }
-    }
-
-    if (noProblemsFound && result.errors.length === 0) {
-        stream.markdown('\nNo problems found.');
-    } else if (!isTargetCheckedOut) {
-        stream.markdown(
-            '\nNote: The target branch or commit is not checked out, so line numbers may not match the current state.'
-        );
-    }
-
-    if (result.errors.length > 0) {
-        for (const error of result.errors) {
-            config.logger.info('Error: ', error.message, error.stack);
-        }
-
-        const errorString = result.errors
-            .map((error) => ` - ${error.message}`)
-            .join('\n');
-        throw new Error(
-            `${result.errors.length} error(s) occurred during review:\n${errorString}`
-        );
-    }
-}
-
 function buildComment(
     config: Config,
     file: FileComments,
@@ -340,7 +274,7 @@ async function getModelDisplayName(modelId: string): Promise<string> {
             : [undefined, modelId];
 
         const matchingModel = models.find((m) =>
-            vendor ? m.vendor === vendor && m.id === id : m.id === id,
+            vendor ? m.vendor === vendor && m.id === id : m.id === id
         );
 
         if (matchingModel) {
@@ -353,4 +287,345 @@ async function getModelDisplayName(modelId: string): Promise<string> {
         return modelId.split(':')[1];
     }
     return modelId;
+}
+
+/** Result of a review with model information */
+type ModelReviewResult = {
+    modelId: string;
+    modelName: string;
+    result: ReviewResult;
+};
+
+/** Reviews changes with a specific model */
+async function reviewWithModel(
+    config: Config,
+    reviewRequest: ReviewRequest,
+    modelId: string,
+    modelName: string,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+): Promise<ModelReviewResult> {
+    const progress = {
+        lastMessage: '',
+        report: ({ message }: { message: string }) => {
+            const prefixedMessage = `[${modelName}] ${message}`;
+            if (prefixedMessage !== progress.lastMessage) {
+                stream.progress(prefixedMessage);
+                progress.lastMessage = prefixedMessage;
+            }
+        },
+    };
+
+    // Create a config that uses the specific model
+    const modelConfig: Config = {
+        ...config,
+        getModel: () => config.getModel(modelId),
+    };
+
+    const result = await reviewDiff(
+        modelConfig,
+        reviewRequest,
+        progress,
+        token
+    );
+
+    return { modelId, modelName, result };
+}
+
+/** Display results from multiple models in separate sections */
+function showSeparateReviewResults(
+    config: Config,
+    results: ModelReviewResult[],
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+) {
+    if (token.isCancellationRequested) {
+        const hasAnyComments = results.some(
+            (r) => r.result.fileComments.length > 0
+        );
+        if (hasAnyComments) {
+            stream.markdown('\nCancelled, showing partial results.\n');
+        } else {
+            stream.markdown('\nCancelled.');
+            return;
+        }
+    }
+
+    const options = config.getOptions();
+    const allErrors: Error[] = [];
+
+    for (const { modelName, result } of results) {
+        if (token.isCancellationRequested) {
+            break;
+        }
+
+        // Add section heading if there are multiple models
+        if (results.length > 1) {
+            stream.markdown(`\n---\n### Results from ${modelName}\n\n`);
+        }
+
+        if (result.files.length === 0) {
+            stream.markdown('No changes found.\n');
+            continue;
+        }
+
+        const isTargetCheckedOut = result.request.scope.isTargetCheckedOut;
+        let noProblemsFound = true;
+
+        for (const file of result.fileComments) {
+            if (token.isCancellationRequested) {
+                break;
+            }
+
+            const filteredFileComments = file.comments.filter(
+                (comment) =>
+                    comment.severity >= options.minSeverity && comment.line > 0
+            );
+
+            if (filteredFileComments.length > 0) {
+                stream.anchor(toUri(config, file.target));
+            }
+
+            for (const comment of filteredFileComments) {
+                stream.markdown(
+                    buildComment(config, file, comment, isTargetCheckedOut)
+                );
+                noProblemsFound = false;
+            }
+
+            if (filteredFileComments.length > 0) {
+                stream.markdown('\n\n');
+            }
+        }
+
+        if (noProblemsFound && result.errors.length === 0) {
+            stream.markdown('No problems found.\n');
+        } else if (!isTargetCheckedOut) {
+            stream.markdown(
+                '\nNote: The target branch or commit is not checked out, so line numbers may not match the current state.\n'
+            );
+        }
+
+        allErrors.push(...result.errors);
+    }
+
+    if (allErrors.length > 0) {
+        for (const error of allErrors) {
+            config.logger.info('Error: ', error.message, error.stack);
+        }
+
+        const errorString = allErrors
+            .map((error) => ` - ${error.message}`)
+            .join('\n');
+        throw new Error(
+            `${allErrors.length} error(s) occurred during review:\n${errorString}`
+        );
+    }
+}
+
+/** Comment with model attribution for merged display */
+type AttributedComment = {
+    file: string;
+    line: number;
+    comment: string;
+    severity: number;
+    models: string[]; // model names that flagged this issue
+    promptType?: string;
+};
+
+/** Display merged results from multiple models with attribution */
+function showMergedReviewResults(
+    config: Config,
+    results: ModelReviewResult[],
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+) {
+    if (token.isCancellationRequested) {
+        const hasAnyComments = results.some(
+            (r) => r.result.fileComments.length > 0
+        );
+        if (hasAnyComments) {
+            stream.markdown('\nCancelled, showing partial results.\n');
+        } else {
+            stream.markdown('\nCancelled.');
+            return;
+        }
+    }
+
+    const options = config.getOptions();
+
+    // Collect all comments with model attribution
+    const commentMap = new Map<string, AttributedComment>();
+
+    for (const { modelName, result } of results) {
+        for (const file of result.fileComments) {
+            for (const comment of file.comments) {
+                if (
+                    comment.severity < options.minSeverity ||
+                    comment.line <= 0
+                ) {
+                    continue;
+                }
+
+                // Create a key based on file, line, and similar comment text
+                const key = `${comment.file}:${comment.line}:${normalizeComment(
+                    comment.comment
+                )}`;
+
+                if (commentMap.has(key)) {
+                    // Add model to existing comment
+                    const existing = commentMap.get(key);
+                    if (existing && !existing.models.includes(modelName)) {
+                        existing.models.push(modelName);
+                    }
+                    // Keep the higher severity
+                    if (existing && comment.severity > existing.severity) {
+                        existing.severity = comment.severity;
+                    }
+                } else {
+                    // Add new comment
+                    commentMap.set(key, {
+                        file: comment.file,
+                        line: comment.line,
+                        comment: comment.comment,
+                        severity: comment.severity,
+                        models: [modelName],
+                        promptType: comment.promptType,
+                    });
+                }
+            }
+        }
+    }
+
+    if (commentMap.size === 0) {
+        stream.markdown('\nNo problems found.\n');
+        return;
+    }
+
+    // Group comments by file
+    const fileComments = new Map<string, AttributedComment[]>();
+    for (const comment of commentMap.values()) {
+        const existing = fileComments.get(comment.file);
+        if (existing) {
+            existing.push(comment);
+        } else {
+            fileComments.set(comment.file, [comment]);
+        }
+    }
+
+    // Sort comments within each file by line number
+    for (const comments of fileComments.values()) {
+        comments.sort((a, b) => a.line - b.line);
+    }
+
+    // Use first result to get metadata
+    const firstResult = results[0].result;
+    const isTargetCheckedOut = firstResult.request.scope.isTargetCheckedOut;
+
+    // Display comments grouped by file
+    for (const [filePath, comments] of fileComments) {
+        if (token.isCancellationRequested) {
+            break;
+        }
+
+        stream.anchor(toUri(config, filePath));
+
+        for (const comment of comments) {
+            stream.markdown(
+                buildMergedComment(
+                    config,
+                    comment,
+                    isTargetCheckedOut,
+                    results.length > 1
+                )
+            );
+        }
+
+        stream.markdown('\n\n');
+    }
+
+    if (!isTargetCheckedOut) {
+        stream.markdown(
+            '\nNote: The target branch or commit is not checked out, so line numbers may not match the current state.\n'
+        );
+    }
+
+    // Collect and throw errors
+    const allErrors = results.flatMap((r) => r.result.errors);
+    if (allErrors.length > 0) {
+        for (const error of allErrors) {
+            config.logger.info('Error: ', error.message, error.stack);
+        }
+
+        const errorString = allErrors
+            .map((error) => ` - ${error.message}`)
+            .join('\n');
+        throw new Error(
+            `${allErrors.length} error(s) occurred during review:\n${errorString}`
+        );
+    }
+}
+
+/** Normalize a comment for comparison (lowercase, trim, remove extra whitespace) */
+function normalizeComment(comment: string): string {
+    return comment.toLowerCase().trim().replace(/\s+/g, ' ').slice(0, 100);
+}
+
+/** Build a comment with model attribution for merged display */
+function buildMergedComment(
+    config: Config,
+    comment: AttributedComment,
+    isTargetCheckedOut: boolean,
+    showAttribution: boolean
+) {
+    const isValidLineNumber = isTargetCheckedOut && comment.line > 0;
+
+    const markdown = new vscode.MarkdownString();
+    markdown.appendMarkdown('\n - ');
+
+    // Add line number anchor
+    const uri = toUri(config, comment.file, comment.line);
+    markdown.appendMarkdown(`[Line ${comment.line}](${uri.toString()})`);
+
+    // Show which models flagged this issue (if multiple models)
+    if (showAttribution) {
+        const attribution =
+            comment.models.length === 1
+                ? comment.models[0]
+                : comment.models.join(', ');
+        markdown.appendMarkdown(` | *${attribution}*`);
+    }
+
+    // (debug: prompt type)
+    if (comment.promptType) {
+        markdown.appendMarkdown(` | **${comment.promptType}**`);
+    }
+    markdown.appendText(` | Severity ${comment.severity}/5`);
+
+    // Add fix button if location is valid
+    if (isValidLineNumber) {
+        const args: FixCommentArgs = {
+            file: comment.file,
+            line: comment.line,
+            comment: comment.comment,
+        };
+        const icon = '✦';
+        const nbsp = '\u00A0';
+        markdown.appendMarkdown(
+            ` | [**${icon}${nbsp}Fix**](${toCommandLink(
+                'lgtm.fixComment',
+                args
+            )})`
+        );
+        markdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
+    }
+
+    // Properly quote multi-line comments
+    const quotedComment = comment.comment
+        .split('\n')
+        .map((line) => `> ${line}`)
+        .join('\n');
+    markdown.appendMarkdown(`\n${quotedComment}`);
+
+    return markdown;
 }

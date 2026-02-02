@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CancellationToken } from 'vscode';
-
 import { parseResponse } from '@/review/comment';
 import { ModelRequest } from '@/review/ModelRequest';
 import { formatGatheringFilesMessage, reviewDiff } from '@/review/review';
@@ -216,6 +215,7 @@ describe('reviewDiff', () => {
             enableDebugOutput: false,
             chatModel: 'gpt-4.1',
             chatModelOnNewPrompt: 'useDefault',
+            reviewFlow: 'separateSections',
             mergeFileReviewRequests: false,
             maxInputTokensFraction: 0.95,
             maxConcurrentModelRequests: 1,
