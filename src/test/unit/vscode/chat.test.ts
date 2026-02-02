@@ -1,7 +1,7 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import { normalizeComment } from '@/utils/text';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Store captured stream calls for verification
 let streamCalls: { method: string; args: unknown[] }[] = [];
@@ -248,8 +248,8 @@ describe('Chat multi-model review', () => {
                             comment.line
                         }:${normalizeComment(comment.comment)}`;
 
-                        if (commentMap.has(key)) {
-                            const existing = commentMap.get(key)!;
+                        const existing = commentMap.get(key);
+                        if (existing) {
                             if (!existing.models.includes(modelName)) {
                                 existing.models.push(modelName);
                             }
@@ -334,8 +334,8 @@ describe('Chat multi-model review', () => {
                             comment.line
                         }:${normalizeComment(comment.comment)}`;
 
-                        if (commentMap.has(key)) {
-                            const existing = commentMap.get(key)!;
+                        const existing = commentMap.get(key);
+                        if (existing) {
                             if (!existing.models.includes(modelName)) {
                                 existing.models.push(modelName);
                             }
