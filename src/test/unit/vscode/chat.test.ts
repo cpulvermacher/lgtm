@@ -326,9 +326,6 @@ describe('Chat multi-model review', () => {
                 models: string[];
             };
 
-            const normalizeComment = (comment: string) =>
-                comment.toLowerCase().trim().replace(/\s+/g, ' ').slice(0, 100);
-
             const commentMap = new Map<string, AttributedComment>();
             for (const { modelName, result } of results) {
                 for (const file of result.fileComments) {
@@ -364,9 +361,7 @@ describe('Chat multi-model review', () => {
         });
 
         it('should normalize comments for comparison', () => {
-            const normalizeComment = (comment: string) =>
-                comment.toLowerCase().trim().replace(/\s+/g, ' ').slice(0, 100);
-
+            // Using the imported normalizeComment from @/utils/text
             expect(normalizeComment('Missing null check')).toBe(
                 'missing null check'
             );

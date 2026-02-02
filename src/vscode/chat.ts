@@ -125,7 +125,21 @@ async function handleChat(
                 token
             )
         );
-        const results = await Promise.all(reviewPromises);
+        const settledResults = await Promise.allSettled(reviewPromises);
+
+        // Collect successful results and log failures
+        const results: ModelReviewResult[] = [];
+        for (let i = 0; i < settledResults.length; i++) {
+            const settled = settledResults[i];
+            if (settled.status === 'fulfilled') {
+                results.push(settled.value);
+            } else {
+                config.logger.info(
+                    `Model ${modelNames[i]} failed:`,
+                    settled.reason
+                );
+            }
+        }
 
         // Display results based on reviewFlow setting
         if (options.reviewFlow === 'mergedWithAttribution') {
@@ -135,8 +149,10 @@ async function handleChat(
             showSeparateReviewResults(config, results, stream, token);
         }
     } finally {
-        // Always clear the session model so the next session prompts again
-        config.clearSessionModel();
+        // Clear session model only when alwaysAsk is set, so user selection persists for single-model sessions
+        if (options.chatModelOnNewPrompt === 'alwaysAsk') {
+            config.clearSessionModel();
+        }
     }
 }
 
@@ -242,7 +258,9 @@ function buildComment(
 
     // Add fix button if location is valid
     if (isValidLineNumber) {
-        markdown.appendMarkdown(` | ${createFixLinkMarkdown(file, comment)}`);
+        markdown.appendMarkdown(
+            ` | ${createFixLinkMarkdown(file.target, comment.line, comment.comment)}`
+        );
         markdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
     }
 
@@ -256,11 +274,15 @@ function buildComment(
     return markdown;
 }
 
-function createFixLinkMarkdown(file: FileComments, comment: ReviewComment) {
+function createFixLinkMarkdown(
+    filePath: string,
+    line: number,
+    commentText: string
+) {
     const args: FixCommentArgs = {
-        file: file.target,
-        line: comment.line,
-        comment: comment.comment,
+        file: filePath,
+        line: line,
+        comment: commentText,
     };
     const icon = '✦';
     const nbsp = '\u00A0';
@@ -457,6 +479,12 @@ function showMergedReviewResults(
     stream: vscode.ChatResponseStream,
     token: vscode.CancellationToken
 ) {
+    // Guard against empty results array
+    if (results.length === 0) {
+        stream.markdown('\nNo results.\n');
+        return;
+    }
+
     if (token.isCancellationRequested) {
         const hasAnyComments = results.some(
             (r) => r.result.fileComments.length > 0
@@ -518,7 +546,13 @@ function showMergedReviewResults(
     const allErrors = results.flatMap((r) => r.result.errors);
 
     if (commentMap.size === 0) {
-        stream.markdown('\nNo problems found.\n');
+        // Check if there were any files to review
+        const hasFilesToReview = results.some((r) => r.result.files.length > 0);
+        if (hasFilesToReview) {
+            stream.markdown('\nNo problems found.\n');
+        } else {
+            stream.markdown('\nNo changes found.\n');
+        }
         // Still report any errors that occurred
         if (allErrors.length > 0) {
             for (const error of allErrors) {
@@ -548,12 +582,6 @@ function showMergedReviewResults(
     // Sort comments within each file by line number
     for (const comments of fileComments.values()) {
         comments.sort((a, b) => a.line - b.line);
-    }
-
-    // Guard against empty results array
-    if (results.length === 0) {
-        stream.markdown('\nNo results.\n');
-        return;
     }
 
     // Use first result to get metadata
@@ -636,18 +664,8 @@ function buildMergedComment(
 
     // Add fix button if location is valid
     if (isValidLineNumber) {
-        const args: FixCommentArgs = {
-            file: comment.file,
-            line: comment.line,
-            comment: comment.comment,
-        };
-        const icon = '✦';
-        const nbsp = '\u00A0';
         markdown.appendMarkdown(
-            ` | [**${icon}${nbsp}Fix**](${toCommandLink(
-                'lgtm.fixComment',
-                args
-            )})`
+            ` | ${createFixLinkMarkdown(comment.file, comment.line, comment.comment)}`
         );
         markdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
     }
