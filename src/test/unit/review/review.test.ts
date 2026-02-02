@@ -215,6 +215,7 @@ describe('reviewDiff', () => {
             excludeGlobs: [] as string[],
             enableDebugOutput: false,
             chatModel: 'gpt-4.1',
+            chatModelOnNewPrompt: 'useDefault',
             mergeFileReviewRequests: false,
             maxInputTokensFraction: 0.95,
             maxConcurrentModelRequests: 1,

@@ -217,7 +217,20 @@
                 "lgtm.chatModel": {
                     "type": "string",
                     "default": "copilot:gpt-4.1",
-                    "markdownDescription": "Chat model to use for generating review comments. Use the 'LGTM: Select Chat Model' command to choose from available models. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits."
+                    "markdownDescription": "Default chat model to use for generating review comments. Use the 'LGTM: Select Chat Model' command to choose from available models. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits."
+                },
+                "lgtm.chatModelOnNewPrompt": {
+                    "type": "string",
+                    "enum": [
+                        "useDefault",
+                        "alwaysAsk"
+                    ],
+                    "default": "useDefault",
+                    "enumDescriptions": [
+                        "Use the model defined in 'Default Chat Model'",
+                        "Always ask which model to use when starting a new prompt"
+                    ],
+                    "markdownDescription": "Controls which chat model to use when starting a new review prompt."
                 },
                 "lgtm.mergeFileReviewRequests": {
                     "type": "boolean",

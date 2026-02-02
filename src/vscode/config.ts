@@ -1,11 +1,16 @@
 import * as vscode from 'vscode';
 
-import type { AutoCheckoutTargetType, Config, Options } from '@/types/Config';
+import type {
+    AutoCheckoutTargetType,
+    ChatModelOnNewPromptType,
+    Config,
+    Options,
+} from '@/types/Config';
 import type { Logger } from '@/types/Logger';
 import type { Model } from '@/types/Model';
-import { createGit, type Git } from '@/utils/git';
+import { type Git, createGit } from '@/utils/git';
 import { LgtmLogger } from './logger';
-import { getChatModel } from './model';
+import { getChatModel, isRecommendedModel, isUnSupportedModel } from './model';
 
 // defined when built via `npm run dev`
 declare const __GIT_VERSION__: string | undefined;
@@ -40,11 +45,34 @@ async function initializeConfig(): Promise<Config> {
     }
 
     const { workspaceRoot, git, gitRoot } = await getWorkspaceConfig();
+
+    // Session-scoped model override (not persisted to settings)
+    let sessionModelId: string | undefined;
+
     const config = {
         git,
         workspaceRoot,
         gitRoot,
-        getModel: () => loadModel(getOptions().chatModel, logger),
+        getModel: () => {
+            const modelId = sessionModelId ?? getOptions().chatModel;
+            return loadModel(modelId, logger);
+        },
+        promptForSessionModel: async () => {
+            const selectedModelId = await promptForModelSelection(
+                getOptions().chatModel,
+            );
+            if (selectedModelId) {
+                sessionModelId = selectedModelId;
+                logger.debug(`Session model set to: ${sessionModelId}`);
+                return true;
+            }
+            return false;
+        },
+        clearSessionModel: () => {
+            sessionModelId = undefined;
+            logger.debug('Session model cleared');
+        },
+        getCurrentModelId: () => sessionModelId ?? getOptions().chatModel,
         getOptions,
         setOption,
         logger,
@@ -146,6 +174,10 @@ function getOptions(): Options {
     const excludeGlobs = config.get<string[]>('exclude', []);
     const enableDebugOutput = config.get<boolean>('enableDebugOutput', false);
     const chatModel = config.get<string>('chatModel', defaultModelId);
+    const chatModelOnNewPrompt = config.get<ChatModelOnNewPromptType>(
+        'chatModelOnNewPrompt',
+        'useDefault',
+    );
     const mergeFileReviewRequests = config.get<boolean>(
         'mergeFileReviewRequests',
         true
@@ -179,6 +211,7 @@ function getOptions(): Options {
         excludeGlobs,
         enableDebugOutput,
         chatModel,
+        chatModelOnNewPrompt,
         mergeFileReviewRequests,
         maxInputTokensFraction,
         maxConcurrentModelRequests,
@@ -195,4 +228,86 @@ async function setOption<T extends keyof Options>(
     await vscode.workspace
         .getConfiguration('lgtm')
         .update(option, value, vscode.ConfigurationTarget.Global);
+}
+
+/**
+ * Prompt the user to select a model for the current session.
+ * Returns the selected model ID (in "vendor:id" format) or undefined if cancelled.
+ */
+async function promptForModelSelection(
+    currentModelId: string,
+): Promise<string | undefined> {
+    const models = await vscode.lm.selectChatModels();
+    if (!models || models.length === 0) {
+        vscode.window.showWarningMessage('No chat models available.');
+        return undefined;
+    }
+
+    const quickPickItems = getModelQuickPickItems(models, currentModelId);
+    const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
+        placeHolder: 'Select a chat model for this review',
+    });
+
+    return selectedItem?.modelIdWithVendor;
+}
+
+type ModelQuickPickItem = vscode.QuickPickItem & {
+    modelIdWithVendor?: string; // in format "vendor:id"
+};
+
+function getModelQuickPickItems(
+    models: vscode.LanguageModelChat[],
+    currentModel: string, // could be in format "vendor:id" or legacy "id" only
+): ModelQuickPickItem[] {
+    const recommendedModels: ModelQuickPickItem[] = [];
+    const otherModels: ModelQuickPickItem[] = [];
+    const unsupportedModels: ModelQuickPickItem[] = [];
+
+    for (const model of models) {
+        const modelIdWithVendor = `${model.vendor}:${model.id}`;
+        const isCurrentModel =
+            modelIdWithVendor === currentModel || model.id === currentModel;
+        const isDefaultModel = modelIdWithVendor === defaultModelId;
+
+        const prefix = isCurrentModel ? '$(check)' : '\u2003 '; // em space
+        const suffix = isDefaultModel ? ' (default)' : '';
+        const modelName = model.name ?? model.id;
+        const item: ModelQuickPickItem = {
+            label: prefix + modelName + suffix,
+            description: model.vendor,
+            modelIdWithVendor,
+        };
+
+        if (isDefaultModel) {
+            // place default model at the top
+            recommendedModels.unshift(item);
+        } else if (isUnSupportedModel(model)) {
+            unsupportedModels.push(item);
+        } else if (isRecommendedModel(model)) {
+            recommendedModels.push(item);
+        } else {
+            otherModels.push(item);
+        }
+    }
+
+    if (recommendedModels.length > 0) {
+        recommendedModels.unshift({
+            label: 'Recommended Models',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
+    if (otherModels.length > 0) {
+        otherModels.unshift({
+            label: 'Other Models',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
+    if (unsupportedModels.length > 0) {
+        unsupportedModels.unshift({
+            label: 'Unsupported Models',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
+
+    return [...recommendedModels, ...otherModels, ...unsupportedModels];
 }

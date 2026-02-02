@@ -47,38 +47,65 @@ async function handleChat(
     }
 
     const config = await getConfig({ refreshWorkspace: true });
-    const reviewRequest = await getReviewRequest(config, chatRequest.prompt);
-    if (!reviewRequest) {
-        stream.markdown(`Nothing to do.`);
-        return;
-    }
 
-    if (!reviewRequest.scope.isCommitted) {
-        const targetLabel =
-            reviewRequest.scope.target === UncommittedRef.Staged
-                ? 'staged'
-                : 'unstaged';
-        stream.markdown(`Reviewing ${targetLabel} changes...\n\n`);
-    } else {
-        const { base, target } = reviewRequest.scope;
-        if (!reviewRequest.scope.isTargetCheckedOut) {
-            await maybeCheckoutTarget(target, stream);
-            //regardless of choice, recheck if ref is now checked out
-            reviewRequest.scope = await config.git.getReviewScope(target, base);
-        }
-
-        const targetIsBranch = await config.git.isBranch(target);
-        stream.markdown(
-            `Reviewing changes ${targetIsBranch ? 'on' : 'at'} \`${target}\` compared to \`${base}\`...\n\n`
-        );
-        if (await config.git.isSameRef(base, target)) {
-            stream.markdown('No changes found.');
+    // Check if we need to prompt for model selection
+    const options = config.getOptions();
+    if (options.chatModelOnNewPrompt === 'alwaysAsk') {
+        const selected = await config.promptForSessionModel();
+        if (!selected) {
+            stream.markdown('No model selected. Review cancelled.');
             return;
         }
     }
-    const results = await review(config, reviewRequest, stream, token);
 
-    showReviewResults(config, results, stream, token);
+    try {
+        const reviewRequest = await getReviewRequest(
+            config,
+            chatRequest.prompt,
+        );
+        if (!reviewRequest) {
+            stream.markdown(`Nothing to do.`);
+            return;
+        }
+
+        const modelId = config.getCurrentModelId();
+        const modelName = formatModelName(modelId);
+
+        if (!reviewRequest.scope.isCommitted) {
+            const targetLabel =
+                reviewRequest.scope.target === UncommittedRef.Staged
+                    ? 'staged'
+                    : 'unstaged';
+            stream.markdown(`Reviewing ${targetLabel} changes using **${modelName}**...\n\n`);
+        } else {
+            const { base, target } = reviewRequest.scope;
+            if (!reviewRequest.scope.isTargetCheckedOut) {
+                await maybeCheckoutTarget(target, stream);
+                //regardless of choice, recheck if ref is now checked out
+                reviewRequest.scope = await config.git.getReviewScope(
+                    target,
+                    base,
+                );
+            }
+
+            const targetIsBranch = await config.git.isBranch(target);
+            stream.markdown(
+                `Reviewing changes ${
+                    targetIsBranch ? 'on' : 'at'
+                } \`${target}\` compared to \`${base}\` using **${modelName}**...\n\n`,
+            );
+            if (await config.git.isSameRef(base, target)) {
+                stream.markdown('No changes found.');
+                return;
+            }
+        }
+        const results = await review(config, reviewRequest, stream, token);
+
+        showReviewResults(config, results, stream, token);
+    } finally {
+        // Always clear the session model so the next session prompts again
+        config.clearSessionModel();
+    }
 }
 
 async function maybeCheckoutTarget(
@@ -298,4 +325,15 @@ function createFixLinkMarkdown(file: FileComments, comment: ReviewComment) {
     const icon = '✦';
     const nbsp = '\u00A0';
     return `[**${icon}${nbsp}Fix**](${toCommandLink('lgtm.fixComment', args)})`;
+}
+
+/**
+ * Format a model ID (e.g. "copilot:gpt-4.1") into a display name (e.g. "gpt-4.1")
+ */
+function formatModelName(modelId: string): string {
+    // Model IDs are in format "vendor:id", we display just the id part
+    if (modelId.includes(':')) {
+        return modelId.split(':')[1];
+    }
+    return modelId;
 }
