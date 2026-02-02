@@ -8,6 +8,7 @@ import { ReviewComment } from '@/types/ReviewComment';
 import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
 import { parseArguments } from '@/utils/parseArguments';
+import { normalizeComment } from '@/utils/text';
 import { getConfig } from './config';
 import { FixCommentArgs } from './fix';
 import { pickRef, pickRefs, promptToCheckout } from './ui';
@@ -69,8 +70,10 @@ async function handleChat(
         }
 
         const modelIds = config.getSessionModelIds();
-        const modelNames = await Promise.all(
-            modelIds.map((id) => getModelDisplayName(id))
+        // Fetch model list once to avoid repeated API calls
+        const availableModels = await vscode.lm.selectChatModels();
+        const modelNames = modelIds.map((id) =>
+            getModelDisplayName(id, availableModels)
         );
         const modelNamesDisplay =
             modelNames.length === 1
@@ -267,16 +270,20 @@ function createFixLinkMarkdown(file: FileComments, comment: ReviewComment) {
 /**
  * Get the display name for a model ID by looking it up in the available models.
  * Falls back to the ID part if the model is not found.
+ * @param modelId The model ID to look up
+ * @param cachedModels Optional cached list of models to avoid repeated API calls
  */
-async function getModelDisplayName(modelId: string): Promise<string> {
-    const models = await vscode.lm.selectChatModels();
-    if (models && models.length > 0) {
+function getModelDisplayName(
+    modelId: string,
+    cachedModels: vscode.LanguageModelChat[]
+): string {
+    if (cachedModels && cachedModels.length > 0) {
         // Model IDs are in format "vendor:id"
         const [vendor, id] = modelId.includes(':')
             ? modelId.split(':', 2)
             : [undefined, modelId];
 
-        const matchingModel = models.find((m) =>
+        const matchingModel = cachedModels.find((m) =>
             vendor ? m.vendor === vendor && m.id === id : m.id === id
         );
 
@@ -507,8 +514,23 @@ function showMergedReviewResults(
         }
     }
 
+    // Collect errors first so we don't skip them on early return
+    const allErrors = results.flatMap((r) => r.result.errors);
+
     if (commentMap.size === 0) {
         stream.markdown('\nNo problems found.\n');
+        // Still report any errors that occurred
+        if (allErrors.length > 0) {
+            for (const error of allErrors) {
+                config.logger.info('Error: ', error.message, error.stack);
+            }
+            const errorString = allErrors
+                .map((error) => ` - ${error.message}`)
+                .join('\n');
+            throw new Error(
+                `${allErrors.length} error(s) occurred during review:\n${errorString}`
+            );
+        }
         return;
     }
 
@@ -526,6 +548,12 @@ function showMergedReviewResults(
     // Sort comments within each file by line number
     for (const comments of fileComments.values()) {
         comments.sort((a, b) => a.line - b.line);
+    }
+
+    // Guard against empty results array
+    if (results.length === 0) {
+        stream.markdown('\nNo results.\n');
+        return;
     }
 
     // Use first result to get metadata
@@ -560,8 +588,7 @@ function showMergedReviewResults(
         );
     }
 
-    // Collect and throw errors
-    const allErrors = results.flatMap((r) => r.result.errors);
+    // Report any errors that occurred
     if (allErrors.length > 0) {
         for (const error of allErrors) {
             config.logger.info('Error: ', error.message, error.stack);
@@ -574,11 +601,6 @@ function showMergedReviewResults(
             `${allErrors.length} error(s) occurred during review:\n${errorString}`
         );
     }
-}
-
-/** Normalize a comment for comparison (lowercase, trim, remove extra whitespace) */
-function normalizeComment(comment: string): string {
-    return comment.toLowerCase().trim().replace(/\s+/g, ' ').slice(0, 100);
 }
 
 /** Build a comment with model attribution for merged display */

@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
+import { normalizeComment } from '@/utils/text';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Store captured stream calls for verification
 let streamCalls: { method: string; args: unknown[] }[] = [];
@@ -46,7 +46,7 @@ function createMockReviewResult(
                 isTargetCheckedOut: true,
             },
         } as ReviewRequest,
-        files: [{ target: 'test.ts', base: 'test.ts' }],
+        files: [{ file: 'test.ts', status: 'M' }],
         fileComments,
         errors: [],
     };
@@ -238,8 +238,7 @@ describe('Chat multi-model review', () => {
                 models: string[];
             };
 
-            const normalizeComment = (comment: string) =>
-                comment.toLowerCase().trim().replace(/\s+/g, ' ').slice(0, 100);
+            // Use the imported normalizeComment function from chat.ts
 
             const commentMap = new Map<string, AttributedComment>();
             for (const { modelName, result } of results) {
