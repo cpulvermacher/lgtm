@@ -108,6 +108,9 @@ async function handleChat(
             }
         }
 
+        // Create a shared progress reporter that deduplicates messages across all models
+        const sharedProgress = createSharedProgress(stream);
+
         // Run reviews for all selected models in parallel
         const reviewPromises = modelIds.map((modelId, index) =>
             reviewWithModel(
@@ -115,7 +118,7 @@ async function handleChat(
                 reviewRequest,
                 modelId,
                 modelNames[index],
-                stream,
+                sharedProgress,
                 token
             )
         );
@@ -296,26 +299,33 @@ type ModelReviewResult = {
     result: ReviewResult;
 };
 
+/** Progress reporter interface */
+type Progress = {
+    report: (value: { message: string }) => void;
+};
+
+/** Creates a shared progress reporter that deduplicates messages across all models */
+function createSharedProgress(stream: vscode.ChatResponseStream): Progress {
+    const reportedMessages = new Set<string>();
+    return {
+        report: ({ message }: { message: string }) => {
+            if (message && !reportedMessages.has(message)) {
+                reportedMessages.add(message);
+                stream.progress(message);
+            }
+        },
+    };
+}
+
 /** Reviews changes with a specific model */
 async function reviewWithModel(
     config: Config,
     reviewRequest: ReviewRequest,
     modelId: string,
     modelName: string,
-    stream: vscode.ChatResponseStream,
+    progress: Progress,
     token: vscode.CancellationToken
 ): Promise<ModelReviewResult> {
-    const progress = {
-        lastMessage: '',
-        report: ({ message }: { message: string }) => {
-            const prefixedMessage = `[${modelName}] ${message}`;
-            if (prefixedMessage !== progress.lastMessage) {
-                stream.progress(prefixedMessage);
-                progress.lastMessage = prefixedMessage;
-            }
-        },
-    };
-
     // Create a config that uses the specific model
     const modelConfig: Config = {
         ...config,
