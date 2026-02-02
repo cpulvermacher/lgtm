@@ -228,9 +228,22 @@
                     "default": "useDefault",
                     "enumDescriptions": [
                         "Use the model defined in 'Default Chat Model'",
-                        "Always ask which model to use when starting a new prompt"
+                        "Always ask which model to use when starting a new prompt (supports multi-selection)"
                     ],
-                    "markdownDescription": "Controls which chat model to use when starting a new review prompt."
+                    "markdownDescription": "Controls which chat model to use when starting a new review prompt. When set to 'Always ask', you can select multiple models to compare their results."
+                },
+                "lgtm.reviewFlow": {
+                    "type": "string",
+                    "enum": [
+                        "separateSections",
+                        "mergedWithAttribution"
+                    ],
+                    "default": "separateSections",
+                    "enumDescriptions": [
+                        "Show each model's results in separate sections with headings",
+                        "Merge results from all models, showing which model(s) flagged each issue"
+                    ],
+                    "markdownDescription": "Controls how results are displayed when using multiple models for review."
                 },
                 "lgtm.mergeFileReviewRequests": {
                     "type": "boolean",
