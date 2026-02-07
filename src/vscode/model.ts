@@ -117,6 +117,7 @@ export type ModelQuickPickItem = vscode.QuickPickItem & {
     name?: string;
     isCurrentModel?: boolean;
     isDefaultModel?: boolean;
+    vendor?: string;
 };
 
 /**
@@ -130,7 +131,7 @@ export function getModelQuickPickItems(
     defaultModel: string
 ): ModelQuickPickItem[] {
     const recommendedModels: ModelQuickPickItem[] = [];
-    const otherModels: ModelQuickPickItem[] = [];
+    let otherModels: ModelQuickPickItem[] = [];
     const unsupportedModels: ModelQuickPickItem[] = [];
 
     for (const model of models) {
@@ -147,6 +148,7 @@ export function getModelQuickPickItems(
             modelIdWithVendor,
             isCurrentModel,
             isDefaultModel,
+            vendor: model.vendor,
         };
 
         if (isDefaultModel) {
@@ -168,10 +170,29 @@ export function getModelQuickPickItems(
         });
     }
     if (otherModels.length > 0) {
-        otherModels.unshift({
-            label: 'Other Models',
-            kind: vscode.QuickPickItemKind.Separator,
-        });
+        const vendorMap: Record<string, ModelQuickPickItem[]> = {};
+        for (const item of otherModels) {
+            if (!vendorMap[item.vendor || '']) {
+                vendorMap[item.vendor || ''] = [];
+            }
+            vendorMap[item.vendor || ''].push(item);
+        }
+
+        otherModels = [
+            ...Object.entries(vendorMap).flatMap(([vendor, items]) => {
+                const name = vendor
+                    ? vendor.charAt(0).toUpperCase() + vendor.slice(1)
+                    : 'Other';
+
+                return [
+                    {
+                        label: `${name} Models`,
+                        kind: vscode.QuickPickItemKind.Separator,
+                    },
+                    ...items,
+                ];
+            }),
+        ];
     }
     if (unsupportedModels.length > 0) {
         unsupportedModels.unshift({
