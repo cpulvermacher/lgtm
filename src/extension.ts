@@ -10,7 +10,7 @@ import {
 } from './utils/parsePullRequest';
 import { registerChatParticipant } from './vscode/chat';
 import { fixComment } from './vscode/fix';
-import { isRecommendedModel, isUnSupportedModel } from './vscode/model';
+import { getModelQuickPickItems } from './vscode/model';
 import { promptToFetchRemotes } from './vscode/ui';
 
 // called the first time a command is executed
@@ -117,7 +117,16 @@ async function handleSelectChatModel() {
 
     const config = await getConfig();
     const currentModelId = config.getOptions().chatModel;
-    const quickPickItems = getModelQuickPickItems(models, currentModelId);
+    const quickPickItems = getModelQuickPickItems(
+        models,
+        currentModelId,
+        defaultModelId
+    ).map((item) => {
+        if (item.kind === vscode.QuickPickItemKind.Separator) return item;
+        const prefix = item.isCurrentModel ? '$(check)' : '\u2003 ';
+        const suffix = item.isDefaultModel ? ' (default)' : '';
+        return { ...item, label: prefix + item.label + suffix };
+    });
     const selectedQuickPickItem = await vscode.window.showQuickPick(
         quickPickItems,
         { placeHolder: 'Select a chat model for LGTM reviews' }
@@ -131,65 +140,4 @@ async function handleSelectChatModel() {
             `LGTM chat model set to: ${selectedQuickPickItem.name}`
         );
     }
-}
-
-type ModelQuickPickItem = vscode.QuickPickItem & {
-    modelIdWithVendor?: string; // in format "vendor:id"
-    name?: string;
-};
-function getModelQuickPickItems(
-    models: vscode.LanguageModelChat[],
-    currentModel: string // could be in format "vendor:id" or legacy "id" only
-): ModelQuickPickItem[] {
-    const recommendedModels: ModelQuickPickItem[] = [];
-    const otherModels: ModelQuickPickItem[] = [];
-    const unsupportedModels: ModelQuickPickItem[] = [];
-    models.forEach((model) => {
-        const modelIdWithVendor = `${model.vendor}:${model.id}`;
-        const isCurrentModel =
-            modelIdWithVendor === currentModel || model.id === currentModel;
-        const isDefaultModel = modelIdWithVendor === defaultModelId;
-
-        const prefix = isCurrentModel ? '$(check)' : '\u2003 '; // em space
-        const suffix = isDefaultModel ? ' (default)' : '';
-        const modelName = model.name ?? model.id;
-        const item = {
-            label: prefix + modelName + suffix,
-            description: model.vendor,
-            name: modelName,
-            modelIdWithVendor,
-        };
-
-        if (isDefaultModel) {
-            //place default model at the top
-            recommendedModels.unshift(item);
-        } else if (isUnSupportedModel(model)) {
-            unsupportedModels.push(item);
-        } else if (isRecommendedModel(model)) {
-            recommendedModels.push(item);
-        } else {
-            otherModels.push(item);
-        }
-    });
-
-    if (recommendedModels.length > 0) {
-        recommendedModels.unshift({
-            label: 'Recommended Models',
-            kind: vscode.QuickPickItemKind.Separator,
-        });
-    }
-    if (otherModels.length > 0) {
-        otherModels.unshift({
-            label: 'Other Models',
-            kind: vscode.QuickPickItemKind.Separator,
-        });
-    }
-    if (unsupportedModels.length > 0) {
-        unsupportedModels.unshift({
-            label: 'Unsupported Models',
-            kind: vscode.QuickPickItemKind.Separator,
-        });
-    }
-
-    return [...recommendedModels, ...otherModels, ...unsupportedModels];
 }

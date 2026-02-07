@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LanguageModelChat } from 'vscode';
+
+import { getModelQuickPickItems } from '@/vscode/model';
+
+vi.mock('vscode', () => ({
+    QuickPickItemKind: { Separator: -1 },
+}));
 
 /**
  * Tests for the new configuration options and session model selection functionality.
- * These tests validate the logic in isolation without importing the actual config module
- * to avoid complex mocking of VS Code APIs and other dependencies.
  */
 
 describe('Config options', () => {
@@ -249,111 +254,68 @@ describe('Session model selection logic', () => {
 });
 
 describe('Model quick pick items', () => {
-    type ModelQuickPickItem = {
-        label: string;
-        description?: string;
-        modelIdWithVendor?: string;
-        kind?: number;
-    };
+    const defaultModelId = 'copilot:gpt-4.1';
 
-    const QuickPickItemKind = { Separator: -1 };
-
-    function getModelQuickPickItems(
-        models: Array<{
-            id: string;
-            vendor: string;
-            name?: string;
-        }>,
-        currentModel: string,
-        defaultModelId: string
-    ): ModelQuickPickItem[] {
-        const recommendedModels: ModelQuickPickItem[] = [];
-        const otherModels: ModelQuickPickItem[] = [];
-
-        for (const model of models) {
-            const modelIdWithVendor = `${model.vendor}:${model.id}`;
-            const isCurrentModel =
-                modelIdWithVendor === currentModel || model.id === currentModel;
-            const isDefaultModel = modelIdWithVendor === defaultModelId;
-
-            const prefix = isCurrentModel ? '$(check)' : '\u2003 ';
-            const suffix = isDefaultModel ? ' (default)' : '';
-            const modelName = model.name ?? model.id;
-            const item: ModelQuickPickItem = {
-                label: prefix + modelName + suffix,
-                description: model.vendor,
-                modelIdWithVendor,
-            };
-
-            if (isDefaultModel) {
-                recommendedModels.unshift(item);
-            } else {
-                otherModels.push(item);
-            }
-        }
-
-        if (recommendedModels.length > 0) {
-            recommendedModels.unshift({
-                label: 'Recommended Models',
-                kind: QuickPickItemKind.Separator,
-            });
-        }
-        if (otherModels.length > 0) {
-            otherModels.unshift({
-                label: 'Other Models',
-                kind: QuickPickItemKind.Separator,
-            });
-        }
-
-        return [...recommendedModels, ...otherModels];
+    function fakeModel(
+        overrides: Partial<LanguageModelChat> & { id: string; vendor: string }
+    ): LanguageModelChat {
+        return {
+            name: overrides.name ?? overrides.id,
+            family: overrides.family ?? overrides.id,
+            version: overrides.version ?? '1',
+            maxInputTokens: overrides.maxInputTokens ?? 128000,
+            countTokens: overrides.countTokens ?? (async () => 0),
+            sendRequest: overrides.sendRequest ?? (async () => ({}) as never),
+            ...overrides,
+        } as LanguageModelChat;
     }
 
-    it('should mark the current model with a checkmark', () => {
+    it('should flag the current model with isCurrentModel', () => {
         const models = [
-            { id: 'gpt-4', vendor: 'copilot', name: 'GPT-4' },
-            { id: 'claude-sonnet', vendor: 'copilot', name: 'Claude Sonnet' },
+            fakeModel({ id: 'gpt-4', vendor: 'copilot' }),
+            fakeModel({ id: 'claude-sonnet', vendor: 'copilot' }),
         ];
 
         const items = getModelQuickPickItems(
             models,
             'copilot:gpt-4',
-            'copilot:gpt-4.1'
+            defaultModelId
         );
         const gpt4Item = items.find(
             (item) => item.modelIdWithVendor === 'copilot:gpt-4'
         );
 
-        expect(gpt4Item?.label).toContain('$(check)');
+        expect(gpt4Item?.isCurrentModel).toBe(true);
     });
 
-    it('should mark the default model with "(default)" suffix', () => {
+    it('should flag the default model with isDefaultModel', () => {
         const models = [
-            { id: 'gpt-4.1', vendor: 'copilot', name: 'GPT-4.1' },
-            { id: 'claude-sonnet', vendor: 'copilot', name: 'Claude Sonnet' },
+            fakeModel({ id: 'gpt-4.1', vendor: 'copilot' }),
+            fakeModel({ id: 'claude-sonnet', vendor: 'copilot' }),
         ];
 
         const items = getModelQuickPickItems(
             models,
             'copilot:claude-sonnet',
-            'copilot:gpt-4.1'
+            defaultModelId
         );
         const defaultItem = items.find(
             (item) => item.modelIdWithVendor === 'copilot:gpt-4.1'
         );
 
-        expect(defaultItem?.label).toContain('(default)');
+        expect(defaultItem?.isDefaultModel).toBe(true);
     });
 
     it('should place default model at the top of recommended models', () => {
         const models = [
-            { id: 'claude-sonnet', vendor: 'copilot', name: 'Claude Sonnet' },
-            { id: 'gpt-4.1', vendor: 'copilot', name: 'GPT-4.1' },
+            fakeModel({ id: 'claude-sonnet', vendor: 'copilot' }),
+            fakeModel({ id: 'gpt-4.1', vendor: 'copilot' }),
         ];
 
         const items = getModelQuickPickItems(
             models,
             'copilot:claude-sonnet',
-            'copilot:gpt-4.1'
+            defaultModelId
         );
 
         // First item should be separator, second should be default model
@@ -363,33 +325,56 @@ describe('Model quick pick items', () => {
         expect(modelItems[0].modelIdWithVendor).toBe('copilot:gpt-4.1');
     });
 
-    it('should include vendor in description', () => {
-        const models = [{ id: 'gpt-4', vendor: 'copilot', name: 'GPT-4' }];
+    it('should include vendor and id in description', () => {
+        const models = [fakeModel({ id: 'gpt-4', vendor: 'copilot' })];
 
         const items = getModelQuickPickItems(
             models,
             'copilot:gpt-4',
-            'copilot:gpt-4.1'
+            defaultModelId
         );
         const gpt4Item = items.find(
             (item) => item.modelIdWithVendor === 'copilot:gpt-4'
         );
 
-        expect(gpt4Item?.description).toBe('copilot');
+        expect(gpt4Item?.description).toBe('copilot:gpt-4');
     });
 
     it('should use model.id as fallback when name is not available', () => {
-        const models = [{ id: 'gpt-4', vendor: 'copilot' }]; // no name
+        const models = [
+            fakeModel({
+                id: 'gpt-4',
+                vendor: 'copilot',
+                name: undefined as unknown as string,
+            }),
+        ];
 
         const items = getModelQuickPickItems(
             models,
             'copilot:other',
-            'copilot:gpt-4.1'
+            defaultModelId
         );
         const gpt4Item = items.find(
             (item) => item.modelIdWithVendor === 'copilot:gpt-4'
         );
 
-        expect(gpt4Item?.label).toContain('gpt-4');
+        expect(gpt4Item?.label).toBe('gpt-4');
+    });
+
+    it('should categorize unsupported models separately', () => {
+        const models = [
+            fakeModel({ id: 'gpt-4.1', vendor: 'copilot' }),
+            fakeModel({ id: 'claude-3.7-sonnet', vendor: 'copilot' }),
+        ];
+
+        const items = getModelQuickPickItems(
+            models,
+            'copilot:gpt-4.1',
+            defaultModelId
+        );
+
+        const separators = items.filter((item) => item.kind === -1);
+        const separatorLabels = separators.map((s) => s.label);
+        expect(separatorLabels).toContain('Unsupported Models');
     });
 });
