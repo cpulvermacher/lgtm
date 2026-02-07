@@ -67,10 +67,10 @@ async function handleChat(
         // Resolve inline model specs against available models
         const resolvedModelIds = await resolveModelSpecs(
             promptModelSpecs,
-            config.logger
+            config.logger,
+            stream
         );
         if (resolvedModelIds.length === 0) {
-            stream.markdown('No matching models found. Review cancelled.');
             return;
         }
         config.setSessionModelIds(resolvedModelIds);
@@ -357,13 +357,15 @@ function getModelDisplayName(
  */
 async function resolveModelSpecs(
     specs: string[],
-    logger: Logger
+    logger: Logger,
+    stream: vscode.ChatResponseStream
 ): Promise<string[]> {
     const availableModels = await vscode.lm.selectChatModels();
     if (!availableModels || availableModels.length === 0) {
         logger.info(
             'No chat models available for resolving inline model specs'
         );
+        stream.markdown('No chat models available. Review cancelled.');
         return [];
     }
 
@@ -390,14 +392,16 @@ async function resolveModelSpecs(
     }
 
     if (ambiguous.length > 0) {
-        vscode.window.showWarningMessage(
+        stream.markdown(
             `Ambiguous model spec(s) — please be more specific: ${ambiguous.join('; ')}. Use the 'LGTM: Select Chat Model' command to see available IDs.`
         );
+        return [];
     }
     if (notFound.length > 0) {
-        vscode.window.showWarningMessage(
+        stream.markdown(
             `Model(s) not found: ${notFound.map((s) => `'${s}'`).join(', ')}. Available model IDs can be found via the 'LGTM: Select Chat Model' command.`
         );
+        return [];
     }
 
     return [...resolvedIds];
