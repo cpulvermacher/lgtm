@@ -112,6 +112,77 @@ export function isRecommendedModel(model: vscode.LanguageModelChat): boolean {
     return false;
 }
 
+export type ModelQuickPickItem = vscode.QuickPickItem & {
+    modelIdWithVendor?: string; // in format "vendor:id"
+    name?: string;
+    isCurrentModel?: boolean;
+    isDefaultModel?: boolean;
+};
+
+/**
+ * Build a categorized list of model quick pick items (Recommended / Other / Unsupported)
+ * with separator headers.  Labels contain only the plain model name — callers
+ * are responsible for adding any prefix / suffix decoration they need.
+ */
+export function getModelQuickPickItems(
+    models: vscode.LanguageModelChat[],
+    currentModel: string, // could be in format "vendor:id" or legacy "id" only
+    defaultModel: string
+): ModelQuickPickItem[] {
+    const recommendedModels: ModelQuickPickItem[] = [];
+    const otherModels: ModelQuickPickItem[] = [];
+    const unsupportedModels: ModelQuickPickItem[] = [];
+
+    for (const model of models) {
+        const modelIdWithVendor = `${model.vendor}:${model.id}`;
+        const isCurrentModel =
+            modelIdWithVendor === currentModel || model.id === currentModel;
+        const isDefaultModel = modelIdWithVendor === defaultModel;
+        const modelName = model.name ?? model.id;
+
+        const item: ModelQuickPickItem = {
+            label: modelName,
+            description: `${model.vendor}:${model.id}`,
+            name: modelName,
+            modelIdWithVendor,
+            isCurrentModel,
+            isDefaultModel,
+        };
+
+        if (isDefaultModel) {
+            // place default model at the top
+            recommendedModels.unshift(item);
+        } else if (isUnSupportedModel(model)) {
+            unsupportedModels.push(item);
+        } else if (isRecommendedModel(model)) {
+            recommendedModels.push(item);
+        } else {
+            otherModels.push(item);
+        }
+    }
+
+    if (recommendedModels.length > 0) {
+        recommendedModels.unshift({
+            label: 'Recommended Models',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
+    if (otherModels.length > 0) {
+        otherModels.unshift({
+            label: 'Other Models',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
+    if (unsupportedModels.length > 0) {
+        unsupportedModels.unshift({
+            label: 'Unsupported Models',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
+
+    return [...recommendedModels, ...otherModels, ...unsupportedModels];
+}
+
 export function isUnSupportedModel(model: vscode.LanguageModelChat): boolean {
     if (model.vendor === 'copilot') {
         const unsupportedCopilotModelIds = [
