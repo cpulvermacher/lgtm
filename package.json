@@ -114,7 +114,7 @@
                 "commands": [
                     {
                         "name": "review",
-                        "description": "Review changes between two branches, commits, or tags.  You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively."
+                        "description": "Review changes. Specify branches, commits, or tags, e.g. `/review develop main`. Use `model:id` to select models inline. Leave empty for interactive."
                     }
                 ]
             }
