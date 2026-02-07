@@ -8,6 +8,13 @@ import { UncommittedRef } from '@/types/Ref';
 import { ReviewComment } from '@/types/ReviewComment';
 import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
+
+/** Minimal model shape used by resolveOneModelSpec, allowing test doubles */
+export type ModelInfo = Pick<
+    vscode.LanguageModelChat,
+    'vendor' | 'id' | 'name'
+>;
+
 import { extractModelSpecs, parseArguments } from '@/utils/parseArguments';
 import { normalizeComment } from '@/utils/text';
 import { getConfig } from './config';
@@ -360,66 +367,99 @@ async function resolveModelSpecs(
         return [];
     }
 
-    const resolvedIds: string[] = [];
+    const resolvedIds = new Set<string>();
+    const notFound: string[] = [];
+    const ambiguous: string[] = [];
     for (const spec of specs) {
         const resolved = resolveOneModelSpec(spec, availableModels);
-        if (resolved) {
-            resolvedIds.push(resolved);
+        if (resolved.match) {
+            resolvedIds.add(resolved.match);
+        } else if (resolved.ambiguous) {
+            logger.info(
+                `Ambiguous model spec '${spec}' matched multiple models: ${resolved.ambiguous.join(', ')}`
+            );
+            ambiguous.push(
+                `'${spec}' matches multiple models: ${resolved.ambiguous.join(', ')}`
+            );
         } else {
             logger.info(
                 `Could not resolve model spec '${spec}'. Available models: ${availableModels.map((m) => `${m.vendor}:${m.id}`).join(', ')}`
             );
-            // Show warning but continue with other specs
-            vscode.window.showWarningMessage(
-                `Model '${spec}' not found. Available model IDs can be found via the 'LGTM: Select Chat Model' command.`
-            );
+            notFound.push(spec);
         }
     }
 
-    return resolvedIds;
+    if (ambiguous.length > 0) {
+        vscode.window.showWarningMessage(
+            `Ambiguous model spec(s) — please be more specific: ${ambiguous.join('; ')}. Use the 'LGTM: Select Chat Model' command to see available IDs.`
+        );
+    }
+    if (notFound.length > 0) {
+        vscode.window.showWarningMessage(
+            `Model(s) not found: ${notFound.map((s) => `'${s}'`).join(', ')}. Available model IDs can be found via the 'LGTM: Select Chat Model' command.`
+        );
+    }
+
+    return [...resolvedIds];
 }
+
+export type ModelSpecResult =
+    | { match: string; ambiguous?: never }
+    | { match?: never; ambiguous: string[] }
+    | { match?: never; ambiguous?: never };
 
 /**
  * Resolve a single model spec against available models.
  * Matching priority: exact vendor:id > exact id > substring match on id > substring match on name.
+ * If a substring match is ambiguous (multiple hits), returns the list of candidates instead.
  */
-function resolveOneModelSpec(
+export function resolveOneModelSpec(
     spec: string,
-    models: vscode.LanguageModelChat[]
-): string | undefined {
+    models: ModelInfo[]
+): ModelSpecResult {
+    const toId = (m: ModelInfo) => `${m.vendor}:${m.id}`;
+
     // If spec contains ':', try exact vendor:id match
     if (spec.includes(':')) {
-        const [vendor, id] = spec.split(':', 2);
+        const colonIdx = spec.indexOf(':');
+        const vendor = spec.slice(0, colonIdx);
+        const id = spec.slice(colonIdx + 1);
         const exactMatch = models.find(
             (m) => m.vendor === vendor && m.id === id
         );
         if (exactMatch) {
-            return `${exactMatch.vendor}:${exactMatch.id}`;
+            return { match: toId(exactMatch) };
         }
     }
 
     // Try exact id match (any vendor)
     const idMatch = models.find((m) => m.id === spec);
     if (idMatch) {
-        return `${idMatch.vendor}:${idMatch.id}`;
+        return { match: toId(idMatch) };
     }
 
-    // Try substring match on model id
-    const idSubstringMatch = models.find((m) => m.id.includes(spec));
-    if (idSubstringMatch) {
-        return `${idSubstringMatch.vendor}:${idSubstringMatch.id}`;
+    // Try substring match on model id — fail-fast if ambiguous
+    const idSubstringMatches = models.filter((m) => m.id.includes(spec));
+    if (idSubstringMatches.length === 1) {
+        return { match: toId(idSubstringMatches[0]) };
+    }
+    if (idSubstringMatches.length > 1) {
+        return { ambiguous: idSubstringMatches.map(toId) };
     }
 
-    // Try substring match on model name
+    // Try substring match on model name — fail-fast if ambiguous
     const specLower = spec.toLowerCase();
-    const nameMatch = models.find((m) =>
+    const nameMatches = models.filter((m) =>
         m.name?.toLowerCase().includes(specLower)
     );
-    if (nameMatch) {
-        return `${nameMatch.vendor}:${nameMatch.id}`;
+    if (nameMatches.length === 1) {
+        return { match: toId(nameMatches[0]) };
+    }
+    if (nameMatches.length > 1) {
+        return { ambiguous: nameMatches.map(toId) };
     }
 
-    return undefined;
+    return {};
 }
 
 /** Result of a review with model information */
