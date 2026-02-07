@@ -71,6 +71,10 @@ async function initializeConfig(): Promise<Config> {
             }
             return false;
         },
+        setSessionModelIds: (ids: string[]) => {
+            sessionModelIds = ids;
+            logger.debug(`Session models set to: ${ids.join(', ')}`);
+        },
         clearSessionModel: () => {
             sessionModelIds = [];
             logger.debug('Session models cleared');

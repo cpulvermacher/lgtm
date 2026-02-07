@@ -13,6 +13,8 @@ export type Config = {
      * The selected models will be used for subsequent getSessionModelIds() calls until clearSessionModel() is called.
      */
     promptForSessionModel: () => Promise<boolean>;
+    /** Set session model IDs directly (e.g. from inline model: specs in the prompt) */
+    setSessionModelIds: (ids: string[]) => void;
     /** Clear any session-scoped model override */
     clearSessionModel: () => void;
     /** Get the current model IDs (session models if set, otherwise default from settings) */
