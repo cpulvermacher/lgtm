@@ -1,11 +1,17 @@
 import * as vscode from 'vscode';
 
-import type { AutoCheckoutTargetType, Config, Options } from '@/types/Config';
+import type {
+    AutoCheckoutTargetType,
+    ChatModelOnNewPromptType,
+    Config,
+    Options,
+    ReviewFlowType,
+} from '@/types/Config';
 import type { Logger } from '@/types/Logger';
 import type { Model } from '@/types/Model';
 import { createGit, type Git } from '@/utils/git';
 import { LgtmLogger } from './logger';
-import { getChatModel } from './model';
+import { getChatModel, getModelQuickPickItems } from './model';
 
 // defined when built via `npm run dev`
 declare const __GIT_VERSION__: string | undefined;
@@ -52,11 +58,43 @@ async function initializeConfig(): Promise<Config> {
                 message
         );
     }
-    const config = {
+
+    // Session-scoped model overrides (not persisted to settings)
+    let sessionModelIds: string[] = [];
+
+    const config: Config = {
         git,
         workspaceRoot,
         gitRoot: git.getGitRoot(),
-        getModel: () => loadModel(getOptions().chatModel, logger),
+        getModel: (modelId?: string) => {
+            const id = modelId ?? sessionModelIds[0] ?? getOptions().chatModel;
+            return loadModel(id, logger);
+        },
+        promptForSessionModel: async () => {
+            const selectedModelIds = await promptForModelSelection(
+                getOptions().chatModel
+            );
+            if (selectedModelIds && selectedModelIds.length > 0) {
+                sessionModelIds = selectedModelIds;
+                logger.debug(
+                    `Session models set to: ${sessionModelIds.join(', ')}`
+                );
+                return true;
+            }
+            return false;
+        },
+        setSessionModelIds: (ids: string[]) => {
+            sessionModelIds = ids;
+            logger.debug(`Session models set to: ${ids.join(', ')}`);
+        },
+        clearSessionModel: () => {
+            sessionModelIds = [];
+            logger.debug('Session models cleared');
+        },
+        getSessionModelIds: () =>
+            sessionModelIds.length > 0
+                ? sessionModelIds
+                : [getOptions().chatModel],
         getOptions,
         setOption,
         logger,
@@ -125,6 +163,14 @@ function getOptions(): Options {
     const excludeGlobs = config.get<string[]>('exclude', []);
     const enableDebugOutput = config.get<boolean>('enableDebugOutput', false);
     const chatModel = config.get<string>('chatModel', defaultModelId);
+    const chatModelOnNewPrompt = config.get<ChatModelOnNewPromptType>(
+        'chatModelOnNewPrompt',
+        'useDefault'
+    );
+    const reviewFlow = config.get<ReviewFlowType>(
+        'reviewFlow',
+        'separateSections'
+    );
     const mergeFileReviewRequests = config.get<boolean>(
         'mergeFileReviewRequests',
         true
@@ -158,6 +204,8 @@ function getOptions(): Options {
         excludeGlobs,
         enableDebugOutput,
         chatModel,
+        chatModelOnNewPrompt,
+        reviewFlow,
         mergeFileReviewRequests,
         maxInputTokensFraction,
         maxConcurrentModelRequests,
@@ -174,4 +222,40 @@ async function setOption<T extends keyof Options>(
     await vscode.workspace
         .getConfiguration('lgtm')
         .update(option, value, vscode.ConfigurationTarget.Global);
+}
+
+/**
+ * Prompt the user to select one or more models for the current session.
+ * Returns an array of selected model IDs (in "vendor:id" format) or undefined if cancelled.
+ */
+async function promptForModelSelection(
+    currentModelId: string
+): Promise<string[] | undefined> {
+    const models = await vscode.lm.selectChatModels();
+    if (!models || models.length === 0) {
+        vscode.window.showWarningMessage('No chat models available.');
+        return undefined;
+    }
+
+    const quickPickItems = getModelQuickPickItems(
+        models,
+        currentModelId,
+        defaultModelId
+    ).map((item) => {
+        if (item.kind === vscode.QuickPickItemKind.Separator) return item;
+        return { ...item, picked: item.isCurrentModel };
+    });
+    const selectedItems = await vscode.window.showQuickPick(quickPickItems, {
+        placeHolder:
+            'Select one or more chat models for this review (use Space to select multiple)',
+        canPickMany: true,
+    });
+
+    if (!selectedItems || selectedItems.length === 0) {
+        return undefined;
+    }
+
+    return selectedItems
+        .filter((item) => item.modelIdWithVendor !== undefined)
+        .map((item) => item.modelIdWithVendor as string);
 }
