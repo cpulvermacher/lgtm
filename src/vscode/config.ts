@@ -184,13 +184,13 @@ function getOptions(): Options {
     const excludeGlobs = config.get<string[]>('exclude', []);
     const enableDebugOutput = config.get<boolean>('enableDebugOutput', false);
     const chatModel = config.get<string>('chatModel', defaultModelId);
-    const chatModelOnNewPrompt = config.get<ChatModelOnNewPromptType>(
-        'chatModelOnNewPrompt',
-        'useDefault'
+    const selectChatModelForReview = config.get<ChatModelOnNewPromptType>(
+        'selectChatModelForReview',
+        'Use default'
     );
-    const reviewFlow = config.get<ReviewFlowType>(
-        'reviewFlow',
-        'separateSections'
+    const outputModeWithMultipleModels = config.get<ReviewFlowType>(
+        'outputModeWithMultipleModels',
+        'Separate sections'
     );
     const mergeFileReviewRequests = config.get<boolean>(
         'mergeFileReviewRequests',
@@ -225,8 +225,8 @@ function getOptions(): Options {
         excludeGlobs,
         enableDebugOutput,
         chatModel,
-        chatModelOnNewPrompt,
-        reviewFlow,
+        selectChatModelForReview,
+        outputModeWithMultipleModels,
         mergeFileReviewRequests,
         maxInputTokensFraction,
         maxConcurrentModelRequests,

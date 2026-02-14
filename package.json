@@ -219,26 +219,26 @@
                     "default": "copilot:gpt-4.1",
                     "markdownDescription": "Default chat model to use for generating review comments. Use the 'LGTM: Select Chat Model' command to choose from available models. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits."
                 },
-                "lgtm.chatModelOnNewPrompt": {
+                "lgtm.selectChatModelForReview": {
                     "type": "string",
                     "enum": [
-                        "useDefault",
-                        "alwaysAsk"
+                        "Use default",
+                        "Always ask"
                     ],
-                    "default": "useDefault",
+                    "default": "Use default",
                     "enumDescriptions": [
-                        "Use the model defined in 'Default Chat Model'",
+                        "Use the model defined in 'Chat Model'",
                         "Always ask which model to use when starting a new prompt (supports multi-selection)"
                     ],
                     "markdownDescription": "Controls which chat model to use when starting a new review prompt. When set to 'Always ask', you can select multiple models to compare their results."
                 },
-                "lgtm.reviewFlow": {
+                "lgtm.outputModeWithMultipleModels": {
                     "type": "string",
                     "enum": [
-                        "separateSections",
-                        "mergedWithAttribution"
+                        "Separate sections",
+                        "Merged with attribution"
                     ],
-                    "default": "separateSections",
+                    "default": "Separate sections",
                     "enumDescriptions": [
                         "Show each model's results in separate sections with headings",
                         "Merge results from all models, showing which model(s) flagged each issue"

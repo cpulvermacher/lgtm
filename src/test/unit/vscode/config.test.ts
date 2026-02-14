@@ -12,39 +12,39 @@ vi.mock('vscode', () => ({
  */
 
 describe('Config options', () => {
-    describe('chatModelOnNewPrompt option', () => {
-        it('should have "useDefault" and "alwaysAsk" as valid values', () => {
-            type ChatModelOnNewPromptType = 'useDefault' | 'alwaysAsk';
+    describe('selectChatModelForReview option', () => {
+        it('should have "Use default" and "Always ask" as valid values', () => {
+            type ChatModelOnNewPromptType = 'Use default' | 'Always ask';
             const validValues: ChatModelOnNewPromptType[] = [
-                'useDefault',
-                'alwaysAsk',
+                'Use default',
+                'Always ask',
             ];
 
-            expect(validValues).toContain('useDefault');
-            expect(validValues).toContain('alwaysAsk');
+            expect(validValues).toContain('Use default');
+            expect(validValues).toContain('Always ask');
         });
 
-        it('should default to "useDefault"', () => {
-            const defaultValue = 'useDefault';
-            expect(defaultValue).toBe('useDefault');
+        it('should default to "Use default"', () => {
+            const defaultValue = 'Use default';
+            expect(defaultValue).toBe('Use default');
         });
     });
 
-    describe('reviewFlow option', () => {
-        it('should have "separateSections" and "mergedWithAttribution" as valid values', () => {
-            type ReviewFlowType = 'separateSections' | 'mergedWithAttribution';
+    describe('outputModeWithMultipleModels option', () => {
+        it('should have "Separate sections" and "Merged with attribution" as valid values', () => {
+            type ReviewFlowType = 'Separate sections' | 'Merged with attribution';
             const validValues: ReviewFlowType[] = [
-                'separateSections',
-                'mergedWithAttribution',
+                'Separate sections',
+                'Merged with attribution',
             ];
 
-            expect(validValues).toContain('separateSections');
-            expect(validValues).toContain('mergedWithAttribution');
+            expect(validValues).toContain('Separate sections');
+            expect(validValues).toContain('Merged with attribution');
         });
 
-        it('should default to "separateSections"', () => {
-            const defaultValue = 'separateSections';
-            expect(defaultValue).toBe('separateSections');
+        it('should default to "Separate sections"', () => {
+            const defaultValue = 'Separate sections';
+            expect(defaultValue).toBe('Separate sections');
         });
     });
 });

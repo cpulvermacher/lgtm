@@ -74,7 +74,7 @@ async function handleChat(
             return;
         }
         config.setSessionModelIds(resolvedModelIds);
-    } else if (options.chatModelOnNewPrompt === 'alwaysAsk') {
+    } else if (options.selectChatModelForReview === 'Always ask') {
         const selected = await config.promptForSessionModel();
         if (!selected) {
             stream.markdown('No model selected. Review cancelled.');
@@ -163,18 +163,18 @@ async function handleChat(
             }
         }
 
-        // Display results based on reviewFlow setting
-        if (options.reviewFlow === 'mergedWithAttribution') {
+        // Display results based on outputModeWithMultipleModels setting
+        if (options.outputModeWithMultipleModels === 'Merged with attribution') {
             showMergedReviewResults(config, results, stream, token);
         } else {
-            // separateSections (default)
+            // Separate sections (default)
             showSeparateReviewResults(config, results, stream, token);
         }
     } finally {
-        // Clear session model when models were specified inline or when alwaysAsk is set
+        // Clear session model when models were specified inline or when Always ask is set
         if (
             promptModelSpecs.length > 0 ||
-            options.chatModelOnNewPrompt === 'alwaysAsk'
+            options.selectChatModelForReview === 'Always ask'
         ) {
             config.clearSessionModel();
         }
