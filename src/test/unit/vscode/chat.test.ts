@@ -23,7 +23,6 @@ vi.mock('@/vscode/uri', () => ({
 
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
-import { normalizeComment } from '@/utils/text';
 import { type ModelInfo, resolveOneModelSpec } from '@/vscode/chat';
 
 // Store captured stream calls for verification
@@ -211,96 +210,7 @@ describe('Chat multi-model review', () => {
     });
 
     describe('merged with attribution display', () => {
-        it('should deduplicate identical comments from multiple models', () => {
-            // Simulate the merging logic
-            const results: ModelReviewResult[] = [
-                {
-                    modelId: 'copilot:gpt-4',
-                    modelName: 'GPT-4',
-                    result: createMockReviewResult([
-                        {
-                            target: 'test.ts',
-                            comments: [
-                                {
-                                    file: 'test.ts',
-                                    line: 10,
-                                    comment: 'Missing null check',
-                                    severity: 3,
-                                },
-                            ],
-                            maxSeverity: 3,
-                        },
-                    ]),
-                },
-                {
-                    modelId: 'copilot:claude-sonnet',
-                    modelName: 'Claude Sonnet',
-                    result: createMockReviewResult([
-                        {
-                            target: 'test.ts',
-                            comments: [
-                                {
-                                    file: 'test.ts',
-                                    line: 10,
-                                    comment: 'Missing null check', // Same comment
-                                    severity: 4,
-                                },
-                            ],
-                            maxSeverity: 4,
-                        },
-                    ]),
-                },
-            ];
-
-            // Simulate merging logic from showMergedReviewResults
-            type AttributedComment = {
-                file: string;
-                line: number;
-                comment: string;
-                severity: number;
-                models: string[];
-            };
-
-            // Use the imported normalizeComment function from chat.ts
-
-            const commentMap = new Map<string, AttributedComment>();
-            for (const { modelName, result } of results) {
-                for (const file of result.fileComments) {
-                    for (const comment of file.comments) {
-                        const key = `${comment.file}:${
-                            comment.line
-                        }:${normalizeComment(comment.comment)}`;
-
-                        const existing = commentMap.get(key);
-                        if (existing) {
-                            if (!existing.models.includes(modelName)) {
-                                existing.models.push(modelName);
-                            }
-                            if (comment.severity > existing.severity) {
-                                existing.severity = comment.severity;
-                            }
-                        } else {
-                            commentMap.set(key, {
-                                file: comment.file,
-                                line: comment.line,
-                                comment: comment.comment,
-                                severity: comment.severity,
-                                models: [modelName],
-                            });
-                        }
-                    }
-                }
-            }
-
-            // Should be merged into one comment with both models
-            expect(commentMap.size).toBe(1);
-            const mergedComment = [...commentMap.values()][0];
-            expect(mergedComment.models).toContain('GPT-4');
-            expect(mergedComment.models).toContain('Claude Sonnet');
-            expect(mergedComment.severity).toBe(4); // Higher severity kept
-        });
-
-        it('should keep unique comments from different models', () => {
+        it('should keep comments from different models', () => {
             const results: ModelReviewResult[] = [
                 {
                     modelId: 'copilot:gpt-4',
@@ -349,28 +259,17 @@ describe('Chat multi-model review', () => {
                 models: string[];
             };
 
-            const commentMap = new Map<string, AttributedComment>();
+            const commentMap = new Set<AttributedComment>();
             for (const { modelName, result } of results) {
                 for (const file of result.fileComments) {
                     for (const comment of file.comments) {
-                        const key = `${comment.file}:${
-                            comment.line
-                        }:${normalizeComment(comment.comment)}`;
-
-                        const existing = commentMap.get(key);
-                        if (existing) {
-                            if (!existing.models.includes(modelName)) {
-                                existing.models.push(modelName);
-                            }
-                        } else {
-                            commentMap.set(key, {
-                                file: comment.file,
-                                line: comment.line,
-                                comment: comment.comment,
-                                severity: comment.severity,
-                                models: [modelName],
-                            });
-                        }
+                        commentMap.add({
+                            file: comment.file,
+                            line: comment.line,
+                            comment: comment.comment,
+                            severity: comment.severity,
+                            models: [modelName],
+                        });
                     }
                 }
             }
@@ -381,19 +280,6 @@ describe('Chat multi-model review', () => {
             const comments = [...commentMap.values()];
             expect(comments[0].models).toHaveLength(1);
             expect(comments[1].models).toHaveLength(1);
-        });
-
-        it('should normalize comments for comparison', () => {
-            // Using the imported normalizeComment from @/utils/text
-            expect(normalizeComment('Missing null check')).toBe(
-                'missing null check'
-            );
-            expect(normalizeComment('  Missing   null   check  ')).toBe(
-                'missing null check'
-            );
-            expect(normalizeComment('MISSING NULL CHECK')).toBe(
-                'missing null check'
-            );
         });
     });
 
@@ -560,7 +446,7 @@ describe('resolveOneModelSpec', () => {
         // (also 'gpt-4.1' from azure, making 3 matches)
         const result = resolveOneModelSpec('gpt-4', sampleModels);
         expect(result.ambiguous).toBeDefined();
-        expect(result.ambiguous!.length).toBeGreaterThan(1);
+        expect(result.ambiguous?.length).toBeGreaterThan(1);
         expect(result.match).toBeUndefined();
     });
 

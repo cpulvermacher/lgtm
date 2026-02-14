@@ -16,7 +16,6 @@ export type ModelInfo = Pick<
 >;
 
 import { extractModelSpecs, parseArguments } from '@/utils/parseArguments';
-import { normalizeComment } from '@/utils/text';
 import { getConfig } from './config';
 import { FixCommentArgs } from './fix';
 import { pickRef, pickRefs, promptToCheckout } from './ui';
@@ -164,7 +163,9 @@ async function handleChat(
         }
 
         // Display results based on outputModeWithMultipleModels setting
-        if (options.outputModeWithMultipleModels === 'Merged with attribution') {
+        if (
+            options.outputModeWithMultipleModels === 'Merged with attribution'
+        ) {
             showMergedReviewResults(config, results, stream, token);
         } else {
             // Separate sections (default)
@@ -629,7 +630,7 @@ type AttributedComment = {
     line: number;
     comment: string;
     severity: number;
-    models: string[]; // model names that flagged this issue
+    model: string; // model name that flagged this issue
     promptType?: string;
 };
 
@@ -661,7 +662,7 @@ function showMergedReviewResults(
     const options = config.getOptions();
 
     // Collect all comments with model attribution
-    const commentMap = new Map<string, AttributedComment>();
+    const commentMap = new Set<AttributedComment>();
 
     for (const { modelName, result } of results) {
         for (const file of result.fileComments) {
@@ -673,32 +674,14 @@ function showMergedReviewResults(
                     continue;
                 }
 
-                // Create a key based on file, line, and similar comment text
-                const key = `${comment.file}:${comment.line}:${normalizeComment(
-                    comment.comment
-                )}`;
-
-                const existing = commentMap.get(key);
-                if (existing) {
-                    // Add model to existing comment
-                    if (!existing.models.includes(modelName)) {
-                        existing.models.push(modelName);
-                    }
-                    // Keep the higher severity
-                    if (comment.severity > existing.severity) {
-                        existing.severity = comment.severity;
-                    }
-                } else {
-                    // Add new comment
-                    commentMap.set(key, {
-                        file: comment.file,
-                        line: comment.line,
-                        comment: comment.comment,
-                        severity: comment.severity,
-                        models: [modelName],
-                        promptType: comment.promptType,
-                    });
-                }
+                commentMap.add({
+                    file: comment.file,
+                    line: comment.line,
+                    comment: comment.comment,
+                    severity: comment.severity,
+                    model: modelName,
+                    promptType: comment.promptType,
+                });
             }
         }
     }
@@ -808,13 +791,9 @@ function buildMergedComment(
     const uri = toUri(config, comment.file, comment.line);
     markdown.appendMarkdown(`[Line ${comment.line}](${uri.toString()})`);
 
-    // Show which models flagged this issue (if multiple models)
+    // Show which model flagged this issue (if multiple models)
     if (showAttribution) {
-        const attribution =
-            comment.models.length === 1
-                ? comment.models[0]
-                : comment.models.join(', ');
-        markdown.appendMarkdown(` | *${attribution}*`);
+        markdown.appendMarkdown(` | *${comment.model}*`);
     }
 
     // (debug: prompt type)
