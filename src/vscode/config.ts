@@ -14,10 +14,21 @@ export const defaultModelId = 'copilot:gpt-4.1';
 
 let config: Config | undefined;
 
-/** Return config */
-export async function getConfig(): Promise<Config> {
+/** Return config
+ *
+ * set refreshWorkspace to refresh workspace / git configuration and ask user to select from multiple roots if needed
+ */
+export async function getConfig(options?: {
+    refreshWorkspace?: boolean;
+}): Promise<Config> {
     if (!config) {
         config = await initializeConfig();
+    } else if (options?.refreshWorkspace) {
+        config.logger.debug('Refreshing workspace configuration...');
+        const { workspaceRoot, git, gitRoot } = await getWorkspaceConfig();
+        config.workspaceRoot = workspaceRoot;
+        config.git = git;
+        config.gitRoot = gitRoot;
     }
     return config;
 }
@@ -28,34 +39,11 @@ async function initializeConfig(): Promise<Config> {
         logger.info(`**LGTM dev build**: ${__GIT_VERSION__}`);
     }
 
-    let mainWorkspace = vscode.workspace.workspaceFolders?.[0];
-    if ((vscode.workspace.workspaceFolders?.length || 0) > 1) {
-        //if there are multiple workspaces, ask the user to select one
-        mainWorkspace = await vscode.window.showWorkspaceFolderPick();
-    }
-
-    if (!mainWorkspace) {
-        throw new Error(
-            'No workspace found. Please open a folder containing a Git repository using `File -> Open Folder`.'
-        );
-    }
-
-    const workspaceRoot = mainWorkspace.uri.fsPath;
-    let git: Git;
-    try {
-        git = await createGit(workspaceRoot);
-    } catch (error) {
-        const message =
-            error instanceof Error ? '\n\n```\n' + error.message + '\n```' : '';
-        throw new Error(
-            'Error opening Git repository. Please open a folder containing a Git repository using `File -> Open Folder` and make sure Git is installed.' +
-                message
-        );
-    }
+    const { workspaceRoot, git, gitRoot } = await getWorkspaceConfig();
     const config = {
         git,
         workspaceRoot,
-        gitRoot: git.getGitRoot(),
+        gitRoot,
         getModel: () => loadModel(getOptions().chatModel, logger),
         getOptions,
         setOption,
@@ -71,6 +59,39 @@ async function initializeConfig(): Promise<Config> {
     });
 
     return config;
+}
+
+async function getWorkspaceConfig(): Promise<{
+    workspaceRoot: string;
+    git: Git;
+    gitRoot: string;
+}> {
+    let mainWorkspace = vscode.workspace.workspaceFolders?.[0];
+    if ((vscode.workspace.workspaceFolders?.length || 0) > 1) {
+        //if there are multiple workspaces, ask the user to select one
+        mainWorkspace = await vscode.window.showWorkspaceFolderPick();
+    }
+
+    if (!mainWorkspace) {
+        throw new Error(
+            'No workspace found or selected. Please open a folder containing a Git repository using `File -> Open Folder`.'
+        );
+    }
+
+    const workspaceRoot = mainWorkspace.uri.fsPath;
+    let git: Git;
+    try {
+        git = await createGit(workspaceRoot);
+    } catch (error) {
+        const message =
+            error instanceof Error ? '\n\n```\n' + error.message + '\n```' : '';
+        throw new Error(
+            'Error opening Git repository. Please open a folder containing a Git repository using `File -> Open Folder` and make sure Git is installed.' +
+                message
+        );
+    }
+    const gitRoot = git.getGitRoot();
+    return { workspaceRoot, git, gitRoot };
 }
 
 /** get desired chat model.
