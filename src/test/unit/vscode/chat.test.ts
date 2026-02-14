@@ -23,7 +23,12 @@ vi.mock('@/vscode/uri', () => ({
 
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
-import { type ModelInfo, resolveOneModelSpec } from '@/vscode/chat';
+import {
+    collectAttributedComments,
+    type ModelInfo,
+    type ModelReviewResult,
+    resolveOneModelSpec,
+} from '@/vscode/chat';
 
 // Store captured stream calls for verification
 let streamCalls: { method: string; args: unknown[] }[] = [];
@@ -73,13 +78,6 @@ function createMockReviewResult(
         errors: [],
     };
 }
-
-// Model review result type matching the internal type
-type ModelReviewResult = {
-    modelId: string;
-    modelName: string;
-    result: ReviewResult;
-};
 
 describe('Chat multi-model review', () => {
     beforeEach(() => {
@@ -210,7 +208,7 @@ describe('Chat multi-model review', () => {
     });
 
     describe('merged with attribution display', () => {
-        it('should keep comments from different models', () => {
+        it('should keep comments from different models as separate entries', () => {
             const results: ModelReviewResult[] = [
                 {
                     modelId: 'copilot:gpt-4',
@@ -250,36 +248,143 @@ describe('Chat multi-model review', () => {
                 },
             ];
 
-            // Simulate merging logic
-            type AttributedComment = {
-                file: string;
-                line: number;
-                comment: string;
-                severity: number;
-                models: string[];
-            };
+            const grouped = collectAttributedComments(results, 1);
 
-            const commentMap = new Set<AttributedComment>();
-            for (const { modelName, result } of results) {
-                for (const file of result.fileComments) {
-                    for (const comment of file.comments) {
-                        commentMap.add({
-                            file: comment.file,
-                            line: comment.line,
-                            comment: comment.comment,
-                            severity: comment.severity,
-                            models: [modelName],
-                        });
-                    }
-                }
-            }
+            // Both comments target the same file
+            expect(grouped.size).toBe(1);
+            const comments = grouped.get('test.ts')!;
+            expect(comments).toHaveLength(2);
 
-            // Different comments should remain separate
-            expect(commentMap.size).toBe(2);
+            // Sorted by line number
+            expect(comments[0].line).toBe(10);
+            expect(comments[0].model).toBe('GPT-4');
+            expect(comments[1].line).toBe(20);
+            expect(comments[1].model).toBe('Claude Sonnet');
+        });
 
-            const comments = [...commentMap.values()];
-            expect(comments[0].models).toHaveLength(1);
-            expect(comments[1].models).toHaveLength(1);
+        it('should filter out comments below minSeverity', () => {
+            const results: ModelReviewResult[] = [
+                {
+                    modelId: 'copilot:gpt-4',
+                    modelName: 'GPT-4',
+                    result: createMockReviewResult([
+                        {
+                            target: 'test.ts',
+                            comments: [
+                                {
+                                    file: 'test.ts',
+                                    line: 10,
+                                    comment: 'Low severity issue',
+                                    severity: 1,
+                                },
+                                {
+                                    file: 'test.ts',
+                                    line: 20,
+                                    comment: 'High severity issue',
+                                    severity: 4,
+                                },
+                            ],
+                            maxSeverity: 4,
+                        },
+                    ]),
+                },
+            ];
+
+            const grouped = collectAttributedComments(results, 3);
+            const comments = grouped.get('test.ts')!;
+            expect(comments).toHaveLength(1);
+            expect(comments[0].comment).toBe('High severity issue');
+        });
+
+        it('should filter out comments with non-positive line numbers', () => {
+            const results: ModelReviewResult[] = [
+                {
+                    modelId: 'copilot:gpt-4',
+                    modelName: 'GPT-4',
+                    result: createMockReviewResult([
+                        {
+                            target: 'test.ts',
+                            comments: [
+                                {
+                                    file: 'test.ts',
+                                    line: 0,
+                                    comment: 'Zero-line comment',
+                                    severity: 3,
+                                },
+                                {
+                                    file: 'test.ts',
+                                    line: 5,
+                                    comment: 'Valid comment',
+                                    severity: 3,
+                                },
+                            ],
+                            maxSeverity: 3,
+                        },
+                    ]),
+                },
+            ];
+
+            const grouped = collectAttributedComments(results, 1);
+            const comments = grouped.get('test.ts')!;
+            expect(comments).toHaveLength(1);
+            expect(comments[0].comment).toBe('Valid comment');
+        });
+
+        it('should group comments by file and sort by line', () => {
+            const results: ModelReviewResult[] = [
+                {
+                    modelId: 'copilot:gpt-4',
+                    modelName: 'GPT-4',
+                    result: createMockReviewResult([
+                        {
+                            target: 'a.ts',
+                            comments: [
+                                {
+                                    file: 'a.ts',
+                                    line: 30,
+                                    comment: 'A30',
+                                    severity: 3,
+                                },
+                                {
+                                    file: 'a.ts',
+                                    line: 10,
+                                    comment: 'A10',
+                                    severity: 3,
+                                },
+                            ],
+                            maxSeverity: 3,
+                        },
+                        {
+                            target: 'b.ts',
+                            comments: [
+                                {
+                                    file: 'b.ts',
+                                    line: 5,
+                                    comment: 'B5',
+                                    severity: 3,
+                                },
+                            ],
+                            maxSeverity: 3,
+                        },
+                    ]),
+                },
+            ];
+
+            const grouped = collectAttributedComments(results, 1);
+            expect(grouped.size).toBe(2);
+
+            const aComments = grouped.get('a.ts')!;
+            expect(aComments).toHaveLength(2);
+            expect(aComments[0].line).toBe(10);
+            expect(aComments[1].line).toBe(30);
+
+            const bComments = grouped.get('b.ts')!;
+            expect(bComments).toHaveLength(1);
+        });
+
+        it('should return empty map when no results', () => {
+            const grouped = collectAttributedComments([], 1);
+            expect(grouped.size).toBe(0);
         });
     });
 

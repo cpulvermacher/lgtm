@@ -468,7 +468,7 @@ export function resolveOneModelSpec(
 }
 
 /** Result of a review with model information */
-type ModelReviewResult = {
+export type ModelReviewResult = {
     modelId: string;
     modelName: string;
     result: ReviewResult;
@@ -625,7 +625,7 @@ function showSeparateReviewResults(
 }
 
 /** Comment with model attribution for merged display */
-type AttributedComment = {
+export type AttributedComment = {
     file: string;
     line: number;
     comment: string;
@@ -633,6 +633,55 @@ type AttributedComment = {
     model: string; // model name that flagged this issue
     promptType?: string;
 };
+
+/**
+ * Collect all review comments from multiple models into a flat list with
+ * model attribution.  Comments below `minSeverity` or with non-positive
+ * line numbers are filtered out.  The returned list is grouped by file
+ * and sorted by line number within each file.
+ */
+export function collectAttributedComments(
+    results: ModelReviewResult[],
+    minSeverity: number
+): Map<string, AttributedComment[]> {
+    const all: AttributedComment[] = [];
+
+    for (const { modelName, result } of results) {
+        for (const file of result.fileComments) {
+            for (const comment of file.comments) {
+                if (comment.severity < minSeverity || comment.line <= 0) {
+                    continue;
+                }
+                all.push({
+                    file: comment.file,
+                    line: comment.line,
+                    comment: comment.comment,
+                    severity: comment.severity,
+                    model: modelName,
+                    promptType: comment.promptType,
+                });
+            }
+        }
+    }
+
+    // Group by file
+    const grouped = new Map<string, AttributedComment[]>();
+    for (const c of all) {
+        const existing = grouped.get(c.file);
+        if (existing) {
+            existing.push(c);
+        } else {
+            grouped.set(c.file, [c]);
+        }
+    }
+
+    // Sort by line within each file
+    for (const comments of grouped.values()) {
+        comments.sort((a, b) => a.line - b.line);
+    }
+
+    return grouped;
+}
 
 /** Display merged results from multiple models with attribution */
 function showMergedReviewResults(
@@ -662,34 +711,15 @@ function showMergedReviewResults(
     const options = config.getOptions();
 
     // Collect all comments with model attribution
-    const commentMap = new Set<AttributedComment>();
-
-    for (const { modelName, result } of results) {
-        for (const file of result.fileComments) {
-            for (const comment of file.comments) {
-                if (
-                    comment.severity < options.minSeverity ||
-                    comment.line <= 0
-                ) {
-                    continue;
-                }
-
-                commentMap.add({
-                    file: comment.file,
-                    line: comment.line,
-                    comment: comment.comment,
-                    severity: comment.severity,
-                    model: modelName,
-                    promptType: comment.promptType,
-                });
-            }
-        }
-    }
+    const fileComments = collectAttributedComments(
+        results,
+        options.minSeverity
+    );
 
     // Collect errors first so we don't skip them on early return
     const allErrors = results.flatMap((r) => r.result.errors);
 
-    if (commentMap.size === 0) {
+    if (fileComments.size === 0) {
         // Check if there were any files to review
         const hasFilesToReview = results.some((r) => r.result.files.length > 0);
         if (hasFilesToReview) {
@@ -710,22 +740,6 @@ function showMergedReviewResults(
             );
         }
         return;
-    }
-
-    // Group comments by file
-    const fileComments = new Map<string, AttributedComment[]>();
-    for (const comment of commentMap.values()) {
-        const existing = fileComments.get(comment.file);
-        if (existing) {
-            existing.push(comment);
-        } else {
-            fileComments.set(comment.file, [comment]);
-        }
-    }
-
-    // Sort comments within each file by line number
-    for (const comments of fileComments.values()) {
-        comments.sort((a, b) => a.line - b.line);
     }
 
     // Use first result to get metadata
