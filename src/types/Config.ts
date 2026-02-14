@@ -33,8 +33,8 @@ export type Options = {
     excludeGlobs: string[];
     enableDebugOutput: boolean;
     chatModel: string;
-    chatModelOnNewPrompt: ChatModelOnNewPromptType;
-    reviewFlow: ReviewFlowType;
+    selectChatModelForReview: ChatModelOnNewPromptType;
+    outputModeWithMultipleModels: ReviewFlowType;
     mergeFileReviewRequests: boolean;
     maxInputTokensFraction: number;
     maxConcurrentModelRequests: number;
@@ -44,5 +44,5 @@ export type Options = {
 };
 
 export type AutoCheckoutTargetType = 'ask' | 'always' | 'never';
-export type ChatModelOnNewPromptType = 'useDefault' | 'alwaysAsk';
-export type ReviewFlowType = 'separateSections' | 'mergedWithAttribution';
+export type ChatModelOnNewPromptType = 'Use default' | 'Always ask';
+export type ReviewFlowType = 'Separate sections' | 'Merged with attribution';
