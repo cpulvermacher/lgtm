@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.2.1] (pre-release)
+- For multi-root workspaces, ask which root directory to use every time a review is started.
+
 ## [1.2.0]
 Includes changes from 1.1.4 to 1.1.8. Highlights:
 - Offer to automatically check out the target ref. Configurable via the `Lgtm: Auto Checkout Target` setting.
