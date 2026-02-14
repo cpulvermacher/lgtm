@@ -32,7 +32,9 @@ describe('Config options', () => {
 
     describe('outputModeWithMultipleModels option', () => {
         it('should have "Separate sections" and "Merged with attribution" as valid values', () => {
-            type ReviewFlowType = 'Separate sections' | 'Merged with attribution';
+            type ReviewFlowType =
+                | 'Separate sections'
+                | 'Merged with attribution';
             const validValues: ReviewFlowType[] = [
                 'Separate sections',
                 'Merged with attribution',
