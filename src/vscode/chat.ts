@@ -31,8 +31,6 @@ async function handleChat(
     stream: vscode.ChatResponseStream,
     token: vscode.CancellationToken
 ): Promise<void> {
-    const config = await getConfig();
-
     if (chatRequest.command !== 'review') {
         if (['branch', 'commit'].includes(chatRequest.command ?? '')) {
             //TODO temporary, clean this up in ~Mar 2026
@@ -48,6 +46,7 @@ async function handleChat(
         return;
     }
 
+    const config = await getConfig({ refreshWorkspace: true });
     const reviewRequest = await getReviewRequest(config, chatRequest.prompt);
     if (!reviewRequest) {
         stream.markdown(`Nothing to do.`);

@@ -64,7 +64,7 @@ async function reviewUnstagedChangesCommand() {
     await startReviewChat('unstaged');
 }
 async function reviewPullRequestCommand(model: unknown) {
-    const config = await getConfig();
+    const config = await getConfig({ refreshWorkspace: true });
 
     let pullRequest;
     try {
