@@ -58,18 +58,24 @@ async function initializeConfig(): Promise<Config> {
             const id = modelId ?? sessionModelIds[0] ?? getOptions().chatModel;
             return loadModel(id, logger);
         },
-        promptForSessionModel: async () => {
+        promptForSessionModelIds: async () => {
             const selectedModelIds = await promptForModelSelection(
-                getOptions().chatModel
+                sessionModelIds.length > 0
+                    ? sessionModelIds
+                    : [getOptions().chatModel]
             );
             if (selectedModelIds && selectedModelIds.length > 0) {
                 sessionModelIds = selectedModelIds;
                 logger.debug(
                     `Session models set to: ${sessionModelIds.join(', ')}`
                 );
-                return true;
+                return selectedModelIds;
             }
-            return false;
+            return undefined;
+        },
+        promptForSessionModel: async () => {
+            const selectedModelIds = await config.promptForSessionModelIds();
+            return (selectedModelIds?.length ?? 0) > 0;
         },
         setSessionModelIds: (ids: string[]) => {
             sessionModelIds = ids;
@@ -250,7 +256,7 @@ async function setOption<T extends keyof Options>(
  * Returns an array of selected model IDs (in "vendor:id" format) or undefined if cancelled.
  */
 async function promptForModelSelection(
-    currentModelId: string
+    currentModelIds: string[]
 ): Promise<string[] | undefined> {
     const models = await vscode.lm.selectChatModels();
     if (!models || models.length === 0) {
@@ -260,11 +266,26 @@ async function promptForModelSelection(
 
     const quickPickItems = getModelQuickPickItems(
         models,
-        currentModelId,
+        currentModelIds[0] ?? defaultModelId,
         defaultModelId
     ).map((item) => {
         if (item.kind === vscode.QuickPickItemKind.Separator) return item;
-        return { ...item, picked: item.isCurrentModel };
+
+        const isPicked = currentModelIds.some((modelId) => {
+            if (!item.modelIdWithVendor) {
+                return false;
+            }
+            if (modelId === item.modelIdWithVendor) {
+                return true;
+            }
+
+            const colonIdx = item.modelIdWithVendor.indexOf(':');
+            return colonIdx >= 0
+                ? modelId === item.modelIdWithVendor.slice(colonIdx + 1)
+                : false;
+        });
+
+        return { ...item, picked: isPicked };
     });
     const selectedItems = await vscode.window.showQuickPick(quickPickItems, {
         placeHolder:

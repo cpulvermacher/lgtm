@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LanguageModelChat } from 'vscode';
 
@@ -12,41 +14,37 @@ vi.mock('vscode', () => ({
  */
 
 describe('Config options', () => {
+    const packageJson = JSON.parse(
+        readFileSync(join(process.cwd(), 'package.json'), 'utf-8')
+    ) as {
+        contributes?: {
+            configuration?: {
+                properties?: Record<
+                    string,
+                    { enum?: string[]; default?: string }
+                >;
+            };
+        };
+    };
+
+    const properties = packageJson.contributes?.configuration?.properties ?? {};
+
     describe('selectChatModelForReview option', () => {
-        it('should have "Use default" and "Always ask" as valid values', () => {
-            type ChatModelOnNewPromptType = 'Use default' | 'Always ask';
-            const validValues: ChatModelOnNewPromptType[] = [
-                'Use default',
-                'Always ask',
-            ];
-
-            expect(validValues).toContain('Use default');
-            expect(validValues).toContain('Always ask');
-        });
-
-        it('should default to "Use default"', () => {
-            const defaultValue = 'Use default';
-            expect(defaultValue).toBe('Use default');
+        it('should declare expected enum values and default in package contributions', () => {
+            const setting = properties['lgtm.selectChatModelForReview'];
+            expect(setting?.enum).toEqual(['Use default', 'Always ask']);
+            expect(setting?.default).toBe('Use default');
         });
     });
 
     describe('outputModeWithMultipleModels option', () => {
-        it('should have "Separate sections" and "Merged with attribution" as valid values', () => {
-            type ReviewFlowType =
-                | 'Separate sections'
-                | 'Merged with attribution';
-            const validValues: ReviewFlowType[] = [
+        it('should declare expected enum values and default in package contributions', () => {
+            const setting = properties['lgtm.outputModeWithMultipleModels'];
+            expect(setting?.enum).toEqual([
                 'Separate sections',
                 'Merged with attribution',
-            ];
-
-            expect(validValues).toContain('Separate sections');
-            expect(validValues).toContain('Merged with attribution');
-        });
-
-        it('should default to "Separate sections"', () => {
-            const defaultValue = 'Separate sections';
-            expect(defaultValue).toBe('Separate sections');
+            ]);
+            expect(setting?.default).toBe('Separate sections');
         });
     });
 });
@@ -378,5 +376,36 @@ describe('Model quick pick items', () => {
         const separators = items.filter((item) => item.kind === -1);
         const separatorLabels = separators.map((s) => s.label);
         expect(separatorLabels).toContain('Unsupported Models');
+    });
+
+    it('should order vendor groups and models deterministically', () => {
+        const models = [
+            fakeModel({ id: 'zeta', vendor: 'beta' }),
+            fakeModel({ id: 'alpha', vendor: 'beta' }),
+            fakeModel({ id: 'omega', vendor: 'acme' }),
+        ];
+
+        const items = getModelQuickPickItems(
+            models,
+            'copilot:gpt-4.1',
+            defaultModelId
+        );
+
+        const acmeSeparatorIndex = items.findIndex(
+            (item) => item.label === 'Acme Models'
+        );
+        const betaSeparatorIndex = items.findIndex(
+            (item) => item.label === 'Beta Models'
+        );
+
+        expect(acmeSeparatorIndex).toBeGreaterThan(-1);
+        expect(betaSeparatorIndex).toBeGreaterThan(-1);
+        expect(acmeSeparatorIndex).toBeLessThan(betaSeparatorIndex);
+
+        const betaModels = items
+            .slice(betaSeparatorIndex + 1)
+            .filter((item) => item.kind !== -1)
+            .map((item) => item.label);
+        expect(betaModels.slice(0, 2)).toEqual(['alpha', 'zeta']);
     });
 });

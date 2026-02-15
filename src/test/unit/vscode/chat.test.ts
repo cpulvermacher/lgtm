@@ -25,6 +25,8 @@ import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import {
     collectAttributedComments,
+    createSharedProgress,
+    getModelDisplayName,
     type ModelInfo,
     type ModelReviewResult,
     resolveOneModelSpec,
@@ -88,16 +90,7 @@ describe('Chat multi-model review', () => {
 
     describe('createSharedProgress', () => {
         it('should deduplicate progress messages', () => {
-            // Simulate shared progress behavior
-            const reportedMessages = new Set<string>();
-            const sharedProgress = {
-                report: ({ message }: { message: string }) => {
-                    if (message && !reportedMessages.has(message)) {
-                        reportedMessages.add(message);
-                        mockStream.progress(message);
-                    }
-                },
-            };
+            const sharedProgress = createSharedProgress(mockStream as never);
 
             // Simulate multiple models reporting the same progress
             sharedProgress.report({ message: 'Gathering changes...' });
@@ -115,15 +108,7 @@ describe('Chat multi-model review', () => {
         });
 
         it('should not report empty messages', () => {
-            const reportedMessages = new Set<string>();
-            const sharedProgress = {
-                report: ({ message }: { message: string }) => {
-                    if (message && !reportedMessages.has(message)) {
-                        reportedMessages.add(message);
-                        mockStream.progress(message);
-                    }
-                },
-            };
+            const sharedProgress = createSharedProgress(mockStream as never);
 
             sharedProgress.report({ message: '' });
             sharedProgress.report({ message: 'Reviewing...' });
@@ -390,18 +375,16 @@ describe('Chat multi-model review', () => {
 
     describe('model display names', () => {
         it('should use model ID as fallback when name is unavailable', () => {
-            // Simulate getModelDisplayName fallback behavior
-            const extractModelIdFallback = (modelId: string): string => {
-                if (modelId.includes(':')) {
-                    return modelId.split(':')[1];
-                }
-                return modelId;
-            };
-
-            expect(extractModelIdFallback('copilot:gpt-4.1')).toBe('gpt-4.1');
-            expect(extractModelIdFallback('gpt-4.1')).toBe('gpt-4.1');
-            expect(extractModelIdFallback('vendor:model-name')).toBe(
+            expect(getModelDisplayName('copilot:gpt-4.1', [])).toBe('gpt-4.1');
+            expect(getModelDisplayName('gpt-4.1', [])).toBe('gpt-4.1');
+            expect(getModelDisplayName('vendor:model-name', [])).toBe(
                 'model-name'
+            );
+        });
+
+        it('should preserve full ID tail for model IDs with multiple colons', () => {
+            expect(getModelDisplayName('vendor:group:sub:model', [])).toBe(
+                'group:sub:model'
             );
         });
     });
@@ -512,6 +495,13 @@ describe('resolveOneModelSpec', () => {
     it('should resolve exact id match (any vendor)', () => {
         const result = resolveOneModelSpec('claude-sonnet-4', sampleModels);
         expect(result).toEqual({ match: 'copilot:claude-sonnet-4' });
+    });
+
+    it('should return ambiguous for exact id matches across vendors', () => {
+        const result = resolveOneModelSpec('gpt-4.1', sampleModels);
+        expect(result).toEqual({
+            ambiguous: ['copilot:gpt-4.1', 'azure:gpt-4.1'],
+        });
     });
 
     it('should prefer exact vendor:id over exact id match', () => {

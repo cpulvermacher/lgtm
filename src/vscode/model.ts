@@ -52,7 +52,9 @@ function parseToSelector(modelIdWithVendor: string) {
         return { vendor: undefined, id: modelIdWithVendor };
     }
 
-    const [vendor, id] = modelIdWithVendor.split(':', 2);
+    const colonIdx = modelIdWithVendor.indexOf(':');
+    const vendor = modelIdWithVendor.slice(0, colonIdx);
+    const id = modelIdWithVendor.slice(colonIdx + 1);
     return { vendor, id };
 }
 
@@ -178,20 +180,26 @@ export function getModelQuickPickItems(
             vendorMap[item.vendor || ''].push(item);
         }
 
-        otherModels = [
-            ...Object.entries(vendorMap).flatMap(([vendor, items]) => {
-                const name = vendor
-                    ? vendor.charAt(0).toUpperCase() + vendor.slice(1)
-                    : 'Other';
+        for (const items of Object.values(vendorMap)) {
+            items.sort((a, b) => a.label.localeCompare(b.label));
+        }
 
-                return [
-                    {
-                        label: `${name} Models`,
-                        kind: vscode.QuickPickItemKind.Separator,
-                    },
-                    ...items,
-                ];
-            }),
+        otherModels = [
+            ...Object.entries(vendorMap)
+                .sort(([vendorA], [vendorB]) => vendorA.localeCompare(vendorB))
+                .flatMap(([vendor, items]) => {
+                    const name = vendor
+                        ? vendor.charAt(0).toUpperCase() + vendor.slice(1)
+                        : 'Other';
+
+                    return [
+                        {
+                            label: `${name} Models`,
+                            kind: vscode.QuickPickItemKind.Separator,
+                        },
+                        ...items,
+                    ];
+                }),
         ];
     }
     if (unsupportedModels.length > 0) {

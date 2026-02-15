@@ -251,4 +251,22 @@ describe('extractModelSpecs', () => {
             remaining: [],
         });
     });
+
+    it('matches MODEL: prefix case-insensitively', () => {
+        const result = extractModelSpecs('MODEL:copilot:gpt-4.1 develop');
+
+        expect(result).toEqual({
+            modelIds: ['copilot:gpt-4.1'],
+            remaining: ['develop'],
+        });
+    });
+
+    it('strips trailing punctuation from model specs', () => {
+        const result = extractModelSpecs('model:gpt-4.1, main');
+
+        expect(result).toEqual({
+            modelIds: ['gpt-4.1'],
+            remaining: ['main'],
+        });
+    });
 });

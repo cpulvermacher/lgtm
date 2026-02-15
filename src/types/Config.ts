@@ -19,6 +19,8 @@ export type Config = {
     clearSessionModel: () => void;
     /** Get the current model IDs (session models if set, otherwise default from settings) */
     getSessionModelIds: () => string[];
+    /** Prompt for one or more model IDs to use in the current request */
+    promptForSessionModelIds: () => Promise<string[] | undefined>;
     getOptions: () => Options;
     setOption: <K extends keyof Options>(
         key: K,

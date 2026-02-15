@@ -55,6 +55,7 @@ async function handleChat(
     }
 
     const config = await getConfig({ refreshWorkspace: true });
+    const availableModels = await vscode.lm.selectChatModels();
 
     // Check if models were specified inline in the prompt (e.g. model:gpt-4.1)
     const { modelIds: promptModelSpecs, remaining: refTokens } =
@@ -62,81 +63,79 @@ async function handleChat(
 
     // Check if we need to prompt for model selection
     const options = config.getOptions();
+    let selectedModelIds = [options.chatModel];
     if (promptModelSpecs.length > 0) {
         // Resolve inline model specs against available models
         const resolvedModelIds = await resolveModelSpecs(
             promptModelSpecs,
             config.logger,
-            stream
+            stream,
+            availableModels
         );
         if (resolvedModelIds.length === 0) {
             return;
         }
-        config.setSessionModelIds(resolvedModelIds);
+        selectedModelIds = resolvedModelIds;
     } else if (options.selectChatModelForReview === 'Always ask') {
-        const selected = await config.promptForSessionModel();
-        if (!selected) {
+        const selected = await config.promptForSessionModelIds();
+        if (!selected || selected.length === 0) {
             stream.markdown('No model selected. Review cancelled.');
+            return;
+        }
+        selectedModelIds = selected;
+    }
+
+    // Pass only the ref tokens (model: specs already extracted)
+    const cleanPrompt = refTokens.join(' ');
+    const reviewRequest = await getReviewRequest(config, cleanPrompt);
+    if (!reviewRequest) {
+        stream.markdown(`Nothing to do.`);
+        return;
+    }
+
+    const modelIds = selectedModelIds;
+    const modelNames = modelIds.map((id) =>
+        getModelDisplayName(id, availableModels)
+    );
+    const modelNamesDisplay =
+        modelNames.length === 1
+            ? `**${modelNames[0]}**`
+            : modelNames.map((n) => `**${n}**`).join(', ');
+
+    if (!reviewRequest.scope.isCommitted) {
+        const targetLabel =
+            reviewRequest.scope.target === UncommittedRef.Staged
+                ? 'staged'
+                : 'unstaged';
+        stream.markdown(
+            `Reviewing ${targetLabel} changes using ${modelNamesDisplay}...\n\n`
+        );
+    } else {
+        const { base, target } = reviewRequest.scope;
+        if (!reviewRequest.scope.isTargetCheckedOut) {
+            await maybeCheckoutTarget(target, stream);
+            //regardless of choice, recheck if ref is now checked out
+            reviewRequest.scope = await config.git.getReviewScope(target, base);
+        }
+
+        const targetIsBranch = await config.git.isBranch(target);
+        stream.markdown(
+            `Reviewing changes ${
+                targetIsBranch ? 'on' : 'at'
+            } \`${target}\` compared to \`${base}\` using ${modelNamesDisplay}...\n\n`
+        );
+        if (await config.git.isSameRef(base, target)) {
+            stream.markdown('No changes found.');
             return;
         }
     }
 
-    try {
-        // Pass only the ref tokens (model: specs already extracted)
-        const cleanPrompt = refTokens.join(' ');
-        const reviewRequest = await getReviewRequest(config, cleanPrompt);
-        if (!reviewRequest) {
-            stream.markdown(`Nothing to do.`);
-            return;
-        }
+    // Create a shared progress reporter that deduplicates messages across all models
+    const sharedProgress = createSharedProgress(stream);
 
-        const modelIds = config.getSessionModelIds();
-        // Fetch model list once to avoid repeated API calls
-        const availableModels = await vscode.lm.selectChatModels();
-        const modelNames = modelIds.map((id) =>
-            getModelDisplayName(id, availableModels)
-        );
-        const modelNamesDisplay =
-            modelNames.length === 1
-                ? `**${modelNames[0]}**`
-                : modelNames.map((n) => `**${n}**`).join(', ');
-
-        if (!reviewRequest.scope.isCommitted) {
-            const targetLabel =
-                reviewRequest.scope.target === UncommittedRef.Staged
-                    ? 'staged'
-                    : 'unstaged';
-            stream.markdown(
-                `Reviewing ${targetLabel} changes using ${modelNamesDisplay}...\n\n`
-            );
-        } else {
-            const { base, target } = reviewRequest.scope;
-            if (!reviewRequest.scope.isTargetCheckedOut) {
-                await maybeCheckoutTarget(target, stream);
-                //regardless of choice, recheck if ref is now checked out
-                reviewRequest.scope = await config.git.getReviewScope(
-                    target,
-                    base
-                );
-            }
-
-            const targetIsBranch = await config.git.isBranch(target);
-            stream.markdown(
-                `Reviewing changes ${
-                    targetIsBranch ? 'on' : 'at'
-                } \`${target}\` compared to \`${base}\` using ${modelNamesDisplay}...\n\n`
-            );
-            if (await config.git.isSameRef(base, target)) {
-                stream.markdown('No changes found.');
-                return;
-            }
-        }
-
-        // Create a shared progress reporter that deduplicates messages across all models
-        const sharedProgress = createSharedProgress(stream);
-
-        // Run reviews for all selected models in parallel
-        const reviewPromises = modelIds.map((modelId, index) =>
+    // Run reviews for all selected models with bounded concurrency
+    const reviewTasks = modelIds.map(
+        (modelId, index) => () =>
             reviewWithModel(
                 config,
                 reviewRequest,
@@ -145,40 +144,35 @@ async function handleChat(
                 sharedProgress,
                 token
             )
-        );
-        const settledResults = await Promise.allSettled(reviewPromises);
+    );
+    const settledResults = await runWithConcurrency(
+        reviewTasks,
+        options.maxConcurrentModelRequests
+    );
 
-        // Collect successful results and log failures
-        const results: ModelReviewResult[] = [];
-        for (let i = 0; i < settledResults.length; i++) {
-            const settled = settledResults[i];
-            if (settled.status === 'fulfilled') {
-                results.push(settled.value);
-            } else {
-                config.logger.info(
-                    `Model ${modelNames[i]} failed:`,
-                    settled.reason
-                );
-            }
-        }
-
-        // Display results based on outputModeWithMultipleModels setting
-        if (
-            options.outputModeWithMultipleModels === 'Merged with attribution'
-        ) {
-            showMergedReviewResults(config, results, stream, token);
+    // Collect successful results and log failures
+    const results: ModelReviewResult[] = [];
+    for (let i = 0; i < settledResults.length; i++) {
+        const settled = settledResults[i];
+        if (settled.status === 'fulfilled') {
+            results.push(settled.value);
         } else {
-            // Separate sections (default)
-            showSeparateReviewResults(config, results, stream, token);
+            config.logger.info(
+                `Model ${modelNames[i]} failed:`,
+                settled.reason
+            );
         }
-    } finally {
-        // Clear session model when models were specified inline or when Always ask is set
-        if (
-            promptModelSpecs.length > 0 ||
-            options.selectChatModelForReview === 'Always ask'
-        ) {
-            config.clearSessionModel();
-        }
+    }
+
+    // Display results based on outputModeWithMultipleModels setting
+    if (
+        options.outputModeWithMultipleModels === 'Merged with attribution' &&
+        results.length > 1
+    ) {
+        showMergedReviewResults(config, results, stream, token);
+    } else {
+        // Separate sections (default)
+        showSeparateReviewResults(config, results, stream, token);
     }
 }
 
@@ -325,15 +319,17 @@ function createFixLinkMarkdown(
  * @param modelId The model ID to look up
  * @param cachedModels Optional cached list of models to avoid repeated API calls
  */
-function getModelDisplayName(
+export function getModelDisplayName(
     modelId: string,
     cachedModels: vscode.LanguageModelChat[]
 ): string {
     if (cachedModels && cachedModels.length > 0) {
         // Model IDs are in format "vendor:id"
-        const [vendor, id] = modelId.includes(':')
-            ? modelId.split(':', 2)
-            : [undefined, modelId];
+        const colonIdx = modelId.indexOf(':');
+        const [vendor, id] =
+            colonIdx >= 0
+                ? [modelId.slice(0, colonIdx), modelId.slice(colonIdx + 1)]
+                : [undefined, modelId];
 
         const matchingModel = cachedModels.find((m) =>
             vendor ? m.vendor === vendor && m.id === id : m.id === id
@@ -345,8 +341,9 @@ function getModelDisplayName(
     }
 
     // Fallback: just return the id part
-    if (modelId.includes(':')) {
-        return modelId.split(':')[1];
+    const colonIdx = modelId.indexOf(':');
+    if (colonIdx >= 0) {
+        return modelId.slice(colonIdx + 1);
     }
     return modelId;
 }
@@ -359,9 +356,9 @@ function getModelDisplayName(
 async function resolveModelSpecs(
     specs: string[],
     logger: Logger,
-    stream: vscode.ChatResponseStream
+    stream: vscode.ChatResponseStream,
+    availableModels: ModelInfo[]
 ): Promise<string[]> {
-    const availableModels = await vscode.lm.selectChatModels();
     if (!availableModels || availableModels.length === 0) {
         logger.info(
             'No chat models available for resolving inline model specs'
@@ -438,13 +435,19 @@ export function resolveOneModelSpec(
     }
 
     // Try exact id match (any vendor)
-    const idMatch = models.find((m) => m.id === spec);
-    if (idMatch) {
-        return { match: toId(idMatch) };
+    const exactIdMatches = models.filter((m) => m.id === spec);
+    if (exactIdMatches.length === 1) {
+        return { match: toId(exactIdMatches[0]) };
+    }
+    if (exactIdMatches.length > 1) {
+        return { ambiguous: exactIdMatches.map(toId) };
     }
 
     // Try substring match on model id — fail-fast if ambiguous
-    const idSubstringMatches = models.filter((m) => m.id.includes(spec));
+    const specLower = spec.toLowerCase();
+    const idSubstringMatches = models.filter((m) =>
+        m.id.toLowerCase().includes(specLower)
+    );
     if (idSubstringMatches.length === 1) {
         return { match: toId(idSubstringMatches[0]) };
     }
@@ -453,7 +456,6 @@ export function resolveOneModelSpec(
     }
 
     // Try substring match on model name — fail-fast if ambiguous
-    const specLower = spec.toLowerCase();
     const nameMatches = models.filter((m) =>
         m.name?.toLowerCase().includes(specLower)
     );
@@ -480,7 +482,9 @@ type Progress = {
 };
 
 /** Creates a shared progress reporter that deduplicates messages across all models */
-function createSharedProgress(stream: vscode.ChatResponseStream): Progress {
+export function createSharedProgress(
+    stream: vscode.ChatResponseStream
+): Progress {
     const reportedMessages = new Set<string>();
     return {
         report: ({ message }: { message: string }) => {
@@ -490,6 +494,56 @@ function createSharedProgress(stream: vscode.ChatResponseStream): Progress {
             }
         },
     };
+}
+
+async function runWithConcurrency<T>(
+    tasks: Array<() => Promise<T>>,
+    maxConcurrency: number
+): Promise<PromiseSettledResult<T>[]> {
+    const settled: PromiseSettledResult<T>[] = new Array(tasks.length);
+    if (tasks.length === 0) {
+        return settled;
+    }
+
+    const concurrency = Math.max(1, Math.min(maxConcurrency, tasks.length));
+    let next = 0;
+
+    const worker = async () => {
+        while (next < tasks.length) {
+            const index = next;
+            next++;
+            try {
+                settled[index] = {
+                    status: 'fulfilled',
+                    value: await tasks[index](),
+                };
+            } catch (reason) {
+                settled[index] = { status: 'rejected', reason };
+            }
+        }
+    };
+
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+    return settled;
+}
+
+function reportErrors(
+    logger: Logger,
+    errors: Error[],
+    stream: vscode.ChatResponseStream
+) {
+    if (errors.length === 0) {
+        return;
+    }
+
+    for (const error of errors) {
+        logger.info('Error: ', error.message, error.stack);
+    }
+
+    const errorString = errors.map((error) => ` - ${error.message}`).join('\n');
+    stream.markdown(
+        `\n${errors.length} error(s) occurred during review:\n${errorString}\n`
+    );
 }
 
 /** Reviews changes with a specific model */
@@ -610,18 +664,7 @@ function showSeparateReviewResults(
         allErrors.push(...result.errors);
     }
 
-    if (allErrors.length > 0) {
-        for (const error of allErrors) {
-            config.logger.info('Error: ', error.message, error.stack);
-        }
-
-        const errorString = allErrors
-            .map((error) => ` - ${error.message}`)
-            .join('\n');
-        throw new Error(
-            `${allErrors.length} error(s) occurred during review:\n${errorString}`
-        );
-    }
+    reportErrors(config.logger, allErrors, stream);
 }
 
 /** Comment with model attribution for merged display */
@@ -728,23 +771,17 @@ function showMergedReviewResults(
             stream.markdown('\nNo changes found.\n');
         }
         // Still report any errors that occurred
-        if (allErrors.length > 0) {
-            for (const error of allErrors) {
-                config.logger.info('Error: ', error.message, error.stack);
-            }
-            const errorString = allErrors
-                .map((error) => ` - ${error.message}`)
-                .join('\n');
-            throw new Error(
-                `${allErrors.length} error(s) occurred during review:\n${errorString}`
-            );
-        }
+        reportErrors(config.logger, allErrors, stream);
         return;
     }
 
     // Use first result to get metadata
     const firstResult = results[0].result;
-    const isTargetCheckedOut = firstResult.request.scope.isTargetCheckedOut;
+    const isTargetCheckedOut = results.every(
+        (r) => r.result.request.scope.isTargetCheckedOut
+    )
+        ? firstResult.request.scope.isTargetCheckedOut
+        : false;
 
     // Display comments grouped by file
     for (const [filePath, comments] of fileComments) {
@@ -775,18 +812,7 @@ function showMergedReviewResults(
     }
 
     // Report any errors that occurred
-    if (allErrors.length > 0) {
-        for (const error of allErrors) {
-            config.logger.info('Error: ', error.message, error.stack);
-        }
-
-        const errorString = allErrors
-            .map((error) => ` - ${error.message}`)
-            .join('\n');
-        throw new Error(
-            `${allErrors.length} error(s) occurred during review:\n${errorString}`
-        );
-    }
+    reportErrors(config.logger, allErrors, stream);
 }
 
 /** Build a comment with model attribution for merged display */
@@ -807,7 +833,9 @@ function buildMergedComment(
 
     // Show which model flagged this issue (if multiple models)
     if (showAttribution) {
-        markdown.appendMarkdown(` | *${comment.model}*`);
+        markdown.appendMarkdown(' | *');
+        markdown.appendText(comment.model);
+        markdown.appendMarkdown('*');
     }
 
     // (debug: prompt type)
