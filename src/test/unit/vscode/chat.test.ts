@@ -252,14 +252,14 @@ describe('Chat multi-model review', () => {
 
             // Both comments target the same file
             expect(grouped.size).toBe(1);
-            const comments = grouped.get('test.ts')!;
+            const comments = grouped.get('test.ts');
             expect(comments).toHaveLength(2);
 
             // Sorted by line number
-            expect(comments[0].line).toBe(10);
-            expect(comments[0].model).toBe('GPT-4');
-            expect(comments[1].line).toBe(20);
-            expect(comments[1].model).toBe('Claude Sonnet');
+            expect(comments?.[0].line).toBe(10);
+            expect(comments?.[0].model).toBe('GPT-4');
+            expect(comments?.[1].line).toBe(20);
+            expect(comments?.[1].model).toBe('Claude Sonnet');
         });
 
         it('should filter out comments below minSeverity', () => {
@@ -291,9 +291,9 @@ describe('Chat multi-model review', () => {
             ];
 
             const grouped = collectAttributedComments(results, 3);
-            const comments = grouped.get('test.ts')!;
+            const comments = grouped.get('test.ts');
             expect(comments).toHaveLength(1);
-            expect(comments[0].comment).toBe('High severity issue');
+            expect(comments?.[0].comment).toBe('High severity issue');
         });
 
         it('should filter out comments with non-positive line numbers', () => {
@@ -325,9 +325,9 @@ describe('Chat multi-model review', () => {
             ];
 
             const grouped = collectAttributedComments(results, 1);
-            const comments = grouped.get('test.ts')!;
+            const comments = grouped.get('test.ts');
             expect(comments).toHaveLength(1);
-            expect(comments[0].comment).toBe('Valid comment');
+            expect(comments?.[0].comment).toBe('Valid comment');
         });
 
         it('should group comments by file and sort by line', () => {
@@ -373,12 +373,12 @@ describe('Chat multi-model review', () => {
             const grouped = collectAttributedComments(results, 1);
             expect(grouped.size).toBe(2);
 
-            const aComments = grouped.get('a.ts')!;
+            const aComments = grouped.get('a.ts');
             expect(aComments).toHaveLength(2);
-            expect(aComments[0].line).toBe(10);
-            expect(aComments[1].line).toBe(30);
+            expect(aComments?.[0].line).toBe(10);
+            expect(aComments?.[1].line).toBe(30);
 
-            const bComments = grouped.get('b.ts')!;
+            const bComments = grouped.get('b.ts');
             expect(bComments).toHaveLength(1);
         });
 
