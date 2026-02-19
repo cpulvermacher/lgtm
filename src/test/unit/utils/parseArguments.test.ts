@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { UncommittedRef } from '@/types/Ref';
 import { Git } from '@/utils/git';
-import { parseArguments } from '@/utils/parseArguments';
+import { extractModelSpecs, parseArguments } from '@/utils/parseArguments';
 
 describe('parseArguments', () => {
     const mockGit = {
@@ -113,5 +113,160 @@ describe('parseArguments', () => {
         await expect(parseArguments(mockGit, 'staged extra')).rejects.toThrow(
             "Expected no argument after 'staged'."
         );
+    });
+
+    describe('inline model specs', () => {
+        it('extracts a single model spec', async () => {
+            const result = await parseArguments(
+                mockGit,
+                'model:gpt-4.1 target base'
+            );
+
+            expect(result).toEqual({
+                target: 'target',
+                base: 'base',
+                modelIds: ['gpt-4.1'],
+            });
+        });
+
+        it('extracts multiple model specs', async () => {
+            const result = await parseArguments(
+                mockGit,
+                'model:gpt-4.1 model:claude-sonnet target base'
+            );
+
+            expect(result).toEqual({
+                target: 'target',
+                base: 'base',
+                modelIds: ['gpt-4.1', 'claude-sonnet'],
+            });
+        });
+
+        it('extracts model specs after refs', async () => {
+            const result = await parseArguments(
+                mockGit,
+                'target model:gpt-4.1 base'
+            );
+
+            expect(result).toEqual({
+                target: 'target',
+                base: 'base',
+                modelIds: ['gpt-4.1'],
+            });
+        });
+
+        it('extracts model specs with vendor prefix', async () => {
+            const result = await parseArguments(
+                mockGit,
+                'model:copilot:gpt-4.1 target'
+            );
+
+            expect(result).toEqual({
+                target: 'target',
+                modelIds: ['copilot:gpt-4.1'],
+            });
+        });
+
+        it('extracts model specs with staged ref', async () => {
+            const result = await parseArguments(
+                mockGit,
+                'model:gpt-4.1 staged'
+            );
+
+            expect(result).toEqual({
+                target: UncommittedRef.Staged,
+                modelIds: ['gpt-4.1'],
+            });
+        });
+
+        it('extracts model specs with no refs', async () => {
+            const result = await parseArguments(
+                mockGit,
+                'model:gpt-4.1 model:claude-sonnet'
+            );
+
+            expect(result).toEqual({
+                modelIds: ['gpt-4.1', 'claude-sonnet'],
+            });
+        });
+
+        it('ignores empty model: prefix', async () => {
+            const result = await parseArguments(mockGit, 'model: target base');
+
+            expect(result).toEqual({ target: 'target', base: 'base' });
+        });
+
+        it('still throws on too many non-model refs', async () => {
+            await expect(
+                parseArguments(mockGit, 'model:gpt-4.1 target base extra')
+            ).rejects.toThrow('Expected at most two refs as arguments.');
+        });
+    });
+});
+
+describe('extractModelSpecs', () => {
+    it('extracts model specs from mixed tokens', () => {
+        const result = extractModelSpecs(
+            'model:gpt-4.1 develop model:claude-sonnet main'
+        );
+
+        expect(result).toEqual({
+            modelIds: ['gpt-4.1', 'claude-sonnet'],
+            remaining: ['develop', 'main'],
+        });
+    });
+
+    it('returns empty modelIds when no model: tokens present', () => {
+        const result = extractModelSpecs('develop main');
+
+        expect(result).toEqual({
+            modelIds: [],
+            remaining: ['develop', 'main'],
+        });
+    });
+
+    it('handles empty string', () => {
+        const result = extractModelSpecs('');
+
+        expect(result).toEqual({
+            modelIds: [],
+            remaining: [],
+        });
+    });
+
+    it('skips model: tokens with no value', () => {
+        const result = extractModelSpecs('model: develop');
+
+        expect(result).toEqual({
+            modelIds: [],
+            remaining: ['develop'],
+        });
+    });
+
+    it('handles vendor:id format in model spec', () => {
+        const result = extractModelSpecs('model:copilot:gpt-4.1');
+
+        expect(result).toEqual({
+            modelIds: ['copilot:gpt-4.1'],
+            remaining: [],
+        });
+    });
+
+    it('matches MODEL: prefix case-insensitively', () => {
+        const result = extractModelSpecs('MODEL:copilot:gpt-4.1 develop');
+
+        expect(result).toEqual({
+            modelIds: ['copilot:gpt-4.1'],
+            remaining: ['develop'],
+        });
+    });
+
+    it('strips trailing punctuation from model specs', () => {
+        const result = extractModelSpecs('model:gpt-4.1, main');
+
+        expect(result).toEqual({
+            modelIds: ['gpt-4.1'],
+            remaining: ['main'],
+        });
     });
 });
