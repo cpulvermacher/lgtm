@@ -52,7 +52,7 @@ Assuming you have staged changes, the agent will start a review using LGTM and t
 ## Limitations
 
 - Chat models listed under "Unsupported Models" can be selected but reviews will fail at runtime.
-- Non-Copilot models (e.g. those added by directly adding an API key) may fail to work.
+- Non-Copilot models (e.g. those added by directly adding an API key) may fail to work. For Claude language models, try the [Claude Model Provider](https://marketplace.visualstudio.com/items?itemName=cpulvermacher.claude-model-provider) extension.
 - Large change sets may trigger chat model rate limits. Please wait before retrying.
 
 ## Data Usage
