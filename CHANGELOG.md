@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.2.2]
+Same as 1.2.1, with some dependency updates.
+
 ## [1.2.1] (pre-release)
 - For multi-root workspaces, ask which root directory to use every time a review is started.
 
