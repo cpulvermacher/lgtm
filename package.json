@@ -279,11 +279,11 @@
         "@biomejs/biome": "2.3.11",
         "@types/node": "22.x",
         "@types/vscode": "^1.104.0",
-        "@vitest/coverage-v8": "^4.0.16",
+        "@vitest/coverage-v8": "^4.0.18",
         "@vscode/vsce": "^3.7.1",
-        "esbuild": "^0.27.2",
+        "esbuild": "^0.27.3",
         "typescript": "^5.9.3",
-        "vitest": "^4.0.16"
+        "vitest": "^4.0.18"
     },
     "dependencies": {
         "fastest-levenshtein": "^1.0.16",
