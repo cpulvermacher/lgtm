@@ -254,8 +254,6 @@ describe('Session model selection logic', () => {
 });
 
 describe('Model quick pick items', () => {
-    const defaultModelId = 'copilot:gpt-4.1';
-
     function fakeModel(
         overrides: Partial<LanguageModelChat> & { id: string; vendor: string }
     ): LanguageModelChat {
@@ -270,69 +268,10 @@ describe('Model quick pick items', () => {
         } as LanguageModelChat;
     }
 
-    it('should flag the current model with isCurrentModel', () => {
-        const models = [
-            fakeModel({ id: 'gpt-4', vendor: 'copilot' }),
-            fakeModel({ id: 'claude-sonnet', vendor: 'copilot' }),
-        ];
-
-        const items = getModelQuickPickItems(
-            models,
-            'copilot:gpt-4',
-            defaultModelId
-        );
-        const gpt4Item = items.find(
-            (item) => item.modelIdWithVendor === 'copilot:gpt-4'
-        );
-
-        expect(gpt4Item?.isCurrentModel).toBe(true);
-    });
-
-    it('should flag the default model with isDefaultModel', () => {
-        const models = [
-            fakeModel({ id: 'gpt-4.1', vendor: 'copilot' }),
-            fakeModel({ id: 'claude-sonnet', vendor: 'copilot' }),
-        ];
-
-        const items = getModelQuickPickItems(
-            models,
-            'copilot:claude-sonnet',
-            defaultModelId
-        );
-        const defaultItem = items.find(
-            (item) => item.modelIdWithVendor === 'copilot:gpt-4.1'
-        );
-
-        expect(defaultItem?.isDefaultModel).toBe(true);
-    });
-
-    it('should place default model at the top of recommended models', () => {
-        const models = [
-            fakeModel({ id: 'claude-sonnet', vendor: 'copilot' }),
-            fakeModel({ id: 'gpt-4.1', vendor: 'copilot' }),
-        ];
-
-        const items = getModelQuickPickItems(
-            models,
-            'copilot:claude-sonnet',
-            defaultModelId
-        );
-
-        // First item should be separator, second should be default model
-        const modelItems = items.filter(
-            (item) => item.modelIdWithVendor !== undefined
-        );
-        expect(modelItems[0].modelIdWithVendor).toBe('copilot:gpt-4.1');
-    });
-
     it('should include vendor and id in description', () => {
         const models = [fakeModel({ id: 'gpt-4', vendor: 'copilot' })];
 
-        const items = getModelQuickPickItems(
-            models,
-            'copilot:gpt-4',
-            defaultModelId
-        );
+        const items = getModelQuickPickItems(models);
         const gpt4Item = items.find(
             (item) => item.modelIdWithVendor === 'copilot:gpt-4'
         );
@@ -349,11 +288,7 @@ describe('Model quick pick items', () => {
             }),
         ];
 
-        const items = getModelQuickPickItems(
-            models,
-            'copilot:other',
-            defaultModelId
-        );
+        const items = getModelQuickPickItems(models);
         const gpt4Item = items.find(
             (item) => item.modelIdWithVendor === 'copilot:gpt-4'
         );
@@ -367,11 +302,7 @@ describe('Model quick pick items', () => {
             fakeModel({ id: 'claude-3.7-sonnet', vendor: 'copilot' }),
         ];
 
-        const items = getModelQuickPickItems(
-            models,
-            'copilot:gpt-4.1',
-            defaultModelId
-        );
+        const items = getModelQuickPickItems(models);
 
         const separators = items.filter((item) => item.kind === -1);
         const separatorLabels = separators.map((s) => s.label);
@@ -385,11 +316,7 @@ describe('Model quick pick items', () => {
             fakeModel({ id: 'omega', vendor: 'acme' }),
         ];
 
-        const items = getModelQuickPickItems(
-            models,
-            'copilot:gpt-4.1',
-            defaultModelId
-        );
+        const items = getModelQuickPickItems(models);
 
         const acmeSeparatorIndex = items.findIndex(
             (item) => item.label === 'Acme Models'
@@ -406,6 +333,6 @@ describe('Model quick pick items', () => {
             .slice(betaSeparatorIndex + 1)
             .filter((item) => item.kind !== -1)
             .map((item) => item.label);
-        expect(betaModels.slice(0, 2)).toEqual(['alpha', 'zeta']);
+        expect(betaModels).toEqual(['alpha', 'zeta']);
     });
 });

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { UncommittedRef } from '@/types/Ref';
-import { defaultModelId, getConfig } from '@/vscode/config';
+import { getConfig } from '@/vscode/config';
 import { ReviewTool } from '@/vscode/ReviewTool';
 import {
     parsePullRequest,
@@ -117,15 +117,17 @@ async function handleSelectChatModel() {
 
     const config = await getConfig();
     const currentModelId = config.getOptions().chatModel;
-    const quickPickItems = getModelQuickPickItems(
-        models,
-        currentModelId,
-        defaultModelId
-    ).map((item) => {
+    const quickPickItems = getModelQuickPickItems(models).map((item) => {
         if (item.kind === vscode.QuickPickItemKind.Separator) return item;
-        const prefix = item.isCurrentModel ? '$(check)' : '\u2003 ';
-        const suffix = item.isDefaultModel ? ' (default)' : '';
-        return { ...item, label: prefix + item.label + suffix };
+
+        const isCurrentModel =
+            item.modelIdWithVendor === currentModelId ||
+            item.id === currentModelId;
+        const prefix = isCurrentModel ? '$(check)' : '\u2003 ';
+        return {
+            ...item,
+            label: prefix + item.label,
+        };
     });
     const selectedQuickPickItem = await vscode.window.showQuickPick(
         quickPickItems,

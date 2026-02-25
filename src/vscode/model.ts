@@ -115,10 +115,9 @@ export function isRecommendedModel(model: vscode.LanguageModelChat): boolean {
 }
 
 export type ModelQuickPickItem = vscode.QuickPickItem & {
+    id?: string;
     modelIdWithVendor?: string; // in format "vendor:id"
     name?: string;
-    isCurrentModel?: boolean;
-    isDefaultModel?: boolean;
     vendor?: string;
 };
 
@@ -128,9 +127,7 @@ export type ModelQuickPickItem = vscode.QuickPickItem & {
  * are responsible for adding any prefix / suffix decoration they need.
  */
 export function getModelQuickPickItems(
-    models: vscode.LanguageModelChat[],
-    currentModel: string, // could be in format "vendor:id" or legacy "id" only
-    defaultModel: string
+    models: vscode.LanguageModelChat[]
 ): ModelQuickPickItem[] {
     const recommendedModels: ModelQuickPickItem[] = [];
     let otherModels: ModelQuickPickItem[] = [];
@@ -138,25 +135,18 @@ export function getModelQuickPickItems(
 
     for (const model of models) {
         const modelIdWithVendor = `${model.vendor}:${model.id}`;
-        const isCurrentModel =
-            modelIdWithVendor === currentModel || model.id === currentModel;
-        const isDefaultModel = modelIdWithVendor === defaultModel;
         const modelName = model.name ?? model.id;
 
         const item: ModelQuickPickItem = {
+            id: model.id,
             label: modelName,
             description: `${model.vendor}:${model.id}`,
             name: modelName,
             modelIdWithVendor,
-            isCurrentModel,
-            isDefaultModel,
             vendor: model.vendor,
         };
 
-        if (isDefaultModel) {
-            // place default model at the top
-            recommendedModels.unshift(item);
-        } else if (isUnSupportedModel(model)) {
+        if (isUnSupportedModel(model)) {
             unsupportedModels.push(item);
         } else if (isRecommendedModel(model)) {
             recommendedModels.push(item);

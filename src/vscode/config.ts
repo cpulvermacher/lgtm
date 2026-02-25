@@ -264,25 +264,15 @@ async function promptForModelSelection(
         return undefined;
     }
 
-    const quickPickItems = getModelQuickPickItems(
-        models,
-        currentModelIds[0] ?? defaultModelId,
-        defaultModelId
-    ).map((item) => {
+    const quickPickItems = getModelQuickPickItems(models).map((item) => {
         if (item.kind === vscode.QuickPickItemKind.Separator) return item;
 
         const isPicked = currentModelIds.some((modelId) => {
             if (!item.modelIdWithVendor) {
                 return false;
             }
-            if (modelId === item.modelIdWithVendor) {
-                return true;
-            }
 
-            const colonIdx = item.modelIdWithVendor.indexOf(':');
-            return colonIdx >= 0
-                ? modelId === item.modelIdWithVendor.slice(colonIdx + 1)
-                : false;
+            return modelId === item.modelIdWithVendor || modelId === item.id;
         });
 
         return { ...item, picked: isPicked };
