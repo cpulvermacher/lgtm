@@ -15,6 +15,7 @@ export type ModelInfo = Pick<
     'vendor' | 'id' | 'name'
 >;
 
+import { correctFilename } from '@/utils/filenames';
 import { extractModelSpecs, parseArguments } from '@/utils/parseArguments';
 import { getConfig } from './config';
 import { FixCommentArgs } from './fix';
@@ -382,10 +383,15 @@ async function resolveModelSpecs(
                 `'${spec}' matches multiple models: ${resolved.ambiguous.join(', ')}`
             );
         } else {
+            const suggestion = suggestClosestModelSpec(spec, availableModels);
             logger.info(
                 `Could not resolve model spec '${spec}'. Available models: ${availableModels.map((m) => `${m.vendor}:${m.id}`).join(', ')}`
             );
-            notFound.push(spec);
+            notFound.push(
+                suggestion
+                    ? `'${spec}' (did you mean '${suggestion}'?)`
+                    : `'${spec}'`
+            );
         }
     }
 
@@ -397,7 +403,7 @@ async function resolveModelSpecs(
     }
     if (notFound.length > 0) {
         stream.markdown(
-            `Model(s) not found: ${notFound.map((s) => `'${s}'`).join(', ')}. Available model IDs can be found via the 'LGTM: Select Chat Model' command.`
+            `Model(s) not found: ${notFound.join(', ')}. Available model IDs can be found via the 'LGTM: Select Chat Model' command.`
         );
         return [];
     }
@@ -467,6 +473,25 @@ export function resolveOneModelSpec(
     }
 
     return {};
+}
+
+/** Suggest closest model id (or vendor:id) for typo recovery. */
+export function suggestClosestModelSpec(
+    spec: string,
+    models: ModelInfo[]
+): string | undefined {
+    if (models.length === 0) {
+        return;
+    }
+
+    const candidates = models.flatMap((m) => [m.id, `${m.vendor}:${m.id}`]);
+    const suggestion = correctFilename(spec, candidates);
+
+    if (!suggestion || suggestion.toLowerCase() === spec.toLowerCase()) {
+        return;
+    }
+
+    return suggestion;
 }
 
 /** Result of a review with model information */

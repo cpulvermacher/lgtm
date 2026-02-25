@@ -30,6 +30,7 @@ import {
     type ModelInfo,
     type ModelReviewResult,
     resolveOneModelSpec,
+    suggestClosestModelSpec,
 } from '@/vscode/chat';
 
 // Store captured stream calls for verification
@@ -632,5 +633,25 @@ describe('resolveOneModelSpec', () => {
         // No id substring match for 'Sonnet', but name matches
         const result = resolveOneModelSpec('Sonnet', models);
         expect(result).toEqual({ match: 'v:abc-123' });
+    });
+});
+
+describe('suggestClosestModelSpec', () => {
+    it('should suggest closest model for a typo', () => {
+        const suggestion = suggestClosestModelSpec('gpt-41', sampleModels);
+        expect(suggestion).toBe('gpt-4.1');
+    });
+
+    it('should prefer vendor:id suggestion when typo includes vendor', () => {
+        const suggestion = suggestClosestModelSpec(
+            'copilot:gpt-41',
+            sampleModels
+        );
+        expect(suggestion).toBe('copilot:gpt-4.1');
+    });
+
+    it('should return undefined when there are no models', () => {
+        const suggestion = suggestClosestModelSpec('gpt-41', []);
+        expect(suggestion).toBeUndefined();
     });
 });
