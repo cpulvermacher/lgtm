@@ -1,6 +1,15 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LanguageModelChat } from 'vscode';
 
 import { getModelQuickPickItems } from '@/vscode/model';
@@ -9,25 +18,67 @@ vi.mock('vscode', () => ({
     QuickPickItemKind: { Separator: -1 },
 }));
 
+function findPackageJsonPath(startDirectory: string): string {
+    let directory = startDirectory;
+
+    while (true) {
+        const candidate = join(directory, 'package.json');
+        if (existsSync(candidate)) {
+            return candidate;
+        }
+
+        const parent = dirname(directory);
+        if (parent === directory) {
+            throw new Error('Could not find package.json');
+        }
+
+        directory = parent;
+    }
+}
+
+describe('findPackageJsonPath', () => {
+    it('should find package.json in a parent directory', () => {
+        const tempRoot = mkdtempSync(join(tmpdir(), 'lgtm-config-test-'));
+        const nested = join(tempRoot, 'a', 'b', 'c');
+
+        try {
+            mkdirSync(nested, { recursive: true });
+            writeFileSync(join(tempRoot, 'package.json'), '{}', 'utf-8');
+
+            expect(findPackageJsonPath(nested)).toBe(join(tempRoot, 'package.json'));
+        } finally {
+            rmSync(tempRoot, { recursive: true, force: true });
+        }
+    });
+
+    it('should throw when package.json cannot be found up to filesystem root', () => {
+        if (existsSync('/package.json')) {
+            expect(findPackageJsonPath('/')).toBe('/package.json');
+            return;
+        }
+
+        expect(() => findPackageJsonPath('/')).toThrow(
+            'Could not find package.json'
+        );
+    });
+});
+
 /**
  * Tests for the new configuration options and session model selection functionality.
  */
 
 describe('Config options', () => {
-    const packageJson = JSON.parse(
-        readFileSync(join(process.cwd(), 'package.json'), 'utf-8')
-    ) as {
-        contributes?: {
-            configuration?: {
-                properties?: Record<
-                    string,
-                    { enum?: string[]; default?: string }
-                >;
-            };
-        };
-    };
+    let properties: Record<string, {
+        enum?: string[];
+        default?: string;
+    }>;
 
-    const properties = packageJson.contributes?.configuration?.properties ?? {};
+    beforeAll(() => {
+        const testDirectory = dirname(fileURLToPath(import.meta.url));
+        const packageJsonPath = findPackageJsonPath(testDirectory);
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+        properties = packageJson.contributes?.configuration?.properties ?? {};
+    });
 
     describe('selectChatModelForReview option', () => {
         it('should declare expected enum values and default in package contributions', () => {
