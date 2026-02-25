@@ -94,8 +94,7 @@ async function handleChat(
         return;
     }
 
-    const modelIds = selectedModelIds;
-    const modelNames = modelIds.map((id) =>
+    const modelNames = selectedModelIds.map((id) =>
         getModelDisplayName(id, availableModels)
     );
     const modelNamesDisplay =
@@ -135,7 +134,7 @@ async function handleChat(
     const sharedProgress = createSharedProgress(stream);
 
     // Run reviews for all selected models with bounded concurrency
-    const reviewTasks = modelIds.map(
+    const reviewTasks = selectedModelIds.map(
         (modelId, index) => () =>
             reviewWithModel(
                 config,
