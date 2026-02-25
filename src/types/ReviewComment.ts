@@ -6,4 +6,5 @@ export type ReviewComment = {
     line: number; // first affected line number (1-based, to-side of diff)
     severity: number; // in 0..5
     promptType?: PromptType; // which prompt was used to generate this comment (if overridden)
+    model?: string; // model name that flagged this issue
 };

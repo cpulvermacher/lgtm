@@ -2,18 +2,11 @@ import * as vscode from 'vscode';
 
 import { reviewDiff } from '@/review/review';
 import { Config } from '@/types/Config';
-import { FileComments } from '@/types/FileComments';
 import { Logger } from '@/types/Logger';
 import { UncommittedRef } from '@/types/Ref';
 import { ReviewComment } from '@/types/ReviewComment';
 import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
-
-/** Minimal model shape used by resolveOneModelSpec, allowing test doubles */
-export type ModelInfo = Pick<
-    vscode.LanguageModelChat,
-    'vendor' | 'id' | 'name'
->;
 
 import { correctFilename } from '@/utils/filenames';
 import { extractModelSpecs, parseArguments } from '@/utils/parseArguments';
@@ -21,6 +14,12 @@ import { getConfig } from './config';
 import { FixCommentArgs } from './fix';
 import { pickRef, pickRefs, promptToCheckout } from './ui';
 import { toCommandLink, toUri } from './uri';
+
+/** Minimal model shape used by resolveOneModelSpec, allowing test doubles */
+export type ModelInfo = Pick<
+    vscode.LanguageModelChat,
+    'vendor' | 'id' | 'name'
+>;
 
 export function registerChatParticipant(context: vscode.ExtensionContext) {
     const chatParticipant = vscode.chat.createChatParticipant(
@@ -251,9 +250,9 @@ async function getReviewRequest(
 
 function buildComment(
     config: Config,
-    file: FileComments,
     comment: ReviewComment,
-    isTargetCheckedOut: boolean
+    isTargetCheckedOut: boolean,
+    showAttribution = false
 ) {
     const isValidLineNumber = isTargetCheckedOut && comment.line > 0;
 
@@ -267,8 +266,15 @@ function buildComment(
     markdown.appendMarkdown('\n - ');
 
     // Add line number anchor
-    const uri = toUri(config, file.target, comment.line);
+    const uri = toUri(config, comment.file, comment.line);
     markdown.appendMarkdown(`[Line ${comment.line}](${uri.toString()})`);
+
+    // Show which model flagged this issue (if multiple models)
+    if (showAttribution && comment.model) {
+        markdown.appendMarkdown(' | *');
+        markdown.appendText(comment.model);
+        markdown.appendMarkdown('*');
+    }
 
     // (debug: prompt type)
     if (comment.promptType) {
@@ -280,7 +286,7 @@ function buildComment(
     if (isValidLineNumber) {
         markdown.appendMarkdown(
             ` | ${createFixLinkMarkdown(
-                file.target,
+                comment.file,
                 comment.line,
                 comment.comment
             )}`
@@ -665,7 +671,11 @@ function showSeparateReviewResults(
 
             for (const comment of filteredFileComments) {
                 stream.markdown(
-                    buildComment(config, file, comment, isTargetCheckedOut)
+                    buildComment(
+                        config,
+                        comment,
+                        isTargetCheckedOut
+                    )
                 );
                 noProblemsFound = false;
             }
@@ -691,16 +701,6 @@ function showSeparateReviewResults(
     reportErrors(config.logger, allErrors, stream);
 }
 
-/** Comment with model attribution for merged display */
-export type AttributedComment = {
-    file: string;
-    line: number;
-    comment: string;
-    severity: number;
-    model: string; // model name that flagged this issue
-    promptType?: string;
-};
-
 /**
  * Collect all review comments from multiple models into a flat list with
  * model attribution.  Comments below `minSeverity` or with non-positive
@@ -710,8 +710,8 @@ export type AttributedComment = {
 export function collectAttributedComments(
     results: ModelReviewResult[],
     minSeverity: number
-): Map<string, AttributedComment[]> {
-    const all: AttributedComment[] = [];
+): Map<string, ReviewComment[]> {
+    const all: ReviewComment[] = [];
 
     for (const { modelName, result } of results) {
         for (const file of result.fileComments) {
@@ -720,19 +720,15 @@ export function collectAttributedComments(
                     continue;
                 }
                 all.push({
-                    file: comment.file,
-                    line: comment.line,
-                    comment: comment.comment,
-                    severity: comment.severity,
+                    ...comment,
                     model: modelName,
-                    promptType: comment.promptType,
                 });
             }
         }
     }
 
     // Group by file
-    const grouped = new Map<string, AttributedComment[]>();
+    const grouped = new Map<string, ReviewComment[]>();
     for (const c of all) {
         const existing = grouped.get(c.file);
         if (existing) {
@@ -799,13 +795,10 @@ function showMergedReviewResults(
         return;
     }
 
-    // Use first result to get metadata
-    const firstResult = results[0].result;
+    // Determine if all reviewed scopes had the target checked out
     const isTargetCheckedOut = results.every(
         (r) => r.result.request.scope.isTargetCheckedOut
-    )
-        ? firstResult.request.scope.isTargetCheckedOut
-        : false;
+    );
 
     // Display comments grouped by file
     for (const [filePath, comments] of fileComments) {
@@ -817,7 +810,7 @@ function showMergedReviewResults(
 
         for (const comment of comments) {
             stream.markdown(
-                buildMergedComment(
+                buildComment(
                     config,
                     comment,
                     isTargetCheckedOut,
@@ -837,55 +830,4 @@ function showMergedReviewResults(
 
     // Report any errors that occurred
     reportErrors(config.logger, allErrors, stream);
-}
-
-/** Build a comment with model attribution for merged display */
-function buildMergedComment(
-    config: Config,
-    comment: AttributedComment,
-    isTargetCheckedOut: boolean,
-    showAttribution: boolean
-) {
-    const isValidLineNumber = isTargetCheckedOut && comment.line > 0;
-
-    const markdown = new vscode.MarkdownString();
-    markdown.appendMarkdown('\n - ');
-
-    // Add line number anchor
-    const uri = toUri(config, comment.file, comment.line);
-    markdown.appendMarkdown(`[Line ${comment.line}](${uri.toString()})`);
-
-    // Show which model flagged this issue (if multiple models)
-    if (showAttribution) {
-        markdown.appendMarkdown(' | *');
-        markdown.appendText(comment.model);
-        markdown.appendMarkdown('*');
-    }
-
-    // (debug: prompt type)
-    if (comment.promptType) {
-        markdown.appendMarkdown(` | **${comment.promptType}**`);
-    }
-    markdown.appendText(` | Severity ${comment.severity}/5`);
-
-    // Add fix button if location is valid
-    if (isValidLineNumber) {
-        markdown.appendMarkdown(
-            ` | ${createFixLinkMarkdown(
-                comment.file,
-                comment.line,
-                comment.comment
-            )}`
-        );
-        markdown.isTrusted = { enabledCommands: ['lgtm.fixComment'] };
-    }
-
-    // Properly quote multi-line comments
-    const quotedComment = comment.comment
-        .split('\n')
-        .map((line) => `> ${line}`)
-        .join('\n');
-    markdown.appendMarkdown(`\n${quotedComment}`);
-
-    return markdown;
 }
