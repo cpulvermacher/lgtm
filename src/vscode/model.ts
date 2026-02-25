@@ -131,6 +131,7 @@ export function getModelQuickPickItems(
 ): ModelQuickPickItem[] {
     const recommendedModels: ModelQuickPickItem[] = [];
     let otherModels: ModelQuickPickItem[] = [];
+    const otherModelsByVendor: Record<string, ModelQuickPickItem[]> = {};
     const unsupportedModels: ModelQuickPickItem[] = [];
 
     for (const model of models) {
@@ -151,7 +152,11 @@ export function getModelQuickPickItems(
         } else if (isRecommendedModel(model)) {
             recommendedModels.push(item);
         } else {
-            otherModels.push(item);
+            const vendor = item.vendor || '';
+            if (!otherModelsByVendor[vendor]) {
+                otherModelsByVendor[vendor] = [];
+            }
+            otherModelsByVendor[vendor].push(item);
         }
     }
 
@@ -161,23 +166,13 @@ export function getModelQuickPickItems(
             kind: vscode.QuickPickItemKind.Separator,
         });
     }
-    if (otherModels.length > 0) {
-        const vendorMap: Record<string, ModelQuickPickItem[]> = {};
-        for (const item of otherModels) {
-            if (!vendorMap[item.vendor || '']) {
-                vendorMap[item.vendor || ''] = [];
-            }
-            vendorMap[item.vendor || ''].push(item);
-        }
-
-        for (const items of Object.values(vendorMap)) {
-            items.sort((a, b) => a.label.localeCompare(b.label));
-        }
-
+    if (Object.keys(otherModelsByVendor).length > 0) {
         otherModels = [
-            ...Object.entries(vendorMap)
+            ...Object.entries(otherModelsByVendor)
                 .sort(([vendorA], [vendorB]) => vendorA.localeCompare(vendorB))
                 .flatMap(([vendor, items]) => {
+                    items.sort((a, b) => a.label.localeCompare(b.label));
+
                     const name = vendor
                         ? vendor.charAt(0).toUpperCase() + vendor.slice(1)
                         : 'Other';
