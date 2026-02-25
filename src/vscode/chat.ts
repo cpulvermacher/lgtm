@@ -671,11 +671,7 @@ function showSeparateReviewResults(
 
             for (const comment of filteredFileComments) {
                 stream.markdown(
-                    buildComment(
-                        config,
-                        comment,
-                        isTargetCheckedOut
-                    )
+                    buildComment(config, comment, isTargetCheckedOut)
                 );
                 noProblemsFound = false;
             }

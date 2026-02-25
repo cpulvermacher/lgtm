@@ -85,7 +85,9 @@ describe('findPackageJsonPath', () => {
             mkdirSync(nested, { recursive: true });
             writeFileSync(join(tempRoot, 'package.json'), '{}', 'utf-8');
 
-            expect(findPackageJsonPath(nested)).toBe(join(tempRoot, 'package.json'));
+            expect(findPackageJsonPath(nested)).toBe(
+                join(tempRoot, 'package.json')
+            );
         } finally {
             rmSync(tempRoot, { recursive: true, force: true });
         }
@@ -108,10 +110,13 @@ describe('findPackageJsonPath', () => {
  */
 
 describe('Config options', () => {
-    let properties: Record<string, {
-        enum?: string[];
-        default?: string;
-    }>;
+    let properties: Record<
+        string,
+        {
+            enum?: string[];
+            default?: string;
+        }
+    >;
 
     beforeAll(() => {
         const testDirectory = dirname(fileURLToPath(import.meta.url));
@@ -219,7 +224,10 @@ describe('Session model selection logic', () => {
 
             vscodeMocks.selectChatModels.mockResolvedValue([
                 fakeSelectableModel({ id: 'gpt-4', vendor: 'copilot' }),
-                fakeSelectableModel({ id: 'claude-3.7-sonnet', vendor: 'copilot' }),
+                fakeSelectableModel({
+                    id: 'claude-3.7-sonnet',
+                    vendor: 'copilot',
+                }),
             ]);
             vscodeMocks.showQuickPick.mockImplementation(async (items) => {
                 const separator = items.find(
