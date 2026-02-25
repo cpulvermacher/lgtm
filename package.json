@@ -114,7 +114,7 @@
                 "commands": [
                     {
                         "name": "review",
-                        "description": "Review changes between two branches, commits, or tags.  You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively."
+                        "description": "Review changes. Specify branches, commits, or tags, e.g. `/review develop main`. Use `model:id` to select models inline. Leave empty for interactive."
                     }
                 ]
             }
@@ -217,7 +217,33 @@
                 "lgtm.chatModel": {
                     "type": "string",
                     "default": "copilot:gpt-4.1",
-                    "markdownDescription": "Chat model to use for generating review comments. Use the 'LGTM: Select Chat Model' command to choose from available models. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits."
+                    "markdownDescription": "Default chat model to use for generating review comments. Use the 'LGTM: Select Chat Model' command to choose from available models. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits."
+                },
+                "lgtm.selectChatModelForReview": {
+                    "type": "string",
+                    "enum": [
+                        "Use default",
+                        "Always ask"
+                    ],
+                    "default": "Use default",
+                    "enumDescriptions": [
+                        "Use the model defined in 'Chat Model'",
+                        "Always ask which model to use when starting a new prompt (supports multi-selection)"
+                    ],
+                    "markdownDescription": "Controls which chat model to use when starting a new review prompt. When set to 'Always ask', you can select multiple models to compare their results."
+                },
+                "lgtm.outputModeWithMultipleModels": {
+                    "type": "string",
+                    "enum": [
+                        "Separate sections",
+                        "Merged with attribution"
+                    ],
+                    "default": "Separate sections",
+                    "enumDescriptions": [
+                        "Show each model's results in separate sections with headings",
+                        "Merge results from all models, showing which model(s) flagged each issue"
+                    ],
+                    "markdownDescription": "Controls how results are displayed when using multiple models for review."
                 },
                 "lgtm.mergeFileReviewRequests": {
                     "type": "boolean",
