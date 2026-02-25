@@ -12,10 +12,50 @@ import { fileURLToPath } from 'node:url';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LanguageModelChat } from 'vscode';
 
+import { getConfig } from '@/vscode/config';
 import { getModelQuickPickItems } from '@/vscode/model';
+
+vi.stubGlobal('__GIT_VERSION__', undefined);
+
+const vscodeMocks = vi.hoisted(() => ({
+    showQuickPick: vi.fn(),
+    showWorkspaceFolderPick: vi.fn(),
+    showWarningMessage: vi.fn(),
+    showErrorMessage: vi.fn(),
+    selectChatModels: vi.fn(),
+    executeCommand: vi.fn(),
+    getConfiguration: vi.fn(),
+    onDidChangeConfiguration: vi.fn(),
+}));
+
+const gitMocks = vi.hoisted(() => ({
+    createGit: vi.fn(),
+}));
 
 vi.mock('vscode', () => ({
     QuickPickItemKind: { Separator: -1 },
+    ConfigurationTarget: { Global: 1 },
+    workspace: {
+        workspaceFolders: [{ uri: { fsPath: '/workspace' } }],
+        getConfiguration: vscodeMocks.getConfiguration,
+        onDidChangeConfiguration: vscodeMocks.onDidChangeConfiguration,
+    },
+    window: {
+        showQuickPick: vscodeMocks.showQuickPick,
+        showWorkspaceFolderPick: vscodeMocks.showWorkspaceFolderPick,
+        showWarningMessage: vscodeMocks.showWarningMessage,
+        showErrorMessage: vscodeMocks.showErrorMessage,
+    },
+    lm: {
+        selectChatModels: vscodeMocks.selectChatModels,
+    },
+    commands: {
+        executeCommand: vscodeMocks.executeCommand,
+    },
+}));
+
+vi.mock('@/utils/git', () => ({
+    createGit: gitMocks.createGit,
 }));
 
 function findPackageJsonPath(startDirectory: string): string {
@@ -104,8 +144,36 @@ describe('Session model selection logic', () => {
     let sessionModelIds: string[];
     const defaultModel = 'copilot:gpt-4.1';
 
+    function fakeSelectableModel(
+        overrides: Partial<LanguageModelChat> & { id: string; vendor: string }
+    ): LanguageModelChat {
+        return {
+            name: overrides.name ?? overrides.id,
+            family: overrides.family ?? overrides.id,
+            version: overrides.version ?? '1',
+            maxInputTokens: overrides.maxInputTokens ?? 128000,
+            countTokens: overrides.countTokens ?? (async () => 0),
+            sendRequest: overrides.sendRequest ?? (async () => ({}) as never),
+            ...overrides,
+        } as LanguageModelChat;
+    }
+
     beforeEach(() => {
         sessionModelIds = [];
+        vscodeMocks.showQuickPick.mockReset();
+        vscodeMocks.selectChatModels.mockReset();
+        vscodeMocks.showWarningMessage.mockReset();
+        vscodeMocks.getConfiguration.mockReset();
+        vscodeMocks.getConfiguration.mockReturnValue({
+            get: <T>(_key: string, fallback?: T) => fallback,
+            update: vi.fn(),
+        });
+        vscodeMocks.onDidChangeConfiguration.mockReturnValue({
+            dispose: vi.fn(),
+        });
+        gitMocks.createGit.mockResolvedValue({
+            getGitRoot: () => '/workspace',
+        });
     });
 
     describe('getSessionModelIds', () => {
@@ -160,146 +228,99 @@ describe('Session model selection logic', () => {
 
     describe('promptForSessionModel', () => {
         it('should return true when models are selected', async () => {
-            const mockShowQuickPick = vi
-                .fn()
-                .mockResolvedValue([
-                    { label: 'GPT-4', modelIdWithVendor: 'copilot:gpt-4' },
-                ]);
+            const config = await getConfig({ refreshWorkspace: true });
+            config.clearSessionModel();
 
-            const promptForSessionModel = async () => {
-                const selected = await mockShowQuickPick();
-                if (selected && selected.length > 0) {
-                    sessionModelIds = selected
-                        .filter(
-                            (item: { modelIdWithVendor?: string }) =>
-                                item.modelIdWithVendor !== undefined
-                        )
-                        .map(
-                            (item: { modelIdWithVendor: string }) =>
-                                item.modelIdWithVendor
-                        );
-                    return true;
-                }
-                return false;
-            };
+            vscodeMocks.selectChatModels.mockResolvedValue([
+                fakeSelectableModel({ id: 'gpt-4', vendor: 'copilot' }),
+            ]);
+            vscodeMocks.showQuickPick.mockImplementation(async (items) =>
+                items.filter(
+                    (item: { modelIdWithVendor?: string }) =>
+                        item.modelIdWithVendor === 'copilot:gpt-4'
+                )
+            );
 
-            const result = await promptForSessionModel();
+            const result = await config.promptForSessionModel();
             expect(result).toBe(true);
-            expect(sessionModelIds).toEqual(['copilot:gpt-4']);
+            expect(config.getSessionModelIds()).toEqual(['copilot:gpt-4']);
         });
 
         it('should return false when selection is cancelled', async () => {
-            const mockShowQuickPick = vi.fn().mockResolvedValue(undefined);
+            const config = await getConfig({ refreshWorkspace: true });
+            config.clearSessionModel();
 
-            const promptForSessionModel = async () => {
-                const selected = await mockShowQuickPick();
-                if (selected && selected.length > 0) {
-                    sessionModelIds = selected
-                        .filter(
-                            (item: { modelIdWithVendor?: string }) =>
-                                item.modelIdWithVendor !== undefined
-                        )
-                        .map(
-                            (item: { modelIdWithVendor: string }) =>
-                                item.modelIdWithVendor
-                        );
-                    return true;
-                }
-                return false;
-            };
+            vscodeMocks.selectChatModels.mockResolvedValue([
+                fakeSelectableModel({ id: 'gpt-4', vendor: 'copilot' }),
+            ]);
+            vscodeMocks.showQuickPick.mockResolvedValue(undefined);
 
-            const result = await promptForSessionModel();
+            const result = await config.promptForSessionModel();
             expect(result).toBe(false);
-            expect(sessionModelIds).toEqual([]);
+            expect(config.getSessionModelIds()).toEqual([defaultModel]);
         });
 
         it('should return false when no models are selected', async () => {
-            const mockShowQuickPick = vi.fn().mockResolvedValue([]);
+            const config = await getConfig({ refreshWorkspace: true });
+            config.clearSessionModel();
 
-            const promptForSessionModel = async () => {
-                const selected = await mockShowQuickPick();
-                if (selected && selected.length > 0) {
-                    sessionModelIds = selected
-                        .filter(
-                            (item: { modelIdWithVendor?: string }) =>
-                                item.modelIdWithVendor !== undefined
-                        )
-                        .map(
-                            (item: { modelIdWithVendor: string }) =>
-                                item.modelIdWithVendor
-                        );
-                    return true;
-                }
-                return false;
-            };
+            vscodeMocks.selectChatModels.mockResolvedValue([
+                fakeSelectableModel({ id: 'gpt-4', vendor: 'copilot' }),
+            ]);
+            vscodeMocks.showQuickPick.mockResolvedValue([]);
 
-            const result = await promptForSessionModel();
+            const result = await config.promptForSessionModel();
             expect(result).toBe(false);
         });
 
         it('should filter out separator items from selection', async () => {
-            const mockShowQuickPick = vi.fn().mockResolvedValue([
-                { label: 'Recommended Models', kind: -1 }, // separator
-                { label: 'GPT-4', modelIdWithVendor: 'copilot:gpt-4' },
+            const config = await getConfig({ refreshWorkspace: true });
+            config.clearSessionModel();
+
+            vscodeMocks.selectChatModels.mockResolvedValue([
+                fakeSelectableModel({ id: 'gpt-4', vendor: 'copilot' }),
+                fakeSelectableModel({ id: 'claude-3.7-sonnet', vendor: 'copilot' }),
             ]);
+            vscodeMocks.showQuickPick.mockImplementation(async (items) => {
+                const separator = items.find(
+                    (item: { kind?: number }) => item.kind === -1
+                );
+                const model = items.find(
+                    (item: { modelIdWithVendor?: string }) =>
+                        item.modelIdWithVendor === 'copilot:gpt-4'
+                );
+                return [separator, model].filter(Boolean);
+            });
 
-            const promptForSessionModel = async () => {
-                const selected = await mockShowQuickPick();
-                if (selected && selected.length > 0) {
-                    sessionModelIds = selected
-                        .filter(
-                            (item: { modelIdWithVendor?: string }) =>
-                                item.modelIdWithVendor !== undefined
-                        )
-                        .map(
-                            (item: { modelIdWithVendor: string }) =>
-                                item.modelIdWithVendor
-                        );
-                    return sessionModelIds.length > 0;
-                }
-                return false;
-            };
-
-            await promptForSessionModel();
-            // Should only contain the actual model, not the separator
-            expect(sessionModelIds).toEqual(['copilot:gpt-4']);
+            const selectedModelIds = await config.promptForSessionModelIds();
+            expect(selectedModelIds).toEqual(['copilot:gpt-4']);
         });
 
         it('should allow selecting multiple models', async () => {
-            const mockShowQuickPick = vi.fn().mockResolvedValue([
-                { label: 'GPT-4', modelIdWithVendor: 'copilot:gpt-4' },
-                {
-                    label: 'Claude Sonnet',
-                    modelIdWithVendor: 'copilot:claude-sonnet',
-                },
-                {
-                    label: 'Gemini Pro',
-                    modelIdWithVendor: 'copilot:gemini-pro',
-                },
+            const config = await getConfig({ refreshWorkspace: true });
+            config.clearSessionModel();
+
+            vscodeMocks.selectChatModels.mockResolvedValue([
+                fakeSelectableModel({ id: 'gpt-4', vendor: 'copilot' }),
+                fakeSelectableModel({ id: 'claude-sonnet', vendor: 'copilot' }),
+                fakeSelectableModel({ id: 'gemini-pro', vendor: 'copilot' }),
             ]);
+            vscodeMocks.showQuickPick.mockImplementation(async (items) =>
+                items.filter((item: { modelIdWithVendor?: string }) =>
+                    [
+                        'copilot:gpt-4',
+                        'copilot:claude-sonnet',
+                        'copilot:gemini-pro',
+                    ].includes(item.modelIdWithVendor ?? '')
+                )
+            );
 
-            const promptForSessionModel = async () => {
-                const selected = await mockShowQuickPick();
-                if (selected && selected.length > 0) {
-                    sessionModelIds = selected
-                        .filter(
-                            (item: { modelIdWithVendor?: string }) =>
-                                item.modelIdWithVendor !== undefined
-                        )
-                        .map(
-                            (item: { modelIdWithVendor: string }) =>
-                                item.modelIdWithVendor
-                        );
-                    return true;
-                }
-                return false;
-            };
-
-            await promptForSessionModel();
-            expect(sessionModelIds).toHaveLength(3);
-            expect(sessionModelIds).toContain('copilot:gpt-4');
-            expect(sessionModelIds).toContain('copilot:claude-sonnet');
-            expect(sessionModelIds).toContain('copilot:gemini-pro');
+            const result = await config.promptForSessionModel();
+            expect(result).toBe(true);
+            expect(config.getSessionModelIds()).toHaveLength(3);
+            expect(config.getSessionModelIds()).toContain('copilot:gpt-4');
+            expect(config.getSessionModelIds()).toContain('copilot:claude-sonnet');
+            expect(config.getSessionModelIds()).toContain('copilot:gemini-pro');
         });
     });
 });
