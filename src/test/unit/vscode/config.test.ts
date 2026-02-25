@@ -141,9 +141,6 @@ describe('Config options', () => {
 });
 
 describe('Session model selection logic', () => {
-    let sessionModelIds: string[];
-    const defaultModel = 'copilot:gpt-4.1';
-
     function fakeSelectableModel(
         overrides: Partial<LanguageModelChat> & { id: string; vendor: string }
     ): LanguageModelChat {
@@ -159,7 +156,6 @@ describe('Session model selection logic', () => {
     }
 
     beforeEach(() => {
-        sessionModelIds = [];
         vscodeMocks.showQuickPick.mockReset();
         vscodeMocks.selectChatModels.mockReset();
         vscodeMocks.showWarningMessage.mockReset();
@@ -176,60 +172,9 @@ describe('Session model selection logic', () => {
         });
     });
 
-    describe('getSessionModelIds', () => {
-        it('should return default model when no session model is set', () => {
-            const getSessionModelIds = () =>
-                sessionModelIds.length > 0 ? sessionModelIds : [defaultModel];
-
-            expect(getSessionModelIds()).toEqual(['copilot:gpt-4.1']);
-        });
-
-        it('should return session model IDs when set', () => {
-            sessionModelIds = ['copilot:claude-sonnet'];
-            const getSessionModelIds = () =>
-                sessionModelIds.length > 0 ? sessionModelIds : [defaultModel];
-
-            expect(getSessionModelIds()).toEqual(['copilot:claude-sonnet']);
-        });
-
-        it('should return multiple session model IDs when multiple are selected', () => {
-            sessionModelIds = [
-                'copilot:gpt-4',
-                'copilot:claude-sonnet',
-                'copilot:gemini-pro',
-            ];
-            const getSessionModelIds = () =>
-                sessionModelIds.length > 0 ? sessionModelIds : [defaultModel];
-
-            expect(getSessionModelIds()).toHaveLength(3);
-            expect(getSessionModelIds()).toContain('copilot:gpt-4');
-            expect(getSessionModelIds()).toContain('copilot:claude-sonnet');
-            expect(getSessionModelIds()).toContain('copilot:gemini-pro');
-        });
-    });
-
-    describe('clearSessionModel', () => {
-        it('should clear session models and revert to default', () => {
-            sessionModelIds = ['copilot:claude-sonnet'];
-            const getSessionModelIds = () =>
-                sessionModelIds.length > 0 ? sessionModelIds : [defaultModel];
-            const clearSessionModel = () => {
-                sessionModelIds = [];
-            };
-
-            // Before clear
-            expect(getSessionModelIds()).toEqual(['copilot:claude-sonnet']);
-
-            // After clear
-            clearSessionModel();
-            expect(getSessionModelIds()).toEqual([defaultModel]);
-        });
-    });
-
     describe('promptForSessionModel', () => {
         it('should return true when models are selected', async () => {
             const config = await getConfig({ refreshWorkspace: true });
-            config.clearSessionModel();
 
             vscodeMocks.selectChatModels.mockResolvedValue([
                 fakeSelectableModel({ id: 'gpt-4', vendor: 'copilot' }),
@@ -243,12 +188,10 @@ describe('Session model selection logic', () => {
 
             const result = await config.promptForSessionModel();
             expect(result).toBe(true);
-            expect(config.getSessionModelIds()).toEqual(['copilot:gpt-4']);
         });
 
         it('should return false when selection is cancelled', async () => {
             const config = await getConfig({ refreshWorkspace: true });
-            config.clearSessionModel();
 
             vscodeMocks.selectChatModels.mockResolvedValue([
                 fakeSelectableModel({ id: 'gpt-4', vendor: 'copilot' }),
@@ -257,12 +200,10 @@ describe('Session model selection logic', () => {
 
             const result = await config.promptForSessionModel();
             expect(result).toBe(false);
-            expect(config.getSessionModelIds()).toEqual([defaultModel]);
         });
 
         it('should return false when no models are selected', async () => {
             const config = await getConfig({ refreshWorkspace: true });
-            config.clearSessionModel();
 
             vscodeMocks.selectChatModels.mockResolvedValue([
                 fakeSelectableModel({ id: 'gpt-4', vendor: 'copilot' }),
@@ -275,7 +216,6 @@ describe('Session model selection logic', () => {
 
         it('should filter out separator items from selection', async () => {
             const config = await getConfig({ refreshWorkspace: true });
-            config.clearSessionModel();
 
             vscodeMocks.selectChatModels.mockResolvedValue([
                 fakeSelectableModel({ id: 'gpt-4', vendor: 'copilot' }),
@@ -298,7 +238,6 @@ describe('Session model selection logic', () => {
 
         it('should allow selecting multiple models', async () => {
             const config = await getConfig({ refreshWorkspace: true });
-            config.clearSessionModel();
 
             vscodeMocks.selectChatModels.mockResolvedValue([
                 fakeSelectableModel({ id: 'gpt-4', vendor: 'copilot' }),
@@ -317,10 +256,6 @@ describe('Session model selection logic', () => {
 
             const result = await config.promptForSessionModel();
             expect(result).toBe(true);
-            expect(config.getSessionModelIds()).toHaveLength(3);
-            expect(config.getSessionModelIds()).toContain('copilot:gpt-4');
-            expect(config.getSessionModelIds()).toContain('copilot:claude-sonnet');
-            expect(config.getSessionModelIds()).toContain('copilot:gemini-pro');
         });
     });
 });

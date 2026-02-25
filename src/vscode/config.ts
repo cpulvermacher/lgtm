@@ -77,18 +77,6 @@ async function initializeConfig(): Promise<Config> {
             const selectedModelIds = await config.promptForSessionModelIds();
             return (selectedModelIds?.length ?? 0) > 0;
         },
-        setSessionModelIds: (ids: string[]) => {
-            sessionModelIds = ids;
-            logger.debug(`Session models set to: ${ids.join(', ')}`);
-        },
-        clearSessionModel: () => {
-            sessionModelIds = [];
-            logger.debug('Session models cleared');
-        },
-        getSessionModelIds: () =>
-            sessionModelIds.length > 0
-                ? sessionModelIds
-                : [getOptions().chatModel],
         getOptions,
         setOption,
         logger,
