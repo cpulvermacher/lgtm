@@ -431,14 +431,17 @@ export function resolveOneModelSpec(
     models: ModelInfo[]
 ): ModelSpecResult {
     const toId = (m: ModelInfo) => `${m.vendor}:${m.id}`;
+    const specLower = spec.toLowerCase();
 
     // If spec contains ':', try exact vendor:id match
     if (spec.includes(':')) {
         const colonIdx = spec.indexOf(':');
-        const vendor = spec.slice(0, colonIdx);
-        const id = spec.slice(colonIdx + 1);
+        const vendor = spec.slice(0, colonIdx).toLowerCase();
+        const id = spec.slice(colonIdx + 1).toLowerCase();
         const exactMatch = models.find(
-            (m) => m.vendor === vendor && m.id === id
+            (m) =>
+                m.vendor.toLowerCase() === vendor &&
+                m.id.toLowerCase() === id
         );
         if (exactMatch) {
             return { match: toId(exactMatch) };
@@ -446,7 +449,7 @@ export function resolveOneModelSpec(
     }
 
     // Try exact id match (any vendor)
-    const exactIdMatches = models.filter((m) => m.id === spec);
+    const exactIdMatches = models.filter((m) => m.id.toLowerCase() === specLower);
     if (exactIdMatches.length === 1) {
         return { match: toId(exactIdMatches[0]) };
     }
@@ -455,7 +458,6 @@ export function resolveOneModelSpec(
     }
 
     // Try substring match on model id — fail-fast if ambiguous
-    const specLower = spec.toLowerCase();
     const idSubstringMatches = models.filter((m) =>
         m.id.toLowerCase().includes(specLower)
     );
@@ -492,7 +494,7 @@ export function suggestClosestModelSpec(
     const candidates = models.flatMap((m) => [m.id, `${m.vendor}:${m.id}`]);
     const suggestion = correctFilename(spec, candidates);
 
-    if (!suggestion || suggestion.toLowerCase() === spec.toLowerCase()) {
+    if (!suggestion) {
         return;
     }
 

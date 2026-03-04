@@ -493,8 +493,18 @@ describe('resolveOneModelSpec', () => {
         expect(result).toEqual({ match: 'copilot:gpt-4.1' });
     });
 
+    it('should resolve exact vendor:id match case-insensitively', () => {
+        const result = resolveOneModelSpec('COPILOT:GPT-4.1', sampleModels);
+        expect(result).toEqual({ match: 'copilot:gpt-4.1' });
+    });
+
     it('should resolve exact id match (any vendor)', () => {
         const result = resolveOneModelSpec('claude-sonnet-4', sampleModels);
+        expect(result).toEqual({ match: 'copilot:claude-sonnet-4' });
+    });
+
+    it('should resolve exact id match case-insensitively', () => {
+        const result = resolveOneModelSpec('CLAUDE-SONNET-4', sampleModels);
         expect(result).toEqual({ match: 'copilot:claude-sonnet-4' });
     });
 
@@ -653,5 +663,13 @@ describe('suggestClosestModelSpec', () => {
     it('should return undefined when there are no models', () => {
         const suggestion = suggestClosestModelSpec('gpt-41', []);
         expect(suggestion).toBeUndefined();
+    });
+
+    it('should return case-only suggestion when found', () => {
+        const suggestion = suggestClosestModelSpec(
+            'COPILOT:GPT-4.1',
+            sampleModels
+        );
+        expect(suggestion).toBe('copilot:gpt-4.1');
     });
 });
