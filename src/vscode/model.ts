@@ -52,7 +52,9 @@ function parseToSelector(modelIdWithVendor: string) {
         return { vendor: undefined, id: modelIdWithVendor };
     }
 
-    const [vendor, id] = modelIdWithVendor.split(':', 2);
+    const colonIdx = modelIdWithVendor.indexOf(':');
+    const vendor = modelIdWithVendor.slice(0, colonIdx);
+    const id = modelIdWithVendor.slice(colonIdx + 1);
     return { vendor, id };
 }
 
@@ -110,6 +112,89 @@ export function isRecommendedModel(model: vscode.LanguageModelChat): boolean {
     }
 
     return false;
+}
+
+export type ModelQuickPickItem = vscode.QuickPickItem & {
+    id?: string;
+    modelIdWithVendor?: string; // in format "vendor:id"
+    name?: string;
+    vendor?: string;
+};
+
+/**
+ * Build a categorized list of model quick pick items (Recommended / Other / Unsupported)
+ * with separator headers.  Labels contain only the plain model name — callers
+ * are responsible for adding any prefix / suffix decoration they need.
+ */
+export function getModelQuickPickItems(
+    models: vscode.LanguageModelChat[]
+): ModelQuickPickItem[] {
+    const recommendedModels: ModelQuickPickItem[] = [];
+    let otherModels: ModelQuickPickItem[] = [];
+    const otherModelsByVendor: Record<string, ModelQuickPickItem[]> = {};
+    const unsupportedModels: ModelQuickPickItem[] = [];
+
+    for (const model of models) {
+        const modelIdWithVendor = `${model.vendor}:${model.id}`;
+        const modelName = model.name ?? model.id;
+
+        const item: ModelQuickPickItem = {
+            id: model.id,
+            label: modelName,
+            description: `${model.vendor}:${model.id}`,
+            name: modelName,
+            modelIdWithVendor,
+            vendor: model.vendor,
+        };
+
+        if (isUnSupportedModel(model)) {
+            unsupportedModels.push(item);
+        } else if (isRecommendedModel(model)) {
+            recommendedModels.push(item);
+        } else {
+            const vendor = item.vendor || '';
+            if (!otherModelsByVendor[vendor]) {
+                otherModelsByVendor[vendor] = [];
+            }
+            otherModelsByVendor[vendor].push(item);
+        }
+    }
+
+    if (recommendedModels.length > 0) {
+        recommendedModels.unshift({
+            label: 'Recommended Models',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
+    if (Object.keys(otherModelsByVendor).length > 0) {
+        otherModels = [
+            ...Object.entries(otherModelsByVendor)
+                .sort(([vendorA], [vendorB]) => vendorA.localeCompare(vendorB))
+                .flatMap(([vendor, items]) => {
+                    items.sort((a, b) => a.label.localeCompare(b.label));
+
+                    const name = vendor
+                        ? vendor.charAt(0).toUpperCase() + vendor.slice(1)
+                        : 'Other';
+
+                    return [
+                        {
+                            label: `${name} Models`,
+                            kind: vscode.QuickPickItemKind.Separator,
+                        },
+                        ...items,
+                    ];
+                }),
+        ];
+    }
+    if (unsupportedModels.length > 0) {
+        unsupportedModels.unshift({
+            label: 'Unsupported Models',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
+
+    return [...recommendedModels, ...otherModels, ...unsupportedModels];
 }
 
 export function isUnSupportedModel(model: vscode.LanguageModelChat): boolean {
