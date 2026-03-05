@@ -440,8 +440,7 @@ export function resolveOneModelSpec(
         const id = spec.slice(colonIdx + 1).toLowerCase();
         const exactMatch = models.find(
             (m) =>
-                m.vendor.toLowerCase() === vendor &&
-                m.id.toLowerCase() === id
+                m.vendor.toLowerCase() === vendor && m.id.toLowerCase() === id
         );
         if (exactMatch) {
             return { match: toId(exactMatch) };
@@ -449,7 +448,9 @@ export function resolveOneModelSpec(
     }
 
     // Try exact id match (any vendor)
-    const exactIdMatches = models.filter((m) => m.id.toLowerCase() === specLower);
+    const exactIdMatches = models.filter(
+        (m) => m.id.toLowerCase() === specLower
+    );
     if (exactIdMatches.length === 1) {
         return { match: toId(exactIdMatches[0]) };
     }
