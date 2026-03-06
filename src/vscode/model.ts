@@ -211,6 +211,9 @@ export function isUnSupportedModel(model: vscode.LanguageModelChat): boolean {
     } else if (model.vendor === 'anthropic') {
         // all fail with {"type":"invalid_request_error","message":"system: text content blocks must be non-empty"}
         return true;
+    } else if (model.vendor === 'claude-code') {
+        // all succeed with an empty response
+        return true;
     }
 
     // no data about other vendors/models yet, assume they work
