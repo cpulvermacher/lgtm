@@ -40,13 +40,6 @@ async function handleChat(
     token: vscode.CancellationToken
 ): Promise<void> {
     if (chatRequest.command !== 'review') {
-        if (['branch', 'commit'].includes(chatRequest.command ?? '')) {
-            //TODO temporary, clean this up in ~Mar 2026
-            stream.markdown(
-                '/branch and /commit have been removed, please use /review instead.'
-            );
-            return;
-        }
         stream.markdown(
             'Please use the /review command:\n' +
                 ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively. Use `/review staged` or `/review unstaged` to review uncommitted changes. Use `model:modelId` to specify models inline, e.g. `/review model:gpt-4.1 develop main`.'
