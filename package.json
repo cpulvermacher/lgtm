@@ -245,11 +245,6 @@
                     ],
                     "markdownDescription": "Controls how results are displayed when using multiple models for review."
                 },
-                "lgtm.mergeFileReviewRequests": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Review changes for multiple files in one request. This improves the model's understanding of the context of individual changes and speeds up reviews. Disabling this will lose these advantages, but can be useful for a very detailed line-by-line review."
-                },
                 "lgtm.maxInputTokensFraction": {
                     "type": "number",
                     "default": 0.95,

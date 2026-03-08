@@ -186,10 +186,6 @@ function getOptions(): Options {
         'outputModeWithMultipleModels',
         'Separate sections'
     );
-    const mergeFileReviewRequests = config.get<boolean>(
-        'mergeFileReviewRequests',
-        true
-    );
     let maxInputTokensFraction = config.get<number>(
         'maxInputTokensFraction',
         0.95
@@ -221,7 +217,6 @@ function getOptions(): Options {
         chatModel,
         selectChatModelForReview,
         outputModeWithMultipleModels,
-        mergeFileReviewRequests,
         maxInputTokensFraction,
         maxConcurrentModelRequests,
         comparePromptTypes,

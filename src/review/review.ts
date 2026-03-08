@@ -98,7 +98,7 @@ async function aggregateFileDiffs(
         config.logger.debug(`Diff for ${file.file}:`, diff);
 
         // if merging is off, create a new request for each file
-        if (modelRequests.length === 0 || !options.mergeFileReviewRequests) {
+        if (modelRequests.length === 0) {
             const modelRequest = new ModelRequest(
                 model,
                 options,

@@ -31,7 +31,6 @@ export type Options = {
     chatModel: string;
     selectChatModelForReview: ChatModelOnNewPromptType;
     outputModeWithMultipleModels: ReviewFlowType;
-    mergeFileReviewRequests: boolean;
     maxInputTokensFraction: number;
     maxConcurrentModelRequests: number;
     comparePromptTypes?: string;

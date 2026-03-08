@@ -153,7 +153,6 @@ function createMockConfig() {
                 excludeGlobs: [] as string[],
                 enableDebugOutput: false,
                 chatModel: 'test-model',
-                mergeFileReviewRequests: true,
                 maxInputTokensFraction: 0.8,
             }) as Options,
         logger,

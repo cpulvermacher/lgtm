@@ -32,7 +32,6 @@ function createMockConfig(saveOutputToFile = false) {
             minSeverity: 3,
             excludeGlobs: [] as string[],
             enableDebugOutput: false,
-            mergeFileReviewRequests: true,
             maxConcurrentModelRequests: 1,
             saveOutputToFile,
         })),
@@ -186,7 +185,7 @@ describe('reviewDiff', () => {
         expect(parseResponse).toHaveBeenCalledWith('model response');
     });
 
-    it('merges file review requests if enabled', async () => {
+    it('merges file review requests', async () => {
         vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
         vi.mocked(parseResponse).mockReturnValue(mockComments);
 
@@ -203,39 +202,6 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toHaveLength(0);
         expect(progress.report).toHaveBeenCalledTimes(3);
-    });
-
-    it('does not merge file review requests if disabled', async () => {
-        vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
-        vi.mocked(parseResponse).mockReturnValue(mockComments);
-        vi.mocked(config.getOptions).mockReturnValue({
-            customPrompt: 'custom prompt',
-            minSeverity: 3,
-            excludeGlobs: [] as string[],
-            enableDebugOutput: false,
-            chatModel: 'gpt-4.1',
-            selectChatModelForReview: 'Use default',
-            outputModeWithMultipleModels: 'Separate sections',
-            mergeFileReviewRequests: false,
-            maxInputTokensFraction: 0.95,
-            maxConcurrentModelRequests: 1,
-            saveOutputToFile: false,
-            autoCheckoutTarget: 'always',
-        });
-
-        const result = await reviewDiff(
-            config,
-            { scope },
-            progress,
-            cancellationToken
-        );
-
-        expect(modelRequest.addDiff).toHaveBeenCalledTimes(2);
-        expect(modelRequest.sendRequest).toHaveBeenCalledTimes(2);
-        expect(result.request.scope).toBe(scope);
-        expect(result.fileComments).toHaveLength(1);
-        expect(result.errors).toHaveLength(0);
-        expect(progress.report).toHaveBeenCalledTimes(4);
     });
 
     it('corrects file names if there is a mismatch', async () => {
