@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.3.1]
+Includs changes from 1.3.0, plus
+- update simple-git dependency.
+- add --end-of-options to all git calls to decrease risk of argument injection via maliciously named refs.
+
 ## [1.3.0] (pre-release)
 - Add `Lgtm: Select Chat Model For Review` setting to pick a specific or multiple chat models before starting a review. When selecting more than one model, the output can be controlled using the `Lgtm: Output Mode With Multiple Models` setting.
 - Allow choosing a particular model by starting a review with `/review model:id`. (e.g. `model:copilot:gpt-4.1`)
