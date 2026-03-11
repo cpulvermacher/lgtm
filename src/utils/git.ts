@@ -19,7 +19,11 @@ export async function createGit(workspaceRoot: string): Promise<Git> {
     return new Git(git, gitRoot);
 }
 
-/** Handles all git-related operations in the current repository */
+/** Handles all git-related operations in the current repository
+ *
+ * Note: for all simple-git calls, pass arguments as an array (not string)
+ *       and add -- or --end-of-options before any user-controlled input
+ */
 export class Git {
     /** Should not be called directly, use createGit() instead. */
     constructor(
@@ -155,6 +159,7 @@ export class Git {
         const rootCommits = await this.git.raw([
             'rev-list',
             '--max-parents=0',
+            '--end-of-options',
             commitRef,
         ]);
         const hashes = rootCommits.trim().split(/\s+/);
@@ -447,7 +452,7 @@ export class Git {
     ): Promise<RefList> {
         const logOptions = [`--max-count=${maxCount}`];
         if (beforeRef) {
-            logOptions.push(`${beforeRef}^`);
+            logOptions.push('--end-of-options', `${beforeRef}^`);
         }
         const commits = await this.git.log(logOptions);
 
@@ -508,6 +513,7 @@ export class Git {
                     this.git.raw([
                         'rev-list',
                         '--count',
+                        '--end-of-options',
                         `${ref}..${targetRef}`,
                     ]),
                     timeout(),
@@ -549,7 +555,11 @@ export class Git {
         const [, , branchName] = remoteBranchMatch;
 
         // Check if local branch exists
-        const branches = await this.git.branch(['--list', branchName]);
+        const branches = await this.git.branch([
+            '--list',
+            '--end-of-options',
+            branchName,
+        ]);
         if (!branches.all.includes(branchName)) {
             return undefined;
         }
@@ -567,7 +577,7 @@ export class Git {
 
     /** checkout the given ref (possibly detached) */
     async checkout(ref: string) {
-        await this.git.checkout(ref);
+        await this.git.checkout(['--end-of-options', ref]);
     }
 }
 

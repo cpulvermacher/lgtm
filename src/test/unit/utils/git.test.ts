@@ -899,11 +899,13 @@ line3`;
             expect(mockSimpleGit.raw).toHaveBeenCalledWith([
                 'rev-list',
                 '--count',
+                '--end-of-options',
                 'abc1..targetRef',
             ]);
             expect(mockSimpleGit.raw).toHaveBeenCalledWith([
                 'rev-list',
                 '--count',
+                '--end-of-options',
                 'abc2..targetRef',
             ]);
             expect(result[0].description).toBe('abc2 (2 commits behind)');
@@ -1135,6 +1137,7 @@ line3`;
 
             expect(mockSimpleGit.log).toHaveBeenCalledWith([
                 '--max-count=2',
+                '--end-of-options',
                 'beforeRef^',
             ]);
             expect(result.map((ref) => ref.ref)).toEqual(['hash1', 'hash2']);
@@ -1205,11 +1208,13 @@ line3`;
             expect(mockSimpleGit.raw).toHaveBeenCalledWith([
                 'rev-list',
                 '--count',
+                '--end-of-options',
                 'ref1..before',
             ]);
             expect(mockSimpleGit.raw).toHaveBeenCalledWith([
                 'rev-list',
                 '--count',
+                '--end-of-options',
                 'ref2..before',
             ]);
 
@@ -1222,7 +1227,7 @@ line3`;
             vi.mocked(mockSimpleGit.raw).mockImplementation(((
                 args: string[]
             ) => {
-                if (args[2] === 'ref2..before') {
+                if (args[3] === 'ref2..before') {
                     return Promise.resolve('8');
                 }
                 throw new Error();
@@ -1300,6 +1305,7 @@ line3`;
 
             expect(mockSimpleGit.branch).toHaveBeenCalledWith([
                 '--list',
+                '--end-of-options',
                 'feature-branch',
             ]);
             expect(result).toBe('feature-branch');
@@ -1319,6 +1325,7 @@ line3`;
 
             expect(mockSimpleGit.branch).toHaveBeenCalledWith([
                 '--list',
+                '--end-of-options',
                 'feature-branch',
             ]);
             expect(result).toBe('feature-branch');
@@ -1379,9 +1386,10 @@ line3`;
 
             await git.checkout('feature-branch');
 
-            expect(mockSimpleGit.checkout).toHaveBeenCalledWith(
-                'feature-branch'
-            );
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
+                '--end-of-options',
+                'feature-branch',
+            ]);
         });
 
         it('calls git checkout with commit hash', async () => {
@@ -1389,7 +1397,10 @@ line3`;
 
             await git.checkout('abc123def456');
 
-            expect(mockSimpleGit.checkout).toHaveBeenCalledWith('abc123def456');
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
+                '--end-of-options',
+                'abc123def456',
+            ]);
         });
     });
 });
