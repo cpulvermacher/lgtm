@@ -431,15 +431,27 @@ export class Git {
         beforeRef: string | undefined,
         maxCount: number
     ): Promise<RefList> {
-        const tagOptions = ['--sort=-creatordate'];
+        const tagOptions = [
+            'tag',
+            '--format=%(refname:short)\t%(contents:subject)',
+            '--sort=-creatordate',
+        ];
         if (beforeRef) {
             tagOptions.push(`--no-contains=${beforeRef}`);
         }
-        const tags = await this.git.tags(tagOptions);
+        const output = await this.git.raw(tagOptions);
 
-        return tags.all.slice(0, maxCount).map((tag) => ({
-            ref: tag,
-        }));
+        return output
+            .split('\n')
+            .filter(Boolean)
+            .slice(0, maxCount)
+            .map((line) => {
+                const tabIndex = line.indexOf('\t');
+                const name = line.substring(0, tabIndex);
+                const description =
+                    line.substring(tabIndex + 1).trim() || undefined;
+                return { ref: name, description };
+            });
     }
 
     /** returns up to `maxCount` commit refs.

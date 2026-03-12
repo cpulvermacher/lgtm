@@ -5,7 +5,6 @@ import simpleGit, {
     LogResult,
     SimpleGit,
     type StatusResult,
-    TagResult,
 } from 'simple-git';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -1039,56 +1038,66 @@ line3`;
     });
 
     describe('getTagList', () => {
-        it('returns list of tags', async () => {
-            vi.mocked(mockSimpleGit.tags).mockResolvedValue({
-                all: ['tag1', 'tag2'],
-            } as TagResult);
+        it('returns list of tags with descriptions', async () => {
+            vi.mocked(mockSimpleGit.raw).mockResolvedValue(
+                'tag1\tFirst release\ntag2\tSecond release\n'
+            );
 
             const result = await git.getTagList(undefined, 2);
 
-            expect(mockSimpleGit.tags).toHaveBeenCalledWith([
+            expect(mockSimpleGit.raw).toHaveBeenCalledWith([
+                'tag',
+                '--format=%(refname:short)\t%(contents:subject)',
                 '--sort=-creatordate',
             ]);
             expect(result.map((ref) => ref.ref)).toEqual(['tag1', 'tag2']);
             expect(result.map((ref) => ref.description)).toEqual([
-                undefined,
+                'First release',
+                'Second release',
+            ]);
+        });
+
+        it('returns undefined description for lightweight tags', async () => {
+            vi.mocked(mockSimpleGit.raw).mockResolvedValue(
+                'tag1\tAnnotated tag\ntag2\t\n'
+            );
+
+            const result = await git.getTagList(undefined, 2);
+
+            expect(result.map((ref) => ref.ref)).toEqual(['tag1', 'tag2']);
+            expect(result.map((ref) => ref.description)).toEqual([
+                'Annotated tag',
                 undefined,
             ]);
         });
 
         it('returns list of tags before beforeRef', async () => {
-            vi.mocked(mockSimpleGit.tags).mockResolvedValue({
-                all: ['tag1', 'tag2'],
-            } as TagResult);
+            vi.mocked(mockSimpleGit.raw).mockResolvedValue('tag1\t\ntag2\t\n');
 
             const result = await git.getTagList('beforeRef', 2);
 
-            expect(mockSimpleGit.tags).toHaveBeenCalledWith([
+            expect(mockSimpleGit.raw).toHaveBeenCalledWith([
+                'tag',
+                '--format=%(refname:short)\t%(contents:subject)',
                 '--sort=-creatordate',
                 '--no-contains=beforeRef',
             ]);
             expect(result.map((ref) => ref.ref)).toEqual(['tag1', 'tag2']);
-            expect(result.map((ref) => ref.description)).toEqual([
-                undefined,
-                undefined,
-            ]);
         });
 
         it('limits results to maxCount', async () => {
-            vi.mocked(mockSimpleGit.tags).mockResolvedValue({
-                all: ['tag1', 'tag2'],
-            } as TagResult);
+            vi.mocked(mockSimpleGit.raw).mockResolvedValue(
+                'tag1\tFirst\ntag2\tSecond\n'
+            );
 
             const result = await git.getTagList(undefined, 1);
 
             expect(result.map((ref) => ref.ref)).toEqual(['tag1']);
-            expect(result.map((ref) => ref.description)).toEqual([undefined]);
+            expect(result.map((ref) => ref.description)).toEqual(['First']);
         });
 
         it('handles empty list', async () => {
-            vi.mocked(mockSimpleGit.tags).mockResolvedValue({
-                all: [],
-            } as unknown as TagResult);
+            vi.mocked(mockSimpleGit.raw).mockResolvedValue('');
 
             const result = await git.getTagList(undefined, 2);
 
