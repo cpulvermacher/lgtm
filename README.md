@@ -4,7 +4,7 @@
 [![Status](https://flat.badgen.net/github/checks/cpulvermacher/lgtm)](https://github.com/cpulvermacher/lgtm/actions/workflows/node.js.yml)
 [![License](https://flat.badgen.net/github/license/cpulvermacher/lgtm)](./LICENSE)
 
-Use GitHub Copilot Chat to review source code changes in Git, and catch bugs, areas for improvement, and other issues before merging.
+Use GitHub Copilot Chat to review pull requests or source code changes in Git, and catch bugs, areas for improvement, and other issues before merging.
 Open the command palette and select `LGTM: Start Code Review...` to select what to review.
 
 ![Demo](./images/demo.gif)
