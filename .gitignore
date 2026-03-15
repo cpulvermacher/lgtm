@@ -5,6 +5,7 @@ coverage
 .vscode-test/
 *.vsix
 .lgtm-debug/
+tsconfig.tsbuildinfo
 
 images/*
 !images/icon.png
