@@ -19,7 +19,8 @@
         "bracketSameLine": false,
         "bracketSpacing": true,
         "expand": "auto",
-        "useEditorconfig": true
+        "useEditorconfig": true,
+        "includes": ["**", "!package.json"]
     },
     "linter": {
         "enabled": true,
@@ -33,13 +34,7 @@
                 "noImplicitAnyLet": "off"
             }
         },
-        "includes": [
-            "**",
-            "!.vscode-test",
-            "!out",
-            "!dist",
-            "!coverage"
-        ]
+        "includes": ["**", "!.vscode-test", "!out", "!dist", "!coverage"]
     },
     "javascript": {
         "formatter": {
@@ -64,3 +59,4 @@
         }
     }
 }
+
