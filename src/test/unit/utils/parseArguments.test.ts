@@ -324,4 +324,13 @@ describe('extractContextSpecs', () => {
             remaining: ['develop', 'main'],
         });
     });
+
+    it('skips context: tokens with no value', () => {
+        const result = extractContextSpecs('context: develop');
+
+        expect(result).toEqual({
+            contextFilesOverride: undefined,
+            remaining: ['develop'],
+        });
+    });
 });

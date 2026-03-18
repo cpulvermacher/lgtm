@@ -1,7 +1,7 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CancellationToken } from 'vscode';
 
 import { parseResponse } from '@/review/comment';
@@ -84,6 +84,7 @@ vi.mock('@/utils/saveToFile', () => ({
 describe('reviewDiff', () => {
     let config: Config;
     let git: Git;
+    const tempDirs: string[] = [];
 
     const progress = {
         report: vi.fn(),
@@ -122,6 +123,13 @@ describe('reviewDiff', () => {
         modelRequestCtorArgs.length = 0;
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
+    });
+
+    afterEach(() => {
+        for (const dir of tempDirs) {
+            rmSync(dir, { recursive: true, force: true });
+        }
+        tempDirs.length = 0;
     });
 
     it('should return a review result', async () => {
@@ -373,6 +381,7 @@ describe('reviewDiff', () => {
 
     it('loads configured context files and passes them to model requests', async () => {
         const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-review-'));
+        tempDirs.push(workspaceRoot);
         writeFileSync(join(workspaceRoot, 'AGENTS.md'), 'Project rules');
         config.workspaceRoot = workspaceRoot;
 
@@ -388,6 +397,7 @@ describe('reviewDiff', () => {
 
     it('respects an explicit empty context override', async () => {
         const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-review-'));
+        tempDirs.push(workspaceRoot);
         writeFileSync(join(workspaceRoot, 'AGENTS.md'), 'Project rules');
         config.workspaceRoot = workspaceRoot;
 
