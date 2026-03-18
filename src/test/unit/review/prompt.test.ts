@@ -64,7 +64,9 @@ describe('createReviewPrompt', () => {
             contextFiles
         );
 
-        expect(prompt).toContain('Here is relevant context for this codebase:');
+        expect(prompt).toContain(
+            'Here is project-wide documentation and context for the codebase where the diff applies:'
+        );
         expect(prompt).toContain('<context_ctx_file_AGENTS_x002e_md>');
         expect(prompt).toContain('Follow the repo conventions.');
         expect(prompt).toContain(

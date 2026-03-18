@@ -65,7 +65,7 @@ export function renderContextFiles(contextFiles: ReviewContextFile[]): string {
         .join('\n\n');
 
     return `
-Here is relevant context for this codebase:
+Here is project-wide documentation and context for the codebase where the diff applies:
 ${renderedFiles}`;
 }
 
