@@ -1,4 +1,4 @@
-import { readFile, realpath } from 'node:fs/promises';
+import { access, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 
 import type { ReviewContextFile } from '@/types/ReviewContextFile';
@@ -24,6 +24,13 @@ export async function loadReviewContextFiles(
             logger.debug(
                 `Skipping context file outside workspace: "${trimmedPath}"`
             );
+            continue;
+        }
+
+        try {
+            await access(absolutePath);
+        } catch {
+            logger.debug(`Skipping missing context file: "${trimmedPath}"`);
             continue;
         }
 

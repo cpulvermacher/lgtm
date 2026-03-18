@@ -78,8 +78,8 @@ describe('loadReviewContextFiles', () => {
         expect(logger.debug).toHaveBeenCalledWith(
             'Skipping empty context file: "README.md"'
         );
-        expect(logger.info).toHaveBeenCalledWith(
-            expect.stringContaining('Failed to load context file "missing.md"')
+        expect(logger.debug).toHaveBeenCalledWith(
+            'Skipping missing context file: "missing.md"'
         );
         expect(logger.debug).toHaveBeenCalledWith(
             'Skipping context file outside workspace: "../outside.md"'
