@@ -1,10 +1,10 @@
 import {
-  mkdirSync,
-  mkdtempSync,
-  readlinkSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
+    mkdirSync,
+    mkdtempSync,
+    readlinkSync,
+    rmSync,
+    symlinkSync,
+    writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
