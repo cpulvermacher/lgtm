@@ -116,7 +116,9 @@ async function getWorkspaceConfig(): Promise<{
         git = await createGit(workspaceRoot);
     } catch (error) {
         const message =
-            error instanceof Error ? '\n\n```\n' + error.message + '\n```' : '';
+            error instanceof Error
+                ? `\n\n\`\`\`\n${error.message}\n\`\`\``
+                : '';
         throw new Error(
             'Error opening Git repository. Please open a folder containing a Git repository using `File -> Open Folder` and make sure Git is installed.' +
                 message

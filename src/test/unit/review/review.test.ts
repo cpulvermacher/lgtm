@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CancellationToken } from 'vscode';
 import { parseResponse } from '@/review/comment';
 import { ModelRequest } from '@/review/ModelRequest';
 import { formatGatheringFilesMessage, reviewDiff } from '@/review/review';
@@ -13,6 +11,8 @@ import { saveToFile } from '@/utils/saveToFile';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CancellationToken } from 'vscode';
 
 function createMockConfig(saveOutputToFile = false) {
     const git = {

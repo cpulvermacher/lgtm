@@ -109,7 +109,7 @@ describe('parseResponse', () => {
     });
 
     it('handles extra bits around JSON', () => {
-        const wrappedJson = '```json\n' + responseJsonString + '\n```';
+        const wrappedJson = `\`\`\`json\n${responseJsonString}\n\`\`\``;
 
         const result = parseResponse(wrappedJson);
 
@@ -117,7 +117,7 @@ describe('parseResponse', () => {
     });
 
     it('handles extra bits around JSON with reasoning tag', () => {
-        const wrappedJson = '```json\n' + responseJsonString + '\n```';
+        const wrappedJson = `\`\`\`json\n${responseJsonString}\n\`\`\``;
         const response = `<code_review_process>[]</code_review_process>\n${wrappedJson}`;
 
         const result = parseResponse(response);
