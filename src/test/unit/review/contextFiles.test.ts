@@ -28,7 +28,10 @@ describe('loadReviewContextFiles', () => {
     } as Logger;
 
     afterEach(() => {
+        vi.doUnmock('node:fs/promises');
+        vi.restoreAllMocks();
         vi.clearAllMocks();
+        vi.resetModules();
         for (const dir of tempDirs) {
             rmSync(dir, { recursive: true, force: true });
         }
@@ -114,6 +117,78 @@ describe('loadReviewContextFiles', () => {
         );
         expect(logger.debug).toHaveBeenCalledWith(
             'Skipping context file outside workspace: "linked-secret.md"'
+        );
+    });
+
+    it('treats the workspace root path as outside the workspace', async () => {
+        const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-context-'));
+        tempDirs.push(workspaceRoot);
+
+        vi.mocked(getConfig).mockResolvedValue({
+            workspaceRoot,
+            logger,
+        } as never);
+
+        const result = await loadReviewContextFiles(['.']);
+
+        expect(result).toEqual([]);
+        expect(logger.debug).toHaveBeenCalledWith(
+            'Skipping context file outside workspace: "."'
+        );
+    });
+
+    it('logs read failures when a configured path resolves to a directory', async () => {
+        const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-context-'));
+        tempDirs.push(workspaceRoot);
+        mkdirSync(join(workspaceRoot, 'docs'));
+
+        vi.mocked(getConfig).mockResolvedValue({
+            workspaceRoot,
+            logger,
+        } as never);
+
+        const result = await loadReviewContextFiles(['docs']);
+
+        expect(result).toEqual([]);
+        expect(logger.info).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(logger.info).mock.calls[0]?.[0]).toMatch(
+            /^Failed to load context file "docs": /
+        );
+    });
+
+    it('stringifies non-Error failures when reading context files', async () => {
+        const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-context-'));
+        tempDirs.push(workspaceRoot);
+        writeFileSync(join(workspaceRoot, 'README.md'), 'Repo guidance');
+
+        const getConfigMock = vi.fn().mockResolvedValue({
+            workspaceRoot,
+            logger,
+        });
+
+        vi.resetModules();
+        vi.doMock('@/vscode/config', () => ({
+            getConfig: getConfigMock,
+        }));
+        vi.doMock('node:fs/promises', async () => {
+            const actual = await vi.importActual<typeof import('node:fs/promises')>(
+                'node:fs/promises'
+            );
+
+            return {
+                ...actual,
+                readFile: vi.fn().mockRejectedValue('boom'),
+            };
+        });
+
+        const { loadReviewContextFiles: loadReviewContextFilesWithMockedFs } =
+            await import('@/review/contextFiles');
+
+        const result = await loadReviewContextFilesWithMockedFs(['README.md']);
+
+        expect(result).toEqual([]);
+        expect(logger.info).toHaveBeenCalledWith(
+            'Failed to load context file "README.md": boom'
         );
     });
 });
