@@ -1,14 +1,13 @@
 import * as vscode from 'vscode';
 
-import { Logger } from '@/types/Logger';
 import { Model } from '@/types/Model';
 import { ModelError } from '@/types/ModelError';
+import { getConfig } from '@/vscode/config';
 
 /** Get given chat model (asks for permissions the first time) */
-export async function getChatModel(
-    modelId: string,
-    logger: Logger
-): Promise<Model> {
+export async function getChatModel(modelId: string): Promise<Model> {
+    const { logger } = await getConfig();
+
     if (logger.isDebugEnabled()) {
         const allModels = await vscode.lm.selectChatModels();
         logger.debug(

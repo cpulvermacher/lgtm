@@ -61,7 +61,6 @@ async function handleChat(
         // Resolve inline model specs against available models
         const resolvedModelIds = await resolveModelSpecs(
             promptModelSpecs,
-            config.logger,
             stream,
             availableModels
         );
@@ -357,14 +356,10 @@ export function getModelDisplayName(
  */
 async function resolveModelSpecs(
     specs: string[],
-    logger: Logger,
     stream: vscode.ChatResponseStream,
     availableModels: ModelInfo[]
 ): Promise<string[]> {
     if (!availableModels || availableModels.length === 0) {
-        logger.info(
-            'No chat models available for resolving inline model specs'
-        );
         stream.markdown('No chat models available. Review cancelled.');
         return [];
     }
@@ -377,17 +372,11 @@ async function resolveModelSpecs(
         if (resolved.match) {
             resolvedIds.add(resolved.match);
         } else if (resolved.ambiguous) {
-            logger.info(
-                `Ambiguous model spec '${spec}' matched multiple models: ${resolved.ambiguous.join(', ')}`
-            );
             ambiguous.push(
                 `'${spec}' matches multiple models: ${resolved.ambiguous.join(', ')}`
             );
         } else {
             const suggestion = suggestClosestModelSpec(spec, availableModels);
-            logger.info(
-                `Could not resolve model spec '${spec}'. Available models: ${availableModels.map((m) => `${m.vendor}:${m.id}`).join(', ')}`
-            );
             notFound.push(
                 suggestion
                     ? `'${spec}' (did you mean '${suggestion}'?)`

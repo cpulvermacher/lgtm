@@ -14,6 +14,11 @@ import { ModelError } from '@/types/ModelError';
 import { ReviewScope } from '@/types/ReviewRequest';
 import type { Git } from '@/utils/git';
 import { saveToFile } from '@/utils/saveToFile';
+import { getConfig } from '@/vscode/config';
+
+vi.mock('@/vscode/config', () => ({
+    getConfig: vi.fn(),
+}));
 
 function createMockConfig(saveOutputToFile = false) {
     const git = {
@@ -135,6 +140,7 @@ describe('reviewDiff', () => {
         ({ config, git } = createMockConfig());
         capturedContextFiles = undefined;
         attachTempWorkspaceRoot(config, tempDirs);
+        vi.mocked(getConfig).mockResolvedValue(config);
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
     });
@@ -360,6 +366,7 @@ describe('reviewDiff', () => {
     it('saves review result to file when saveOutputToFile is enabled', async () => {
         const { config, git } = createMockConfig(true); // Enable file saving
         attachTempWorkspaceRoot(config, tempDirs);
+        vi.mocked(getConfig).mockResolvedValue(config);
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
         vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
@@ -379,6 +386,7 @@ describe('reviewDiff', () => {
     it('does not save review result to file when saveOutputToFile is disabled', async () => {
         const { config, git } = createMockConfig(false); // Disable file saving
         attachTempWorkspaceRoot(config, tempDirs);
+        vi.mocked(getConfig).mockResolvedValue(config);
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
         vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);

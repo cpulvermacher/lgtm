@@ -31,11 +31,7 @@ export async function reviewDiff(
     );
     const configuredContextFiles =
         request.contextFilesOverride ?? options.contextFiles;
-    const contextFiles = await loadReviewContextFiles(
-        config.workspaceRoot,
-        configuredContextFiles,
-        config.logger
-    );
+    const contextFiles = await loadReviewContextFiles(configuredContextFiles);
 
     //TODO reorder to get relevant input files together, e.g.
     // order by distance: file move < main+test < same dir (levenshtein) < parent dir (levenshtein) < ...

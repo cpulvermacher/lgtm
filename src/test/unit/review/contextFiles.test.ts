@@ -12,6 +12,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadReviewContextFiles } from '@/review/contextFiles';
 import type { Logger } from '@/types/Logger';
+import { getConfig } from '@/vscode/config';
+
+vi.mock('@/vscode/config', () => ({
+    getConfig: vi.fn(),
+}));
 
 describe('loadReviewContextFiles', () => {
     const tempDirs: string[] = [];
@@ -37,11 +42,15 @@ describe('loadReviewContextFiles', () => {
         writeFileSync(join(workspaceRoot, 'AGENTS.md'), 'Repo guidance\n');
         writeFileSync(join(workspaceRoot, 'docs', 'README.md'), 'Nested docs');
 
-        const result = await loadReviewContextFiles(
+        vi.mocked(getConfig).mockResolvedValue({
             workspaceRoot,
-            ['AGENTS.md', 'docs/README.md'],
-            logger
-        );
+            logger,
+        } as never);
+
+        const result = await loadReviewContextFiles([
+            'AGENTS.md',
+            'docs/README.md',
+        ]);
 
         expect(result).toEqual([
             { path: 'AGENTS.md', content: 'Repo guidance' },
@@ -54,20 +63,25 @@ describe('loadReviewContextFiles', () => {
         tempDirs.push(workspaceRoot);
         writeFileSync(join(workspaceRoot, 'README.md'), '');
 
-        const result = await loadReviewContextFiles(
+        vi.mocked(getConfig).mockResolvedValue({
             workspaceRoot,
-            ['README.md', 'missing.md', '../outside.md'],
-            logger
-        );
+            logger,
+        } as never);
+
+        const result = await loadReviewContextFiles([
+            'README.md',
+            'missing.md',
+            '../outside.md',
+        ]);
 
         expect(result).toEqual([]);
-        expect(logger.info).toHaveBeenCalledWith(
+        expect(logger.debug).toHaveBeenCalledWith(
             'Skipping empty context file: "README.md"'
         );
         expect(logger.info).toHaveBeenCalledWith(
             expect.stringContaining('Failed to load context file "missing.md"')
         );
-        expect(logger.info).toHaveBeenCalledWith(
+        expect(logger.debug).toHaveBeenCalledWith(
             'Skipping context file outside workspace: "../outside.md"'
         );
     });
@@ -84,17 +98,21 @@ describe('loadReviewContextFiles', () => {
         symlinkSync(join(outsideRoot, 'secret.md'), symlinkPath);
         expect(readlinkSync(symlinkPath)).toBe(join(outsideRoot, 'secret.md'));
 
-        const result = await loadReviewContextFiles(
+        vi.mocked(getConfig).mockResolvedValue({
             workspaceRoot,
-            ['   ', 'linked-secret.md'],
-            logger
-        );
+            logger,
+        } as never);
+
+        const result = await loadReviewContextFiles([
+            '   ',
+            'linked-secret.md',
+        ]);
 
         expect(result).toEqual([]);
-        expect(logger.info).toHaveBeenCalledWith(
+        expect(logger.debug).toHaveBeenCalledWith(
             'Skipping empty context file path.'
         );
-        expect(logger.info).toHaveBeenCalledWith(
+        expect(logger.debug).toHaveBeenCalledWith(
             'Skipping context file outside workspace: "linked-secret.md"'
         );
     });

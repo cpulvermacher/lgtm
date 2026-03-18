@@ -7,7 +7,6 @@ import type {
     Options,
     ReviewFlowType,
 } from '@/types/Config';
-import type { Logger } from '@/types/Logger';
 import type { Model } from '@/types/Model';
 import { createGit, type Git } from '@/utils/git';
 import { LgtmLogger } from './logger';
@@ -56,7 +55,7 @@ async function initializeConfig(): Promise<Config> {
         gitRoot,
         getModel: (modelId?: string) => {
             const id = modelId ?? sessionModelIds[0] ?? getOptions().chatModel;
-            return loadModel(id, logger);
+            return loadModel(id);
         },
         promptForSessionModelIds: async () => {
             const selectedModelIds = await promptForModelSelection(
@@ -133,10 +132,12 @@ async function getWorkspaceConfig(): Promise<{
  * If the model is not available, shows an error toast with possible options.
  * Note that this is rather slow (~1 sec), avoid repeated calls.
  */
-async function loadModel(modelId: string, logger: Logger): Promise<Model> {
+async function loadModel(modelId: string): Promise<Model> {
+    const { logger } = await getConfig();
     logger.debug(`Loading chat model: ${modelId}`);
+
     try {
-        return await getChatModel(modelId, logger);
+        return await getChatModel(modelId);
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : 'Error loading chat model';
@@ -160,10 +161,10 @@ async function loadModel(modelId: string, logger: Logger): Promise<Model> {
         if (option === resetToDefaultOption) {
             await setOption('chatModel', defaultModelId);
             logger.info(`Chat model reset to default: ${defaultModelId}`);
-            return await loadModel(defaultModelId, logger);
+            return await loadModel(defaultModelId);
         } else if (option === selectChatModelOption) {
             await vscode.commands.executeCommand('lgtm.selectChatModel');
-            return await loadModel(getOptions().chatModel, logger);
+            return await loadModel(getOptions().chatModel);
         }
 
         throw new Error(

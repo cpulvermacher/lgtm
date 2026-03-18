@@ -1,27 +1,27 @@
 import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 
-import type { Logger } from '@/types/Logger';
 import type { ReviewContextFile } from '@/types/ReviewContextFile';
+import { getConfig } from '@/vscode/config';
 
 export async function loadReviewContextFiles(
-    workspaceRoot: string,
-    configuredPaths: string[],
-    logger: Logger
+    configuredPaths: string[]
 ): Promise<ReviewContextFile[]> {
+    const { logger, workspaceRoot } = await getConfig();
+
     const contextFiles: ReviewContextFile[] = [];
     const realWorkspaceRoot = await realpath(workspaceRoot);
 
     for (const configuredPath of configuredPaths) {
         const trimmedPath = configuredPath.trim();
         if (trimmedPath.length === 0) {
-            logger.info('Skipping empty context file path.');
+            logger.debug('Skipping empty context file path.');
             continue;
         }
 
         const absolutePath = resolve(workspaceRoot, trimmedPath);
         if (isOutsideWorkspace(workspaceRoot, absolutePath)) {
-            logger.info(
+            logger.debug(
                 `Skipping context file outside workspace: "${trimmedPath}"`
             );
             continue;
@@ -30,7 +30,7 @@ export async function loadReviewContextFiles(
         try {
             const realAbsolutePath = await realpath(absolutePath);
             if (isOutsideWorkspace(realWorkspaceRoot, realAbsolutePath)) {
-                logger.info(
+                logger.debug(
                     `Skipping context file outside workspace: "${trimmedPath}"`
                 );
                 continue;
@@ -39,7 +39,7 @@ export async function loadReviewContextFiles(
 
             const content = (await readFile(absolutePath, 'utf8')).trim();
             if (content.length === 0) {
-                logger.info(`Skipping empty context file: "${trimmedPath}"`);
+                logger.debug(`Skipping empty context file: "${trimmedPath}"`);
                 continue;
             }
 
