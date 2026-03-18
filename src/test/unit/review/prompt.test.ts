@@ -65,9 +65,27 @@ describe('createReviewPrompt', () => {
         );
 
         expect(prompt).toContain('Here is relevant context for this codebase:');
-        expect(prompt).toContain('<context_AGENTS_md>');
+        expect(prompt).toContain('<context_ctx_file_AGENTS_x002e_md>');
         expect(prompt).toContain('Follow the repo conventions.');
-        expect(prompt).toContain('<context_docs_README_md>');
+        expect(prompt).toContain(
+            '<context_ctx_file_docs_x002f_README_x002e_md>'
+        );
         expect(prompt).toContain('Architecture notes.');
+    });
+
+    it('renders distinct tags for paths that would otherwise collide', () => {
+        const prompt = createReviewPrompt(
+            changeDescription,
+            diff,
+            customPrompt,
+            undefined,
+            [
+                { path: 'a/b.md', content: 'slash path' },
+                { path: 'a_b.md', content: 'underscore path' },
+            ]
+        );
+
+        expect(prompt).toContain('<context_ctx_file_a_x002f_b_x002e_md>');
+        expect(prompt).toContain('<context_ctx_file_a_x005f_b_x002e_md>');
     });
 });

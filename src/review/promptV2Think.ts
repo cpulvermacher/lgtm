@@ -1,5 +1,9 @@
 import type { ReviewContextFile } from '@/types/ReviewContextFile';
-import { reasoningTag, renderContextFiles, responseExample } from './prompt';
+import {
+    buildOptionalPromptContext,
+    reasoningTag,
+    responseExample,
+} from './prompt';
 
 export function createReviewPromptV2Think(
     changeDescription: string | undefined,
@@ -9,19 +13,10 @@ export function createReviewPromptV2Think(
 ): string {
     customPrompt = customPrompt.length > 0 ? `${customPrompt.trim()}\n` : '';
 
-    let wrappedChangeDescription = '';
-    if (changeDescription?.trim()) {
-        wrappedChangeDescription = `
-Here's the change description for context:
-<change_description>
-${changeDescription.trim()}
-</change_description>`;
-    }
-
-    const wrappedContextFiles = renderContextFiles(contextFiles);
-    const optionalContext = [wrappedChangeDescription, wrappedContextFiles]
-        .filter(Boolean)
-        .join('\n');
+    const optionalContext = buildOptionalPromptContext(
+        changeDescription,
+        contextFiles
+    );
 
     return `
 You are a senior software engineer tasked with reviewing a pull request. Your goal is to analyze the provided git diff and offer insightful, actionable comments on code issues. Focus on identifying bugs, security vulnerabilities, unreadable code, possible refactorings, and typos while considering the changeset as a whole.

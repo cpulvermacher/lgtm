@@ -46,6 +46,13 @@ function createMockConfig(saveOutputToFile = false) {
     return { config, git, logger };
 }
 
+function attachTempWorkspaceRoot(config: Config, tempDirs: string[]) {
+    const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-review-'));
+    tempDirs.push(workspaceRoot);
+    writeFileSync(join(workspaceRoot, 'AGENTS.md'), 'Project rules');
+    config.workspaceRoot = workspaceRoot;
+}
+
 const cancellationToken = {
     isCancellationRequested: false,
 } as CancellationToken;
@@ -56,7 +63,7 @@ const modelRequest = {
     files: ['file1', 'file2'],
 } as Partial<ModelRequest> as ModelRequest;
 
-const modelRequestCtorArgs: unknown[][] = [];
+let capturedContextFiles: unknown[] | undefined;
 
 vi.mock('@/review/comment', () => ({
     parseResponse: vi.fn(),
@@ -67,8 +74,14 @@ vi.mock('@/review/comment', () => ({
 
 vi.mock('@/review/ModelRequest', () => ({
     ModelRequest: class {
-        constructor(...args: unknown[]) {
-            modelRequestCtorArgs.push(args);
+        constructor(
+            _model: unknown,
+            _options: unknown,
+            _logger: unknown,
+            _changeDescription: unknown,
+            contextFiles: unknown[] = []
+        ) {
+            capturedContextFiles = contextFiles;
         }
 
         addDiff = modelRequest.addDiff;
@@ -120,7 +133,8 @@ describe('reviewDiff', () => {
 
     beforeEach(() => {
         ({ config, git } = createMockConfig());
-        modelRequestCtorArgs.length = 0;
+        capturedContextFiles = undefined;
+        attachTempWorkspaceRoot(config, tempDirs);
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
     });
@@ -345,6 +359,7 @@ describe('reviewDiff', () => {
 
     it('saves review result to file when saveOutputToFile is enabled', async () => {
         const { config, git } = createMockConfig(true); // Enable file saving
+        attachTempWorkspaceRoot(config, tempDirs);
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
         vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
@@ -363,6 +378,7 @@ describe('reviewDiff', () => {
 
     it('does not save review result to file when saveOutputToFile is disabled', async () => {
         const { config, git } = createMockConfig(false); // Disable file saving
+        attachTempWorkspaceRoot(config, tempDirs);
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
         vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
@@ -380,27 +396,17 @@ describe('reviewDiff', () => {
     });
 
     it('loads configured context files and passes them to model requests', async () => {
-        const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-review-'));
-        tempDirs.push(workspaceRoot);
-        writeFileSync(join(workspaceRoot, 'AGENTS.md'), 'Project rules');
-        config.workspaceRoot = workspaceRoot;
-
         vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
         vi.mocked(parseResponse).mockReturnValue(mockComments);
 
         await reviewDiff(config, { scope }, progress, cancellationToken);
 
-        expect(modelRequestCtorArgs[0]?.[4]).toEqual([
+        expect(capturedContextFiles).toEqual([
             { path: 'AGENTS.md', content: 'Project rules' },
         ]);
     });
 
     it('respects an explicit empty context override', async () => {
-        const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-review-'));
-        tempDirs.push(workspaceRoot);
-        writeFileSync(join(workspaceRoot, 'AGENTS.md'), 'Project rules');
-        config.workspaceRoot = workspaceRoot;
-
         vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
         vi.mocked(parseResponse).mockReturnValue(mockComments);
 
@@ -411,7 +417,7 @@ describe('reviewDiff', () => {
             cancellationToken
         );
 
-        expect(modelRequestCtorArgs[0]?.[4]).toEqual([]);
+        expect(capturedContextFiles).toEqual([]);
     });
 });
 

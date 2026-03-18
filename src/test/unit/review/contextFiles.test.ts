@@ -1,4 +1,11 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -62,6 +69,33 @@ describe('loadReviewContextFiles', () => {
         );
         expect(logger.info).toHaveBeenCalledWith(
             'Skipping context file outside workspace: "../outside.md"'
+        );
+    });
+
+    it('logs empty configured paths and blocks symlinks escaping the workspace', async () => {
+        const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-context-'));
+        const outsideRoot = mkdtempSync(
+            join(tmpdir(), 'lgtm-context-outside-')
+        );
+        tempDirs.push(workspaceRoot, outsideRoot);
+
+        writeFileSync(join(outsideRoot, 'secret.md'), 'outside');
+        const symlinkPath = join(workspaceRoot, 'linked-secret.md');
+        symlinkSync(join(outsideRoot, 'secret.md'), symlinkPath);
+        expect(readlinkSync(symlinkPath)).toBe(join(outsideRoot, 'secret.md'));
+
+        const result = await loadReviewContextFiles(
+            workspaceRoot,
+            ['   ', 'linked-secret.md'],
+            logger
+        );
+
+        expect(result).toEqual([]);
+        expect(logger.info).toHaveBeenCalledWith(
+            'Skipping empty context file path.'
+        );
+        expect(logger.info).toHaveBeenCalledWith(
+            'Skipping context file outside workspace: "linked-secret.md"'
         );
     });
 });

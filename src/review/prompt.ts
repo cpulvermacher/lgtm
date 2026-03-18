@@ -69,9 +69,37 @@ Here is relevant context for this codebase:
 ${renderedFiles}`;
 }
 
+export function buildOptionalPromptContext(
+    changeDescription: string | undefined,
+    contextFiles: ReviewContextFile[]
+): string {
+    const wrappedChangeDescription = changeDescription?.trim()
+        ? `
+Here's the change description for context:
+<change_description>
+${changeDescription.trim()}
+</change_description>`
+        : '';
+    const wrappedContextFiles = renderContextFiles(contextFiles);
+
+    return [wrappedChangeDescription, wrappedContextFiles]
+        .filter(Boolean)
+        .join('\n');
+}
+
 function toContextTagName(filePath: string): string {
-    const tag = filePath.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-    return tag.length > 0 ? tag : 'file';
+    const tag = Array.from(filePath)
+        .map((char) => {
+            if (/^[a-zA-Z0-9]$/.test(char)) {
+                return char;
+            }
+
+            const hexCode = char.codePointAt(0)?.toString(16).padStart(4, '0');
+            return `_x${hexCode}_`;
+        })
+        .join('')
+        .replace(/^_+|_+$/g, '');
+    return `ctx_file_${tag.length > 0 ? tag : 'file'}`;
 }
 
 export const responseExample = [

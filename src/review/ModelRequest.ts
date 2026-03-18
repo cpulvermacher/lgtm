@@ -143,6 +143,9 @@ export class ModelRequest {
             return false;
         }
 
+        const originalContextFiles = this.contextFiles.map((contextFile) => ({
+            ...contextFile,
+        }));
         let remainingCharsToRemove = numCharsToRemove;
         for (
             let index = this.contextFiles.length - 1;
@@ -170,6 +173,34 @@ export class ModelRequest {
             remainingCharsToRemove = 0;
         }
 
+        this.logContextFileTruncation(originalContextFiles);
+
         return remainingCharsToRemove < numCharsToRemove;
+    }
+
+    private logContextFileTruncation(
+        originalContextFiles: ReviewContextFile[]
+    ) {
+        for (const originalContextFile of originalContextFiles) {
+            const updatedContextFile = this.contextFiles.find(
+                (contextFile) => contextFile.path === originalContextFile.path
+            );
+
+            if (!updatedContextFile) {
+                this.logger.info(
+                    `Context file removed to fit token limit: ${originalContextFile.path}`
+                );
+                continue;
+            }
+
+            if (
+                updatedContextFile.content.length <
+                originalContextFile.content.length
+            ) {
+                this.logger.info(
+                    `Context file truncated from ${originalContextFile.content.length} to ${updatedContextFile.content.length} characters: ${originalContextFile.path}`
+                );
+            }
+        }
     }
 }

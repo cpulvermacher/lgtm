@@ -325,11 +325,31 @@ describe('extractContextSpecs', () => {
         });
     });
 
+    it('allows context files after context:none', () => {
+        const result = extractContextSpecs(
+            'context:none context:AGENTS.md develop main'
+        );
+
+        expect(result).toEqual({
+            contextFilesOverride: ['AGENTS.md'],
+            remaining: ['develop', 'main'],
+        });
+    });
+
     it('skips context: tokens with no value', () => {
         const result = extractContextSpecs('context: develop');
 
         expect(result).toEqual({
-            contextFilesOverride: undefined,
+            contextFilesOverride: [],
+            remaining: ['develop'],
+        });
+    });
+
+    it('treats punctuation-only context tokens as an explicit override', () => {
+        const result = extractContextSpecs('context:... develop');
+
+        expect(result).toEqual({
+            contextFilesOverride: [],
             remaining: ['develop'],
         });
     });
