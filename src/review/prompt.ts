@@ -1,4 +1,5 @@
 import type { PromptType } from '../types/PromptType';
+import type { ReviewContextFile } from '../types/ReviewContextFile';
 import { createReviewPromptV2 } from './promptV2';
 import { createReviewPromptV2Think } from './promptV2Think';
 
@@ -29,19 +30,47 @@ export function createReviewPrompt(
     changeDescription: string | undefined,
     diff: string,
     customPrompt: string,
-    promptType?: PromptType
+    promptType?: PromptType,
+    contextFiles: ReviewContextFile[] = []
 ): string {
     switch (promptType) {
         case 'v2':
-            return createReviewPromptV2(changeDescription, diff, customPrompt);
-        case 'v2think':
+            return createReviewPromptV2(
+                changeDescription,
+                diff,
+                customPrompt,
+                contextFiles
+            );
         default:
             return createReviewPromptV2Think(
                 changeDescription,
                 diff,
-                customPrompt
+                customPrompt,
+                contextFiles
             );
     }
+}
+
+export function renderContextFiles(contextFiles: ReviewContextFile[]): string {
+    if (contextFiles.length === 0) {
+        return '';
+    }
+
+    const renderedFiles = contextFiles
+        .map(({ path, content }) => {
+            const tagName = `context_${toContextTagName(path)}`;
+            return `<${tagName}>\n${content.trim()}\n</${tagName}>`;
+        })
+        .join('\n\n');
+
+    return `
+Here is relevant context for this codebase:
+${renderedFiles}`;
+}
+
+function toContextTagName(filePath: string): string {
+    const tag = filePath.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return tag.length > 0 ? tag : 'file';
 }
 
 export const responseExample = [

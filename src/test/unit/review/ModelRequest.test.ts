@@ -70,6 +70,25 @@ describe('ModelRequest', () => {
         expect(model.countTokens).toHaveBeenCalledTimes(3);
     });
 
+    it('truncates context files before truncating the diff', async () => {
+        const { config } = createMockConfig();
+        request = new ModelRequest(
+            model,
+            config.getOptions(),
+            config.logger,
+            undefined,
+            [{ path: 'AGENTS.md', content: 'c'.repeat(10000) }]
+        );
+        vi.mocked(model.countTokens)
+            .mockResolvedValueOnce(2000)
+            .mockResolvedValueOnce(2);
+
+        await request.addDiff('file1.ts', 'DIFF1');
+
+        expect(request.getPrompt()).toContain('DIFF1');
+        expect(request.getPrompt()).not.toContain('c'.repeat(10000));
+    });
+
     it('throws if first diff cannot be truncated to fit token limit', async () => {
         vi.mocked(model.countTokens)
             .mockResolvedValueOnce(2000)
@@ -150,6 +169,7 @@ function createMockConfig() {
             ({
                 minSeverity: 3,
                 customPrompt: 'custom prompt',
+                contextFiles: ['AGENTS.md'],
                 excludeGlobs: [] as string[],
                 enableDebugOutput: false,
                 chatModel: 'test-model',

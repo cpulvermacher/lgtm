@@ -114,7 +114,7 @@
                 "commands": [
                     {
                         "name": "review",
-                        "description": "Review changes. Specify branches, commits, or tags, e.g. `/review develop main`. Use `model:id` to select models inline. Leave empty for interactive."
+                        "description": "Review changes. Specify branches, commits, or tags, e.g. `/review develop main`. Use `model:id` to select models inline. Use `context:path` to override attached context files or `context:none` to disable them for one review. Leave empty for interactive."
                     }
                 ]
             }
@@ -195,6 +195,16 @@
                     "default": "",
                     "description": "Add custom text to the review prompt. For example, \"- In the final JSON output, use Spanish for the  `comment` field.\"",
                     "editPresentation": "multilineText"
+                },
+                "lgtm.contextFiles": {
+                    "type": "array",
+                    "default": [
+                        "AGENTS.md"
+                    ],
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Workspace-relative files to attach as extra codebase context on every review request. Set this to an empty list to attach no extra context by default. Prefer models with larger context windows for this setting: each additional file sends more tokens, which can easily fill the context window and degrade review quality rather than improve it."
                 },
                 "lgtm.exclude": {
                     "type": "array",

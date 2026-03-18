@@ -10,6 +10,9 @@ import { ModelError } from '@/types/ModelError';
 import { ReviewScope } from '@/types/ReviewRequest';
 import type { Git } from '@/utils/git';
 import { saveToFile } from '@/utils/saveToFile';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 function createMockConfig(saveOutputToFile = false) {
     const git = {
@@ -29,6 +32,7 @@ function createMockConfig(saveOutputToFile = false) {
         workspaceRoot: '/test/workspace',
         getOptions: vi.fn(() => ({
             customPrompt: 'custom prompt',
+            contextFiles: ['AGENTS.md'],
             minSeverity: 3,
             excludeGlobs: [] as string[],
             enableDebugOutput: false,
@@ -51,6 +55,8 @@ const modelRequest = {
     files: ['file1', 'file2'],
 } as Partial<ModelRequest> as ModelRequest;
 
+const modelRequestCtorArgs: unknown[][] = [];
+
 vi.mock('@/review/comment', () => ({
     parseResponse: vi.fn(),
     sortFileCommentsBySeverity: vi.fn(
@@ -60,6 +66,10 @@ vi.mock('@/review/comment', () => ({
 
 vi.mock('@/review/ModelRequest', () => ({
     ModelRequest: class {
+        constructor(...args: unknown[]) {
+            modelRequestCtorArgs.push(args);
+        }
+
         addDiff = modelRequest.addDiff;
         sendRequest = modelRequest.sendRequest;
         files = modelRequest.files;
@@ -108,6 +118,7 @@ describe('reviewDiff', () => {
 
     beforeEach(() => {
         ({ config, git } = createMockConfig());
+        modelRequestCtorArgs.length = 0;
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
     });
@@ -357,6 +368,39 @@ describe('reviewDiff', () => {
 
         expect(result.request.scope).toBe(scope);
         expect(saveToFile).not.toHaveBeenCalled();
+    });
+
+    it('loads configured context files and passes them to model requests', async () => {
+        const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-review-'));
+        writeFileSync(join(workspaceRoot, 'AGENTS.md'), 'Project rules');
+        config.workspaceRoot = workspaceRoot;
+
+        vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
+        vi.mocked(parseResponse).mockReturnValue(mockComments);
+
+        await reviewDiff(config, { scope }, progress, cancellationToken);
+
+        expect(modelRequestCtorArgs[0]?.[4]).toEqual([
+            { path: 'AGENTS.md', content: 'Project rules' },
+        ]);
+    });
+
+    it('respects an explicit empty context override', async () => {
+        const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-review-'));
+        writeFileSync(join(workspaceRoot, 'AGENTS.md'), 'Project rules');
+        config.workspaceRoot = workspaceRoot;
+
+        vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
+        vi.mocked(parseResponse).mockReturnValue(mockComments);
+
+        await reviewDiff(
+            config,
+            { scope, contextFilesOverride: [] },
+            progress,
+            cancellationToken
+        );
+
+        expect(modelRequestCtorArgs[0]?.[4]).toEqual([]);
     });
 });
 

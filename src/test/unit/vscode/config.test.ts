@@ -143,6 +143,13 @@ describe('Config options', () => {
             expect(setting?.default).toBe('Separate sections');
         });
     });
+
+    describe('contextFiles option', () => {
+        it('should declare expected default in package contributions', () => {
+            const setting = properties['lgtm.contextFiles'];
+            expect(setting?.default).toEqual(['AGENTS.md']);
+        });
+    });
 });
 
 describe('Session model selection logic', () => {

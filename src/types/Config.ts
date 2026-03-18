@@ -26,6 +26,7 @@ export type Config = {
 export type Options = {
     minSeverity: number;
     customPrompt: string;
+    contextFiles: string[];
     excludeGlobs: string[];
     enableDebugOutput: boolean;
     chatModel: string;

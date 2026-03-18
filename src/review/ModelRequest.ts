@@ -4,6 +4,7 @@ import type { Options } from '@/types/Config';
 import type { Logger } from '@/types/Logger';
 import type { Model } from '@/types/Model';
 import type { PromptType } from '@/types/PromptType';
+import type { ReviewContextFile } from '@/types/ReviewContextFile';
 import { createReviewPrompt } from './prompt';
 
 export class ModelRequest {
@@ -14,7 +15,8 @@ export class ModelRequest {
         private readonly model: Model,
         private readonly options: Options,
         private readonly logger: Logger,
-        private changeDescription: string | undefined
+        private changeDescription: string | undefined,
+        private contextFiles: ReviewContextFile[] = []
     ) {}
 
     /** add diff for one file, throw if we cannot fit this into the current request (caller should create new ModelRequest) */
@@ -93,6 +95,10 @@ export class ModelRequest {
                 continue;
             }
 
+            if (this.truncateContextFiles(numCharsToRemove)) {
+                continue;
+            }
+
             // try truncating diff
             if (numCharsToRemove >= diff.length) {
                 throw new Error(
@@ -127,7 +133,43 @@ export class ModelRequest {
             this.changeDescription,
             diff,
             this.options.customPrompt,
-            promptType
+            promptType,
+            this.contextFiles
         );
+    }
+
+    private truncateContextFiles(numCharsToRemove: number): boolean {
+        if (numCharsToRemove <= 0 || this.contextFiles.length === 0) {
+            return false;
+        }
+
+        let remainingCharsToRemove = numCharsToRemove;
+        for (
+            let index = this.contextFiles.length - 1;
+            index >= 0 && remainingCharsToRemove > 0;
+            index--
+        ) {
+            const contextFile = this.contextFiles[index];
+            if (remainingCharsToRemove >= contextFile.content.length) {
+                remainingCharsToRemove -= contextFile.content.length;
+                this.contextFiles.splice(index, 1);
+                continue;
+            }
+
+            const truncatedContent = contextFile.content
+                .slice(0, contextFile.content.length - remainingCharsToRemove)
+                .trimEnd();
+            if (truncatedContent.length === 0) {
+                this.contextFiles.splice(index, 1);
+            } else {
+                this.contextFiles[index] = {
+                    ...contextFile,
+                    content: truncatedContent,
+                };
+            }
+            remainingCharsToRemove = 0;
+        }
+
+        return remainingCharsToRemove < numCharsToRemove;
     }
 }

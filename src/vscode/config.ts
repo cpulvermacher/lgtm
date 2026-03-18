@@ -175,6 +175,7 @@ function getOptions(): Options {
 
     const minSeverity = config.get<number>('minSeverity', 1);
     const customPrompt = config.get<string>('customPrompt', '');
+    const contextFiles = config.get<string[]>('contextFiles', ['AGENTS.md']);
     const excludeGlobs = config.get<string[]>('exclude', []);
     const enableDebugOutput = config.get<boolean>('enableDebugOutput', false);
     const chatModel = config.get<string>('chatModel', defaultModelId);
@@ -212,6 +213,7 @@ function getOptions(): Options {
     return {
         minSeverity,
         customPrompt,
+        contextFiles,
         excludeGlobs,
         enableDebugOutput,
         chatModel,

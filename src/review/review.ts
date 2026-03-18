@@ -12,6 +12,7 @@ import { correctFilename } from '@/utils/filenames';
 import { isPathNotExcluded } from '@/utils/glob';
 import { saveToFile } from '@/utils/saveToFile';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
+import { loadReviewContextFiles } from './contextFiles';
 import { ModelRequest } from './ModelRequest';
 import { defaultPromptType, toPromptTypes } from './prompt';
 
@@ -28,6 +29,13 @@ export async function reviewDiff(
             isPathNotExcluded(file.file, options.excludeGlobs) &&
             file.status !== 'D' // ignore deleted files
     );
+    const configuredContextFiles =
+        request.contextFilesOverride ?? options.contextFiles;
+    const contextFiles = await loadReviewContextFiles(
+        config.workspaceRoot,
+        configuredContextFiles,
+        config.logger
+    );
 
     //TODO reorder to get relevant input files together, e.g.
     // order by distance: file move < main+test < same dir (levenshtein) < parent dir (levenshtein) < ...
@@ -35,6 +43,7 @@ export async function reviewDiff(
     const modelRequests = await aggregateFileDiffs(
         config,
         request,
+        contextFiles,
         files,
         progress,
         cancellationToken
@@ -73,6 +82,7 @@ export async function reviewDiff(
 async function aggregateFileDiffs(
     config: Config,
     request: ReviewRequest,
+    contextFiles: { path: string; content: string }[],
     files: DiffFile[],
     progress?: Progress<{ message?: string; increment?: number }>,
     cancellationToken?: CancellationToken
@@ -103,7 +113,8 @@ async function aggregateFileDiffs(
                 model,
                 options,
                 config.logger,
-                request.scope.changeDescription
+                request.scope.changeDescription,
+                contextFiles.map((contextFile) => ({ ...contextFile }))
             );
             modelRequests.push(modelRequest);
         }
@@ -120,7 +131,8 @@ async function aggregateFileDiffs(
                 model,
                 options,
                 config.logger,
-                request.scope.changeDescription
+                request.scope.changeDescription,
+                contextFiles.map((contextFile) => ({ ...contextFile }))
             );
             await modelRequest.addDiff(file.file, diff); // adding the first diff will never throw
             modelRequests.push(modelRequest);
