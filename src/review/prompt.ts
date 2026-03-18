@@ -41,6 +41,7 @@ export function createReviewPrompt(
                 customPrompt,
                 contextFiles
             );
+        // case 'v2think': // fallthrough to default
         default:
             return createReviewPromptV2Think(
                 changeDescription,
