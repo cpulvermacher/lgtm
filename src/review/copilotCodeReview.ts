@@ -37,6 +37,19 @@ type CopilotCodeReviewCancelled = {
     readonly type: 'cancelled';
 };
 
+type CommandExecutionResult =
+    | {
+          readonly type: 'command';
+          readonly result: CopilotCodeReviewResult | undefined;
+      }
+    | {
+          readonly type: 'error';
+          readonly error: unknown;
+      }
+    | {
+          readonly type: 'cancelled';
+      };
+
 type CopilotCodeReviewResult =
     | CopilotCodeReviewSuccess
     | CopilotCodeReviewError
@@ -117,10 +130,11 @@ export async function reviewDiffWithCopilotCodeReview(
             };
         }
 
-        progress?.report({ message: 'Reviewing...', increment: -100 });
+        progress?.report({ message: 'Reviewing...' });
 
         const result = await runCopilotCodeReview(
-            preparedFiles.map((preparedFile) => preparedFile.input)
+            preparedFiles.map((preparedFile) => preparedFile.input),
+            cancellationToken
         );
 
         if (result.type === 'error') {
@@ -175,7 +189,17 @@ export async function reviewDiffWithCopilotCodeReview(
         }
     } finally {
         if (tempDir) {
-            await rm(tempDir, { recursive: true, force: true });
+            await rm(tempDir, { recursive: true, force: true }).catch(
+                (error: unknown) => {
+                    const message =
+                        error instanceof Error ? error.message : String(error);
+                    errors.push(
+                        new Error(
+                            `Failed to remove temporary Copilot review files: ${message}`
+                        )
+                    );
+                }
+            );
         }
     }
 
@@ -340,7 +364,8 @@ function normalizeSeverity(severity: unknown): number {
 }
 
 async function runCopilotCodeReview(
-    files: readonly CodeReviewFileInput[]
+    files: readonly CodeReviewFileInput[],
+    cancellationToken?: vscode.CancellationToken
 ): Promise<CopilotCodeReviewResult> {
     const extension = vscode.extensions.getExtension('GitHub.copilot-chat');
     if (!extension) {
@@ -362,18 +387,80 @@ async function runCopilotCodeReview(
 
     await extension.activate();
 
-    const result =
-        await vscode.commands.executeCommand<CopilotCodeReviewResult>(
-            'github.copilot.chat.codeReview.run',
-            { files }
-        );
+    if (cancellationToken?.isCancellationRequested) {
+        return { type: 'cancelled' };
+    }
 
-    if (!result) {
+    const command = vscode.commands.executeCommand<CopilotCodeReviewResult>(
+        'github.copilot.chat.codeReview.run',
+        { files }
+    );
+    const result = await raceCommandWithCancellation(
+        command,
+        cancellationToken
+    );
+
+    if (result.type === 'cancelled') {
+        return result;
+    }
+
+    if (result.type === 'error') {
+        throw result.error;
+    }
+
+    if (!result.result) {
         return {
             type: 'error',
             reason: 'No result returned from GitHub Copilot Chat.',
         };
     }
 
-    return result;
+    return result.result;
+}
+
+async function raceCommandWithCancellation(
+    command: PromiseLike<CopilotCodeReviewResult | undefined>,
+    cancellationToken?: vscode.CancellationToken
+): Promise<CommandExecutionResult> {
+    if (!cancellationToken) {
+        try {
+            return {
+                type: 'command',
+                result: await command,
+            };
+        } catch (error) {
+            return {
+                type: 'error',
+                error,
+            };
+        }
+    }
+
+    let disposeCancellation: (() => void) | undefined;
+    const cancellation = new Promise<CommandExecutionResult>((resolve) => {
+        const subscription = cancellationToken.onCancellationRequested(() => {
+            resolve({ type: 'cancelled' });
+        });
+        disposeCancellation = () => subscription.dispose();
+    });
+
+    try {
+        return await Promise.race([
+            command.then(
+                (result) =>
+                    ({
+                        type: 'command',
+                        result,
+                    }) as const,
+                (error) =>
+                    ({
+                        type: 'error',
+                        error,
+                    }) as const
+            ),
+            cancellation,
+        ]);
+    } finally {
+        disposeCancellation?.();
+    }
 }

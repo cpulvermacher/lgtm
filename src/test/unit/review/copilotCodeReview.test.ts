@@ -19,6 +19,24 @@ type TestConfig = {
     git: TestGit;
 };
 
+const fsPromisesMocks = vi.hoisted(() => ({
+    rm: vi.fn(),
+    actualRm: undefined as
+        | typeof import('node:fs/promises').rm
+        | undefined,
+}));
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('node:fs/promises')>();
+    fsPromisesMocks.actualRm = actual.rm;
+    fsPromisesMocks.rm.mockImplementation(actual.rm);
+
+    return {
+        ...actual,
+        rm: fsPromisesMocks.rm,
+    };
+});
+
 const vscodeMocks = vi.hoisted(() => ({
     getExtension: vi.fn(),
     executeCommand: vi.fn(),
@@ -73,6 +91,10 @@ describe('reviewDiffWithCopilotCodeReview', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        if (!fsPromisesMocks.actualRm) {
+            throw new Error('Expected node:fs/promises.rm to be initialized.');
+        }
+        fsPromisesMocks.rm.mockImplementation(fsPromisesMocks.actualRm);
         vscodeMocks.getConfiguration.mockReturnValue({
             get: vi.fn((_key: string, fallback?: boolean) => fallback),
         });
@@ -204,7 +226,6 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         });
         expect(progress.report).toHaveBeenCalledWith({
             message: 'Reviewing...',
-            increment: -100,
         });
     });
 
@@ -448,6 +469,224 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         expect(result.fileComments).toEqual([]);
         expect(result.errors).toEqual([]);
         expect(vscodeMocks.executeCommand).not.toHaveBeenCalled();
+    });
+
+    it('returns a cancelled result when cancellation is already requested before running Copilot review', async () => {
+        const config = createConfig();
+        const activate = vi.fn();
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('head');
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+
+        const result = await reviewDiffWithCopilotCodeReview(
+            config as unknown as Config,
+            {
+                scope: {
+                    target: UncommittedRef.Staged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            } as never,
+            [{ file: 'src/file.ts', status: 'M' }],
+            { report: vi.fn() },
+            { isCancellationRequested: true } as never
+        );
+
+        expect(activate).not.toHaveBeenCalled();
+        expect(vscodeMocks.executeCommand).not.toHaveBeenCalled();
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toHaveLength(0);
+    });
+
+    it('returns a cancelled result when cancellation happens during Copilot review execution', async () => {
+        const config = createConfig();
+        const activate = vi.fn();
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('head');
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+
+        let cancelReview: (() => void) | undefined;
+        let resolveListenerRegistration: (() => void) | undefined;
+        let resolveCommand:
+            | ((value: { type: 'success'; comments: [] }) => void)
+            | undefined;
+        vscodeMocks.executeCommand.mockReturnValue(
+            new Promise((resolve) => {
+                resolveCommand = resolve;
+            })
+        );
+        const listenerRegistered = new Promise<void>((resolve) => {
+            resolveListenerRegistration = resolve;
+        });
+
+        const cancellationToken = {
+            isCancellationRequested: false,
+            onCancellationRequested: vi.fn((callback: () => void) => {
+                cancelReview = () => {
+                    cancellationToken.isCancellationRequested = true;
+                    callback();
+                };
+                resolveListenerRegistration?.();
+
+                return {
+                    dispose: vi.fn(),
+                };
+            }),
+        };
+
+        const reviewPromise = reviewDiffWithCopilotCodeReview(
+            config as unknown as Config,
+            {
+                scope: {
+                    target: UncommittedRef.Staged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            } as never,
+            [{ file: 'src/file.ts', status: 'M' }],
+            { report: vi.fn() },
+            cancellationToken as never
+        );
+
+        await listenerRegistered;
+
+        cancelReview?.();
+        resolveCommand?.({ type: 'success', comments: [] });
+
+        const result = await reviewPromise;
+
+        expect(activate).toHaveBeenCalledOnce();
+        expect(
+            cancellationToken.onCancellationRequested
+        ).toHaveBeenCalledOnce();
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0].message).toBe('Copilot Code Review cancelled.');
+    });
+
+    it('returns a cancelled result when cancellation is requested after activation but before starting the review command', async () => {
+        const config = createConfig();
+        const activate = vi.fn();
+        let cancellationChecks = 0;
+        const cancellationToken = {
+            get isCancellationRequested() {
+                cancellationChecks += 1;
+                return cancellationChecks >= 4;
+            },
+            onCancellationRequested: vi.fn(),
+        };
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('head');
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+
+        const result = await reviewDiffWithCopilotCodeReview(
+            config as unknown as Config,
+            {
+                scope: {
+                    target: UncommittedRef.Staged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            } as never,
+            [{ file: 'src/file.ts', status: 'M' }],
+            { report: vi.fn() },
+            cancellationToken as never
+        );
+
+        expect(activate).toHaveBeenCalledOnce();
+        expect(vscodeMocks.executeCommand).not.toHaveBeenCalled();
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0].message).toBe('Copilot Code Review cancelled.');
+    });
+
+    it('rejects when the Copilot review command fails without a cancellation token', async () => {
+        const config = createConfig();
+        const activate = vi.fn();
+        const failure = new Error('command failed');
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('head');
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+        vscodeMocks.executeCommand.mockRejectedValue(failure);
+
+        await expect(
+            reviewDiffWithCopilotCodeReview(
+                config as unknown as Config,
+                {
+                    scope: {
+                        target: UncommittedRef.Staged,
+                        isCommitted: false,
+                        isTargetCheckedOut: true,
+                    },
+                } as never,
+                [{ file: 'src/file.ts', status: 'M' }],
+                { report: vi.fn() }
+            )
+        ).rejects.toBe(failure);
+    });
+
+    it('rejects when the Copilot review command fails while a cancellation token is active', async () => {
+        const config = createConfig();
+        const activate = vi.fn();
+        const failure = new Error('command failed with token');
+        const subscription = { dispose: vi.fn() };
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('head');
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+        vscodeMocks.executeCommand.mockRejectedValue(failure);
+
+        await expect(
+            reviewDiffWithCopilotCodeReview(
+                config as unknown as Config,
+                {
+                    scope: {
+                        target: UncommittedRef.Staged,
+                        isCommitted: false,
+                        isTargetCheckedOut: true,
+                    },
+                } as never,
+                [{ file: 'src/file.ts', status: 'M' }],
+                { report: vi.fn() },
+                {
+                    isCancellationRequested: false,
+                    onCancellationRequested: vi.fn(() => subscription),
+                } as never
+            )
+        ).rejects.toBe(failure);
+
+        expect(subscription.dispose).toHaveBeenCalledOnce();
+    });
+
+    it('preserves the review result when temporary file cleanup fails', async () => {
+        const config = createConfig();
+        const activate = vi.fn();
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('head');
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+        vscodeMocks.executeCommand.mockResolvedValue({
+            type: 'success',
+            comments: [],
+        });
+        fsPromisesMocks.rm.mockRejectedValue('cleanup failed');
+
+        const result = await reviewDiffWithCopilotCodeReview(
+            config as unknown as Config,
+            {
+                scope: {
+                    target: UncommittedRef.Staged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            } as never,
+            [{ file: 'src/file.ts', status: 'M' }],
+            { report: vi.fn() }
+        );
+
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0].message).toBe(
+            'Failed to remove temporary Copilot review files: cleanup failed'
+        );
     });
 
     it('handles edge-case gathering messages and falls back to empty staged snapshots', async () => {

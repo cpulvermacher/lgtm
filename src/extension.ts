@@ -112,7 +112,6 @@ async function handleSelectChatModel() {
     const models = await vscode.lm.selectChatModels();
     const config = await getConfig();
     const currentModelId = config.getOptions().chatModel;
-    const DONT_FORGET_TO_REMOVE_ME = 'Im debug only.';
     const quickPickItems = getModelQuickPickItems(models ?? []).map((item) => {
         if (item.kind === vscode.QuickPickItemKind.Separator) return item;
 

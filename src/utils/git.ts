@@ -629,6 +629,12 @@ export class Git {
     }
 }
 
+/**
+ * Git reports missing objects and missing paths through stderr text rather than
+ * a dedicated error code we can reliably branch on here. These snippets cover
+ * the variants we currently normalize to `undefined` in getFileContentFromObject.
+ * Keep the list and tests aligned when broadening support for new git versions.
+ */
 function isMissingGitObjectError(error: unknown): boolean {
     if (!(error instanceof Error)) {
         return false;

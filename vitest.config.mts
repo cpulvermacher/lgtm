@@ -21,8 +21,8 @@ export default defineConfig({
                 ...coverageConfigDefaults.exclude,
             ],
             thresholds: {
-                lines: 98.64,
-                functions: 98.48,
+                lines: 98.68,
+                functions: 98.56,
                 autoUpdate: true,
             },
             reporter: ['text', 'lcov'],
