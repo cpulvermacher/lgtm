@@ -21,9 +21,7 @@ type TestConfig = {
 
 const fsPromisesMocks = vi.hoisted(() => ({
     rm: vi.fn(),
-    actualRm: undefined as
-        | typeof import('node:fs/promises').rm
-        | undefined,
+    actualRm: undefined as typeof import('node:fs/promises').rm | undefined,
 }));
 
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -435,6 +433,31 @@ describe('reviewDiffWithCopilotCodeReview', () => {
 
         expect(result.fileComments).toEqual([]);
         expect(result.errors).toEqual([]);
+        expect(vscodeMocks.executeCommand).not.toHaveBeenCalled();
+    });
+
+    it('rejects snapshot paths that escape the temporary review directory', async () => {
+        const config = createConfig();
+        vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('head');
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+
+        await expect(
+            reviewDiffWithCopilotCodeReview(
+                config as unknown as Config,
+                {
+                    scope: {
+                        target: UncommittedRef.Staged,
+                        isCommitted: false,
+                        isTargetCheckedOut: true,
+                    },
+                } as never,
+                [{ file: '../escape.ts', status: 'M' }],
+                { report: vi.fn() }
+            )
+        ).rejects.toThrow(
+            'Refusing to write Copilot review snapshot outside the temporary directory: ../escape.ts'
+        );
+
         expect(vscodeMocks.executeCommand).not.toHaveBeenCalled();
     });
 

@@ -592,6 +592,16 @@ describe('resolveOneModelSpec', () => {
         expect(result).toEqual({ match: 'azure:gpt-4.1' });
     });
 
+    it('should resolve Copilot Code Review by provider name prefix', () => {
+        const result = resolveOneModelSpec('copilot code', sampleModels);
+        expect(result).toEqual({ match: 'copilot-code-review' });
+    });
+
+    it('should not resolve Copilot Code Review for short or generic substrings', () => {
+        expect(resolveOneModelSpec('review', sampleModels)).toEqual({});
+        expect(resolveOneModelSpec('code', sampleModels)).toEqual({});
+    });
+
     // ── Fix #4: colon handling ────────────────────────────────────────
 
     it('should handle model IDs with multiple colons', () => {

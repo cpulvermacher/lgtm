@@ -640,13 +640,15 @@ function isMissingGitObjectError(error: unknown): boolean {
         return false;
     }
 
+    const message = error.message.toLowerCase();
+
     return [
-        'does not exist',
-        'exists on disk, but not in',
-        'pathspec',
-        'bad revision',
-        'unknown revision',
-    ].some((snippet) => error.message.includes(snippet));
+        /path '.*' does not exist in /,
+        /exists on disk, but not in /,
+        /pathspec '.*' did not match any file\(s\) known to git/,
+        /\bbad revision\b/,
+        /\bunknown revision or path not in the working tree\b/,
+    ].some((pattern) => pattern.test(message));
 }
 
 export type RefList = {

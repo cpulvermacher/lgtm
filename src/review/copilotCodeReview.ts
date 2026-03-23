@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import * as vscode from 'vscode';
 
 import { sortFileCommentsBySeverity } from '@/review/comment';
@@ -79,6 +79,13 @@ type FileSnapshotPair =
           readonly useWorkspaceFileForCurrent: false;
       };
 
+/**
+ * Run GitHub Copilot Chat's code review command for the prepared diff files.
+ *
+ * API-level failures and cancellations are returned in `ReviewResult.errors`
+ * so callers can keep a normal review result shape. Command execution failures
+ * are treated as infrastructure errors and still reject the call.
+ */
 export async function reviewDiffWithCopilotCodeReview(
     config: Config,
     request: ReviewRequest,
@@ -102,6 +109,8 @@ export async function reviewDiffWithCopilotCodeReview(
 
         tempDir = await mkdtemp(join(tmpdir(), 'lgtm-copilot-review-'));
         const preparedFiles: PreparedFile[] = [];
+        const gatheringMessage = formatGatheringFilesMessage(files);
+        const gatheringIncrement = files.length > 0 ? 100 / files.length : 0;
 
         for (const file of files) {
             if (cancellationToken?.isCancellationRequested) {
@@ -109,8 +118,8 @@ export async function reviewDiffWithCopilotCodeReview(
             }
 
             progress?.report({
-                message: formatGatheringFilesMessage(files),
-                increment: files.length > 0 ? 100 / files.length : 0,
+                message: gatheringMessage,
+                increment: gatheringIncrement,
             });
 
             preparedFiles.push(
@@ -211,6 +220,13 @@ export async function reviewDiffWithCopilotCodeReview(
     };
 }
 
+/**
+ * Build the file pair that Copilot Chat expects for review.
+ *
+ * Workspace files are used directly when the current side exists on disk.
+ * Otherwise we materialize temporary snapshots for staged, committed, deleted,
+ * or renamed content so both sides can be reviewed through stable URIs.
+ */
 async function prepareFileForReview(
     config: Config,
     scope: ReviewScope,
@@ -313,7 +329,20 @@ async function writeSnapshotFile(
     filePath: string,
     content: string
 ): Promise<vscode.Uri> {
-    const fullPath = join(tempDir, directory, filePath);
+    const snapshotRoot = resolve(tempDir, directory);
+    const fullPath = resolve(snapshotRoot, filePath);
+    const relativePath = relative(snapshotRoot, fullPath);
+
+    if (
+        !relativePath ||
+        relativePath === '..' ||
+        relativePath.startsWith(`..${sep}`)
+    ) {
+        throw new Error(
+            `Refusing to write Copilot review snapshot outside the temporary directory: ${filePath}`
+        );
+    }
+
     await mkdir(dirname(fullPath), { recursive: true });
     await writeFile(fullPath, content, 'utf8');
     return vscode.Uri.file(fullPath);
@@ -335,6 +364,9 @@ function getCommentLine(comment: CopilotCodeReviewComment): number {
     return typeof line === 'number' && line >= 0 ? line + 1 : 0;
 }
 
+/**
+ * Normalize Copilot severities to LGTM's 1..5 severity scale where 5 is high.
+ */
 function normalizeSeverity(severity: unknown): number {
     if (typeof severity === 'number' && severity >= 1 && severity <= 5) {
         return severity;
@@ -375,6 +407,8 @@ async function runCopilotCodeReview(
         };
     }
 
+    // This setting belongs to the Copilot Chat extension. Defaulting to true
+    // preserves existing behavior if the setting is absent or renamed.
     const reviewEnabled = vscode.workspace
         .getConfiguration('github.copilot.chat')
         .get<boolean>('reviewAgent.enabled', true);
@@ -418,6 +452,10 @@ async function runCopilotCodeReview(
     return result.result;
 }
 
+/**
+ * Race the review command against cancellation and dispose the listener once
+ * either side wins.
+ */
 async function raceCommandWithCancellation(
     command: PromiseLike<CopilotCodeReviewResult | undefined>,
     cancellationToken?: vscode.CancellationToken

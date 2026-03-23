@@ -426,12 +426,13 @@ export function resolveOneModelSpec(
 ): ModelSpecResult {
     const toId = (m: ModelInfo) => `${m.vendor}:${m.id}`;
     const specLower = spec.toLowerCase();
+    const providerNameLower = copilotCodeReviewProviderName.toLowerCase();
 
     if (specLower === copilotCodeReviewProviderId) {
         return { match: copilotCodeReviewProviderId };
     }
 
-    if (copilotCodeReviewProviderName.toLowerCase().includes(specLower)) {
+    if (specLower.length >= 4 && providerNameLower.startsWith(specLower)) {
         return { match: copilotCodeReviewProviderId };
     }
 

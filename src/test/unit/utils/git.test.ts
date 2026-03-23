@@ -560,6 +560,17 @@ line3`;
             ).rejects.toBe(error);
         });
 
+        it('does not treat unrelated pathspec errors as missing objects', async () => {
+            const error = new Error(
+                'pathspec magic is not supported by this command'
+            );
+            vi.mocked(mockSimpleGit.show).mockRejectedValue(error);
+
+            await expect(
+                git.getFileContentAtRef('HEAD', 'src/file.ts')
+            ).rejects.toBe(error);
+        });
+
         it('rethrows non-Error show failures', async () => {
             vi.mocked(mockSimpleGit.show).mockRejectedValue('bad failure');
 

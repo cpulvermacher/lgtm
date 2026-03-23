@@ -56,7 +56,7 @@ async function initializeConfig(): Promise<Config> {
         gitRoot,
         getModel: (modelId?: string) => {
             const id = modelId ?? sessionModelIds[0] ?? getOptions().chatModel;
-            return loadModel(id);
+            return loadReviewProvider(id);
         },
         promptForSessionModelIds: async () => {
             const selectedModelIds = await promptForModelSelection(
@@ -128,12 +128,12 @@ async function getWorkspaceConfig(): Promise<{
     return { workspaceRoot, git, gitRoot };
 }
 
-/** get desired chat model.
+/** get desired review provider.
  *
  * If the model is not available, shows an error toast with possible options.
  * Note that this is rather slow (~1 sec), avoid repeated calls.
  */
-async function loadModel(modelId: string): Promise<Model> {
+async function loadReviewProvider(modelId: string): Promise<Model> {
     const { logger } = await getConfig();
     logger.debug(`Loading review provider: ${modelId}`);
 
@@ -170,10 +170,10 @@ async function loadModel(modelId: string): Promise<Model> {
         if (option === resetToDefaultOption) {
             await setOption('chatModel', defaultModelId);
             logger.info(`Review provider reset to default: ${defaultModelId}`);
-            return await loadModel(defaultModelId);
+            return await loadReviewProvider(defaultModelId);
         } else if (option === selectChatModelOption) {
             await vscode.commands.executeCommand('lgtm.selectChatModel');
-            return await loadModel(getOptions().chatModel);
+            return await loadReviewProvider(getOptions().chatModel);
         }
 
         throw new Error(
@@ -257,10 +257,6 @@ async function promptForModelSelection(
 ): Promise<string[] | undefined> {
     const models = await vscode.lm.selectChatModels();
     const quickPickItems = getModelQuickPickItems(models ?? []);
-    if (quickPickItems.length === 0) {
-        vscode.window.showWarningMessage('No review providers available.');
-        return undefined;
-    }
 
     const itemsWithSelectionState = quickPickItems.map((item) => {
         if (item.kind === vscode.QuickPickItemKind.Separator) return item;
