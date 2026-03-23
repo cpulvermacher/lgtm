@@ -2,6 +2,10 @@ import * as vscode from 'vscode';
 
 import { Model } from '@/types/Model';
 import { ModelError } from '@/types/ModelError';
+import {
+    copilotCodeReviewProviderId,
+    copilotCodeReviewProviderName,
+} from '@/types/ReviewProvider';
 import { getConfig } from '@/vscode/config';
 
 /** Get given chat model (asks for permissions the first time) */
@@ -115,6 +119,7 @@ export function isRecommendedModel(model: vscode.LanguageModelChat): boolean {
 
 export type ModelQuickPickItem = vscode.QuickPickItem & {
     id?: string;
+    providerId?: string;
     modelIdWithVendor?: string; // in format "vendor:id"
     name?: string;
     vendor?: string;
@@ -128,7 +133,16 @@ export type ModelQuickPickItem = vscode.QuickPickItem & {
 export function getModelQuickPickItems(
     models: vscode.LanguageModelChat[]
 ): ModelQuickPickItem[] {
-    const recommendedModels: ModelQuickPickItem[] = [];
+    const recommendedModels: ModelQuickPickItem[] = [
+        {
+            id: copilotCodeReviewProviderId,
+            providerId: copilotCodeReviewProviderId,
+            label: copilotCodeReviewProviderName,
+            description: copilotCodeReviewProviderId,
+            name: copilotCodeReviewProviderName,
+            vendor: 'copilot',
+        },
+    ];
     let otherModels: ModelQuickPickItem[] = [];
     const otherModelsByVendor: Record<string, ModelQuickPickItem[]> = {};
     const unsupportedModels: ModelQuickPickItem[] = [];
@@ -139,6 +153,7 @@ export function getModelQuickPickItems(
 
         const item: ModelQuickPickItem = {
             id: model.id,
+            providerId: modelIdWithVendor,
             label: modelName,
             description: `${model.vendor}:${model.id}`,
             name: modelName,

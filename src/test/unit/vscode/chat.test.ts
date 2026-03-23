@@ -432,6 +432,20 @@ describe('Chat multi-model review', () => {
         });
     });
 
+    describe('special review provider resolution', () => {
+        it('should resolve model:copilot-code-review inline', () => {
+            const result = resolveOneModelSpec('copilot-code-review', []);
+
+            expect(result).toEqual({ match: 'copilot-code-review' });
+        });
+
+        it('should display Copilot Code Review by name', () => {
+            expect(getModelDisplayName('copilot-code-review', [])).toBe(
+                'Copilot Code Review'
+            );
+        });
+    });
+
     describe('model display names', () => {
         it('should use model ID as fallback when name is unavailable', () => {
             expect(getModelDisplayName('copilot:gpt-4.1', [])).toBe('gpt-4.1');

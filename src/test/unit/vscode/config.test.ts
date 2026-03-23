@@ -301,6 +301,21 @@ describe('Model quick pick items', () => {
         expect(gpt4Item?.description).toBe('copilot:gpt-4');
     });
 
+    it('should include Copilot Code Review in Recommended Models', () => {
+        const items = getModelQuickPickItems([]);
+
+        const separatorIndex = items.findIndex(
+            (item) => item.label === 'Recommended Models'
+        );
+        const providerIndex = items.findIndex(
+            (item) => item.providerId === 'copilot-code-review'
+        );
+
+        expect(separatorIndex).toBe(0);
+        expect(providerIndex).toBe(1);
+        expect(items[providerIndex]?.label).toBe('Copilot Code Review');
+    });
+
     it('should use model.id as fallback when name is not available', () => {
         const models = [
             fakeModel({
