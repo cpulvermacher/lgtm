@@ -5,6 +5,7 @@ import type { DiffFile } from '@/types/DiffFile';
 import { ModelError } from '@/types/ModelError';
 import type { PromptType } from '@/types/PromptType';
 import type { ReviewComment } from '@/types/ReviewComment';
+import type { ReviewContextFile } from '@/types/ReviewContextFile';
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import { parallelLimit } from '@/utils/async';
@@ -78,7 +79,7 @@ export async function reviewDiff(
 async function aggregateFileDiffs(
     config: Config,
     request: ReviewRequest,
-    contextFiles: { path: string; content: string }[],
+    contextFiles: ReviewContextFile[],
     files: DiffFile[],
     progress?: Progress<{ message?: string; increment?: number }>,
     cancellationToken?: CancellationToken

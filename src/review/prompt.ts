@@ -59,7 +59,7 @@ export function renderContextFiles(contextFiles: ReviewContextFile[]): string {
 
     const renderedFiles = contextFiles
         .map(({ path, content }) => {
-            const tagName = `context_${toContextTagName(path)}`;
+            const tagName = toContextTagName(path);
             return `<${tagName}>\n${content.trim()}\n</${tagName}>`;
         })
         .join('\n\n');
@@ -99,7 +99,7 @@ function toContextTagName(filePath: string): string {
         })
         .join('')
         .replace(/^_+|_+$/g, '');
-    return `ctx_file_${tag.length > 0 ? tag : 'file'}`;
+    return tag.length > 0 ? `context_file_${tag}` : 'context_file';
 }
 
 export const responseExample = [

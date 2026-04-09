@@ -67,11 +67,9 @@ describe('createReviewPrompt', () => {
         expect(prompt).toContain(
             'Here is project-wide documentation and context for the codebase where the diff applies:'
         );
-        expect(prompt).toContain('<context_ctx_file_AGENTS_x002e_md>');
+        expect(prompt).toContain('<context_file_AGENTS_x002e_md>');
         expect(prompt).toContain('Follow the repo conventions.');
-        expect(prompt).toContain(
-            '<context_ctx_file_docs_x002f_README_x002e_md>'
-        );
+        expect(prompt).toContain('<context_file_docs_x002f_README_x002e_md>');
         expect(prompt).toContain('Architecture notes.');
     });
 
@@ -87,7 +85,20 @@ describe('createReviewPrompt', () => {
             ]
         );
 
-        expect(prompt).toContain('<context_ctx_file_a_x002f_b_x002e_md>');
-        expect(prompt).toContain('<context_ctx_file_a_x005f_b_x002e_md>');
+        expect(prompt).toContain('<context_file_a_x002f_b_x002e_md>');
+        expect(prompt).toContain('<context_file_a_x005f_b_x002e_md>');
+    });
+
+    it('uses a readable fallback tag when a context path is empty', () => {
+        const prompt = createReviewPrompt(
+            changeDescription,
+            diff,
+            customPrompt,
+            undefined,
+            [{ path: '', content: 'fallback context' }]
+        );
+
+        expect(prompt).toContain('<context_file>');
+        expect(prompt).not.toContain('<context_file_file>');
     });
 });
