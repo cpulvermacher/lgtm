@@ -42,7 +42,7 @@ async function handleChat(
     if (chatRequest.command !== 'review') {
         stream.markdown(
             'Please use the /review command:\n' +
-                ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively. Use `/review staged` or `/review unstaged` to review uncommitted changes. Use `model:modelId` to specify models inline, e.g. `/review model:gpt-4.1 develop main`.'
+                ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively. Use `/review staged` or `/review unstaged` to review uncommitted changes. Use `model:modelId` to specify models inline, e.g. `/review model:gpt-4.1 develop main`. Use `context:path` to override which context files are attached, or `context:none` to disable context for a single review.'
         );
         return;
     }
@@ -61,7 +61,6 @@ async function handleChat(
         // Resolve inline model specs against available models
         const resolvedModelIds = await resolveModelSpecs(
             promptModelSpecs,
-            config.logger,
             stream,
             availableModels
         );
@@ -196,7 +195,7 @@ async function maybeCheckoutTarget(
 }
 
 /** Constructs review request (prompting user if needed) */
-async function getReviewRequest(
+export async function getReviewRequest(
     config: Config,
     prompt: string
 ): Promise<ReviewRequest | undefined> {
@@ -238,7 +237,10 @@ async function getReviewRequest(
         return;
     }
 
-    return { scope: reviewScope };
+    return {
+        scope: reviewScope,
+        contextFilesOverride: parsedPrompt.contextFilesOverride,
+    };
 }
 
 function buildComment(
@@ -354,14 +356,10 @@ export function getModelDisplayName(
  */
 async function resolveModelSpecs(
     specs: string[],
-    logger: Logger,
     stream: vscode.ChatResponseStream,
     availableModels: ModelInfo[]
 ): Promise<string[]> {
     if (!availableModels || availableModels.length === 0) {
-        logger.info(
-            'No chat models available for resolving inline model specs'
-        );
         stream.markdown('No chat models available. Review cancelled.');
         return [];
     }
@@ -374,17 +372,11 @@ async function resolveModelSpecs(
         if (resolved.match) {
             resolvedIds.add(resolved.match);
         } else if (resolved.ambiguous) {
-            logger.info(
-                `Ambiguous model spec '${spec}' matched multiple models: ${resolved.ambiguous.join(', ')}`
-            );
             ambiguous.push(
                 `'${spec}' matches multiple models: ${resolved.ambiguous.join(', ')}`
             );
         } else {
             const suggestion = suggestClosestModelSpec(spec, availableModels);
-            logger.info(
-                `Could not resolve model spec '${spec}'. Available models: ${availableModels.map((m) => `${m.vendor}:${m.id}`).join(', ')}`
-            );
             notFound.push(
                 suggestion
                     ? `'${spec}' (did you mean '${suggestion}'?)`

@@ -27,6 +27,7 @@ import {
     collectAttributedComments,
     createSharedProgress,
     getModelDisplayName,
+    getReviewRequest,
     type ModelInfo,
     type ModelReviewResult,
     resolveOneModelSpec,
@@ -116,6 +117,63 @@ describe('Chat multi-model review', () => {
 
             expect(mockStream.progress).toHaveBeenCalledTimes(1);
             expect(mockStream.progress).toHaveBeenCalledWith('Reviewing...');
+        });
+    });
+
+    describe('getReviewRequest', () => {
+        it('should carry context overrides into the review request', async () => {
+            const config = {
+                git: {
+                    getCommitRef: vi.fn().mockResolvedValue('abc1234'),
+                    isUncommitted: vi.fn(() => false),
+                    isValidRefPair: vi.fn(() => true),
+                    getReviewScope: vi.fn().mockResolvedValue({
+                        target: 'feature',
+                        base: 'main',
+                        isCommitted: true,
+                        isTargetCheckedOut: true,
+                        revisionRangeDiff: 'main...feature',
+                        revisionRangeLog: 'main..feature',
+                        changeDescription: 'Changes',
+                    }),
+                },
+            } as never;
+
+            const request = await getReviewRequest(
+                config,
+                'context:AGENTS.md context:README.md feature main'
+            );
+
+            expect(request?.contextFilesOverride).toEqual([
+                'AGENTS.md',
+                'README.md',
+            ]);
+        });
+
+        it('should allow disabling context files for one review', async () => {
+            const config = {
+                git: {
+                    getCommitRef: vi.fn().mockResolvedValue('abc1234'),
+                    isUncommitted: vi.fn(() => false),
+                    isValidRefPair: vi.fn(() => true),
+                    getReviewScope: vi.fn().mockResolvedValue({
+                        target: 'feature',
+                        base: 'main',
+                        isCommitted: true,
+                        isTargetCheckedOut: true,
+                        revisionRangeDiff: 'main...feature',
+                        revisionRangeLog: 'main..feature',
+                        changeDescription: 'Changes',
+                    }),
+                },
+            } as never;
+
+            const request = await getReviewRequest(
+                config,
+                'context:none feature main'
+            );
+
+            expect(request?.contextFilesOverride).toEqual([]);
         });
     });
 

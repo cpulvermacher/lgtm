@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { UncommittedRef } from '@/types/Ref';
 import { Git } from '@/utils/git';
-import { extractModelSpecs, parseArguments } from '@/utils/parseArguments';
+import {
+    extractContextSpecs,
+    extractModelSpecs,
+    parseArguments,
+} from '@/utils/parseArguments';
 
 describe('parseArguments', () => {
     const mockGit = {
@@ -201,6 +205,46 @@ describe('parseArguments', () => {
                 parseArguments(mockGit, 'model:gpt-4.1 target base extra')
             ).rejects.toThrow('Expected at most two refs as arguments.');
         });
+
+        it('extracts context file overrides', async () => {
+            const result = await parseArguments(
+                mockGit,
+                'context:AGENTS.md context:docs/README.md target base'
+            );
+
+            expect(result).toEqual({
+                target: 'target',
+                base: 'base',
+                contextFilesOverride: ['AGENTS.md', 'docs/README.md'],
+            });
+        });
+
+        it('extracts context:none as an empty override', async () => {
+            const result = await parseArguments(
+                mockGit,
+                'model:gpt-4.1 context:none target base'
+            );
+
+            expect(result).toEqual({
+                target: 'target',
+                base: 'base',
+                modelIds: ['gpt-4.1'],
+                contextFilesOverride: [],
+            });
+        });
+
+        it('ignores empty context tokens instead of disabling context', async () => {
+            const result = await parseArguments(
+                mockGit,
+                'model:gpt-4.1 context: target base'
+            );
+
+            expect(result).toEqual({
+                target: 'target',
+                base: 'base',
+                modelIds: ['gpt-4.1'],
+            });
+        });
     });
 });
 
@@ -267,6 +311,59 @@ describe('extractModelSpecs', () => {
         expect(result).toEqual({
             modelIds: ['gpt-4.1'],
             remaining: ['main'],
+        });
+    });
+});
+
+describe('extractContextSpecs', () => {
+    it('extracts context overrides from mixed tokens', () => {
+        const result = extractContextSpecs(
+            'context:AGENTS.md develop context:docs/README.md main'
+        );
+
+        expect(result).toEqual({
+            contextFilesOverride: ['AGENTS.md', 'docs/README.md'],
+            remaining: ['develop', 'main'],
+        });
+    });
+
+    it('treats context:none as disabling all context files', () => {
+        const result = extractContextSpecs(
+            'context:AGENTS.md context:none develop main'
+        );
+
+        expect(result).toEqual({
+            contextFilesOverride: [],
+            remaining: ['develop', 'main'],
+        });
+    });
+
+    it('allows context files after context:none', () => {
+        const result = extractContextSpecs(
+            'context:none context:AGENTS.md develop main'
+        );
+
+        expect(result).toEqual({
+            contextFilesOverride: ['AGENTS.md'],
+            remaining: ['develop', 'main'],
+        });
+    });
+
+    it('ignores context: tokens with no value', () => {
+        const result = extractContextSpecs('context: develop');
+
+        expect(result).toEqual({
+            contextFilesOverride: undefined,
+            remaining: ['develop'],
+        });
+    });
+
+    it('ignores punctuation-only context tokens', () => {
+        const result = extractContextSpecs('context:... develop');
+
+        expect(result).toEqual({
+            contextFilesOverride: undefined,
+            remaining: ['develop'],
         });
     });
 });

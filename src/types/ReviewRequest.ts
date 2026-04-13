@@ -2,6 +2,7 @@ import type { UncommittedRef } from './Ref';
 
 export type ReviewRequest = {
     scope: ReviewScope;
+    contextFilesOverride?: string[];
 };
 
 /** scope of changes in version control for a given review request  */

@@ -39,7 +39,7 @@ export function parseComment(comment: unknown): ReviewComment {
         typeof comment.file !== 'string' ||
         !comment.file
     ) {
-        throw new Error('Missing `file` field in ' + JSON.stringify(comment));
+        throw new Error(`Missing \`file\` field in ${JSON.stringify(comment)}`);
     }
     if (!('comment' in comment) || typeof comment.comment !== 'string') {
         throw new Error('Missing `comment` field');
