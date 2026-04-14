@@ -965,10 +965,6 @@ line3`;
     });
 
     describe('getDetachedHead', () => {
-        beforeEach(() => {
-            vi.mocked(mockSimpleGit.branch).mockClear();
-        });
-
         it('returns detached HEAD info when HEAD is detached', async () => {
             vi.mocked(mockSimpleGit.branch).mockResolvedValue({
                 all: ['branch1', 'branch2'],

@@ -85,7 +85,6 @@ function createMockReviewResult(
 
 describe('Chat multi-model review', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
         streamCalls = [];
         mockToken.isCancellationRequested = false;
     });

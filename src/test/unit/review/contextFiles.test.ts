@@ -29,8 +29,6 @@ describe('loadReviewContextFiles', () => {
 
     afterEach(() => {
         vi.doUnmock('node:fs/promises');
-        vi.restoreAllMocks();
-        vi.clearAllMocks();
         vi.resetModules();
         for (const dir of tempDirs) {
             rmSync(dir, { recursive: true, force: true });

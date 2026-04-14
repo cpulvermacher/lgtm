@@ -168,10 +168,6 @@ describe('Session model selection logic', () => {
     }
 
     beforeEach(() => {
-        vscodeMocks.showQuickPick.mockReset();
-        vscodeMocks.selectChatModels.mockReset();
-        vscodeMocks.showWarningMessage.mockReset();
-        vscodeMocks.getConfiguration.mockReset();
         vscodeMocks.getConfiguration.mockReturnValue({
             get: <T>(_key: string, fallback?: T) => fallback,
             update: vi.fn(),
