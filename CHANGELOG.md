@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.4.0] (pre-release)
+- Add support for adding project-specific context files to the review prompt. Defaults to `AGENTS.md`, but can be configured using `Lgtm: Context Files`. (Many thanks to @Quicksaver!)
+- Fix: If a setting (e.g. chat model) is overridden at the workspace level, changing it via commands should change the setting at workspace level, not user level. (#17)
+- Add Claude Sonnet 4.6 to list of recommended models.
+- Show descriptions for git tags.
+
 ## [1.3.1]
 Includs changes from 1.3.0, plus
 - update simple-git dependency.
