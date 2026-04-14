@@ -34,7 +34,7 @@ const gitMocks = vi.hoisted(() => ({
 
 vi.mock('vscode', () => ({
     QuickPickItemKind: { Separator: -1 },
-    ConfigurationTarget: { Global: 1 },
+    ConfigurationTarget: { Global: 1, Workspace: 2, WorkspaceFolder: 3 },
     workspace: {
         workspaceFolders: [{ uri: { fsPath: '/workspace' } }],
         getConfiguration: vscodeMocks.getConfiguration,
@@ -171,6 +171,7 @@ describe('Session model selection logic', () => {
         vscodeMocks.getConfiguration.mockReturnValue({
             get: <T>(_key: string, fallback?: T) => fallback,
             update: vi.fn(),
+            inspect: vi.fn().mockReturnValue(undefined),
         });
         vscodeMocks.onDidChangeConfiguration.mockReturnValue({
             dispose: vi.fn(),
@@ -268,6 +269,105 @@ describe('Session model selection logic', () => {
             const result = await config.promptForSessionModel();
             expect(result).toBe(true);
         });
+    });
+});
+
+describe('setOption', () => {
+    beforeEach(() => {
+        vscodeMocks.onDidChangeConfiguration.mockReturnValue({
+            dispose: vi.fn(),
+        });
+        gitMocks.createGit.mockResolvedValue({
+            getGitRoot: () => '/workspace',
+        });
+    });
+
+    it('should write to Global when no workspace setting exists', async () => {
+        const updateMock = vi.fn();
+        vscodeMocks.getConfiguration.mockReturnValue({
+            get: <T>(_key: string, fallback?: T) => fallback,
+            update: updateMock,
+            inspect: vi.fn().mockReturnValue({
+                globalValue: undefined,
+                workspaceValue: undefined,
+                workspaceFolderValue: undefined,
+            }),
+        });
+
+        const config = await getConfig({ refreshWorkspace: true });
+        await config.setOption('chatModel', 'copilot:gpt-4');
+
+        expect(updateMock).toHaveBeenCalledWith(
+            'chatModel',
+            'copilot:gpt-4',
+            1
+        );
+    });
+
+    it('should write to Workspace when a workspace-level setting exists', async () => {
+        const updateMock = vi.fn();
+        vscodeMocks.getConfiguration.mockReturnValue({
+            get: <T>(_key: string, fallback?: T) => fallback,
+            update: updateMock,
+            inspect: vi.fn().mockReturnValue({
+                globalValue: 'copilot:gpt-4',
+                workspaceValue: 'copilot:gpt-4.1',
+                workspaceFolderValue: undefined,
+            }),
+        });
+
+        const config = await getConfig({ refreshWorkspace: true });
+        await config.setOption('chatModel', 'copilot:claude-sonnet');
+
+        expect(updateMock).toHaveBeenCalledWith(
+            'chatModel',
+            'copilot:claude-sonnet',
+            2
+        );
+    });
+
+    it('should write to WorkspaceFolder when a workspace-folder-level setting exists', async () => {
+        const updateMock = vi.fn();
+        vscodeMocks.getConfiguration.mockReturnValue({
+            get: <T>(_key: string, fallback?: T) => fallback,
+            update: updateMock,
+            inspect: vi.fn().mockReturnValue({
+                globalValue: undefined,
+                workspaceValue: undefined,
+                workspaceFolderValue: 'copilot:gpt-4',
+            }),
+        });
+
+        const config = await getConfig({ refreshWorkspace: true });
+        await config.setOption('chatModel', 'copilot:claude-sonnet');
+
+        expect(updateMock).toHaveBeenCalledWith(
+            'chatModel',
+            'copilot:claude-sonnet',
+            3
+        );
+    });
+
+    it('should prefer WorkspaceFolder over Workspace when both are set', async () => {
+        const updateMock = vi.fn();
+        vscodeMocks.getConfiguration.mockReturnValue({
+            get: <T>(_key: string, fallback?: T) => fallback,
+            update: updateMock,
+            inspect: vi.fn().mockReturnValue({
+                globalValue: 'copilot:gpt-4',
+                workspaceValue: 'copilot:gpt-4.1',
+                workspaceFolderValue: 'copilot:gpt-4o',
+            }),
+        });
+
+        const config = await getConfig({ refreshWorkspace: true });
+        await config.setOption('chatModel', 'copilot:claude-sonnet');
+
+        expect(updateMock).toHaveBeenCalledWith(
+            'chatModel',
+            'copilot:claude-sonnet',
+            3
+        );
     });
 });
 
