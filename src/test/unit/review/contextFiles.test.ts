@@ -6,6 +6,7 @@ import {
     symlinkSync,
     writeFileSync,
 } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -18,6 +19,14 @@ vi.mock('@/vscode/config', () => ({
     getConfig: vi.fn(),
 }));
 
+vi.mock('node:fs/promises', async () => {
+    const actual =
+        await vi.importActual<typeof import('node:fs/promises')>(
+            'node:fs/promises'
+        );
+    return { ...actual, readFile: vi.fn(actual.readFile) };
+});
+
 describe('loadReviewContextFiles', () => {
     const tempDirs: string[] = [];
     const logger = {
@@ -28,8 +37,6 @@ describe('loadReviewContextFiles', () => {
     } as Logger;
 
     afterEach(() => {
-        vi.doUnmock('node:fs/promises');
-        vi.resetModules();
         for (const dir of tempDirs) {
             rmSync(dir, { recursive: true, force: true });
         }
@@ -43,10 +50,10 @@ describe('loadReviewContextFiles', () => {
         writeFileSync(join(workspaceRoot, 'AGENTS.md'), 'Repo guidance\n');
         writeFileSync(join(workspaceRoot, 'docs', 'README.md'), 'Nested docs');
 
-        vi.mocked(getConfig).mockResolvedValue({
+        vi.mocked(getConfig, { partial: true }).mockResolvedValue({
             workspaceRoot,
             logger,
-        } as never);
+        });
 
         const result = await loadReviewContextFiles([
             'AGENTS.md',
@@ -64,10 +71,10 @@ describe('loadReviewContextFiles', () => {
         tempDirs.push(workspaceRoot);
         writeFileSync(join(workspaceRoot, 'README.md'), '');
 
-        vi.mocked(getConfig).mockResolvedValue({
+        vi.mocked(getConfig, { partial: true }).mockResolvedValue({
             workspaceRoot,
             logger,
-        } as never);
+        });
 
         const result = await loadReviewContextFiles([
             'README.md',
@@ -99,10 +106,10 @@ describe('loadReviewContextFiles', () => {
         symlinkSync(join(outsideRoot, 'secret.md'), symlinkPath);
         expect(readlinkSync(symlinkPath)).toBe(join(outsideRoot, 'secret.md'));
 
-        vi.mocked(getConfig).mockResolvedValue({
+        vi.mocked(getConfig, { partial: true }).mockResolvedValue({
             workspaceRoot,
             logger,
-        } as never);
+        });
 
         const result = await loadReviewContextFiles([
             '   ',
@@ -122,10 +129,10 @@ describe('loadReviewContextFiles', () => {
         const workspaceRoot = mkdtempSync(join(tmpdir(), 'lgtm-context-'));
         tempDirs.push(workspaceRoot);
 
-        vi.mocked(getConfig).mockResolvedValue({
+        vi.mocked(getConfig, { partial: true }).mockResolvedValue({
             workspaceRoot,
             logger,
-        } as never);
+        });
 
         const result = await loadReviewContextFiles(['.']);
 
@@ -140,10 +147,10 @@ describe('loadReviewContextFiles', () => {
         tempDirs.push(workspaceRoot);
         mkdirSync(join(workspaceRoot, 'docs'));
 
-        vi.mocked(getConfig).mockResolvedValue({
+        vi.mocked(getConfig, { partial: true }).mockResolvedValue({
             workspaceRoot,
             logger,
-        } as never);
+        });
 
         const result = await loadReviewContextFiles(['docs']);
 
@@ -159,31 +166,13 @@ describe('loadReviewContextFiles', () => {
         tempDirs.push(workspaceRoot);
         writeFileSync(join(workspaceRoot, 'README.md'), 'Repo guidance');
 
-        const getConfigMock = vi.fn().mockResolvedValue({
+        vi.mocked(getConfig, { partial: true }).mockResolvedValue({
             workspaceRoot,
             logger,
         });
+        vi.mocked(readFile).mockRejectedValueOnce('boom');
 
-        vi.resetModules();
-        vi.doMock('@/vscode/config', () => ({
-            getConfig: getConfigMock,
-        }));
-        vi.doMock('node:fs/promises', async () => {
-            const actual =
-                await vi.importActual<typeof import('node:fs/promises')>(
-                    'node:fs/promises'
-                );
-
-            return {
-                ...actual,
-                readFile: vi.fn().mockRejectedValue('boom'),
-            };
-        });
-
-        const { loadReviewContextFiles: loadReviewContextFilesWithMockedFs } =
-            await import('@/review/contextFiles');
-
-        const result = await loadReviewContextFilesWithMockedFs(['README.md']);
+        const result = await loadReviewContextFiles(['README.md']);
 
         expect(result).toEqual([]);
         expect(logger.info).toHaveBeenCalledWith(
