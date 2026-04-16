@@ -104,16 +104,20 @@ async function readStream(
 }
 
 export function isRecommendedModel(model: vscode.LanguageModelChat): boolean {
-    if (
-        (model.vendor === 'copilot' && model.id === 'gpt-4.1') ||
-        (model.vendor === 'copilot' &&
-            model.id.startsWith('claude-sonnet-4.5')) ||
-        (model.vendor === 'claude-model-provider' &&
-            model.id.startsWith('claude-sonnet-4-5'))
-    ) {
-        return true;
+    const { vendor, id } = model;
+    if (vendor === 'copilot') {
+        return (
+            id === 'gpt-4.1' ||
+            id.startsWith('claude-sonnet-4.5') ||
+            id.startsWith('claude-sonnet-4.6')
+        );
     }
-
+    if (vendor === 'claude-model-provider') {
+        return (
+            id.startsWith('claude-sonnet-4-5') ||
+            id.startsWith('claude-sonnet-4-6')
+        );
+    }
     return false;
 }
 

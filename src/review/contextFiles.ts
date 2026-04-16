@@ -44,7 +44,7 @@ export async function loadReviewContextFiles(
             }
             const relativePath = relative(realWorkspaceRoot, realAbsolutePath);
 
-            const content = (await readFile(absolutePath, 'utf8')).trim();
+            const content = (await readFile(realAbsolutePath, 'utf8')).trim();
             if (content.length === 0) {
                 logger.debug(`Skipping empty context file: "${trimmedPath}"`);
                 continue;

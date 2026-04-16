@@ -128,7 +128,6 @@ export function extractContextSpecs(args: string): {
     for (const token of tokens) {
         const tokenLower = token.toLowerCase();
         if (tokenLower.startsWith('context:')) {
-            hasOverride = true;
             const contextSpec = token
                 .slice('context:'.length)
                 .replace(/[.,;:!?]+$/, '');
@@ -136,6 +135,7 @@ export function extractContextSpecs(args: string): {
                 continue;
             }
 
+            hasOverride = true;
             if (contextSpec.toLowerCase() === 'none') {
                 contextFiles.length = 0;
                 continue;

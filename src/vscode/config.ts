@@ -243,9 +243,15 @@ async function setOption<T extends keyof Options>(
     option: T,
     value: Options[T]
 ) {
-    await vscode.workspace
-        .getConfiguration('lgtm')
-        .update(option, value, vscode.ConfigurationTarget.Global);
+    const cfg = vscode.workspace.getConfiguration('lgtm');
+    const inspection = cfg.inspect(option);
+    let target = vscode.ConfigurationTarget.Global;
+    if (inspection?.workspaceFolderValue !== undefined) {
+        target = vscode.ConfigurationTarget.WorkspaceFolder;
+    } else if (inspection?.workspaceValue !== undefined) {
+        target = vscode.ConfigurationTarget.Workspace;
+    }
+    await cfg.update(option, value, target);
 }
 
 /**

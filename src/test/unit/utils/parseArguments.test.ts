@@ -232,6 +232,19 @@ describe('parseArguments', () => {
                 contextFilesOverride: [],
             });
         });
+
+        it('ignores empty context tokens instead of disabling context', async () => {
+            const result = await parseArguments(
+                mockGit,
+                'model:gpt-4.1 context: target base'
+            );
+
+            expect(result).toEqual({
+                target: 'target',
+                base: 'base',
+                modelIds: ['gpt-4.1'],
+            });
+        });
     });
 });
 
@@ -336,20 +349,20 @@ describe('extractContextSpecs', () => {
         });
     });
 
-    it('skips context: tokens with no value', () => {
+    it('ignores context: tokens with no value', () => {
         const result = extractContextSpecs('context: develop');
 
         expect(result).toEqual({
-            contextFilesOverride: [],
+            contextFilesOverride: undefined,
             remaining: ['develop'],
         });
     });
 
-    it('treats punctuation-only context tokens as an explicit override', () => {
+    it('ignores punctuation-only context tokens', () => {
         const result = extractContextSpecs('context:... develop');
 
         expect(result).toEqual({
-            contextFilesOverride: [],
+            contextFilesOverride: undefined,
             remaining: ['develop'],
         });
     });

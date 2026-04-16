@@ -3,7 +3,7 @@
     "displayName": "LGTM - AI Code Review",
     "description": "Review pull requests or source code changes in Git using GitHub Copilot Chat",
     "publisher": "cpulvermacher",
-    "version": "1.3.1",
+    "version": "1.4.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/cpulvermacher/lgtm.git"
@@ -312,15 +312,15 @@
         "@types/vscode": "^1.104.0",
         "@vitest/coverage-v8": "^4.0.18",
         "@vscode/vsce": "^3.7.1",
-        "esbuild": "^0.27.3",
+        "esbuild": "^0.28.0",
         "typescript": "^5.9.3",
         "vitest": "^4.0.18"
     },
     "dependencies": {
         "fastest-levenshtein": "^1.0.16",
         "jsonc-parser": "^3.3.1",
-        "minimatch": "^10.2.4",
-        "simple-git": "^3.33.0"
+        "minimatch": "^10.2.5",
+        "simple-git": "^3.35.2"
     },
     "extensionDependencies": [
         "github.copilot-chat"
@@ -328,9 +328,8 @@
     "pnpm": {
         "overrides": {
             "brace-expansion@>=1.0.0 <=1.1.11": ">=1.1.12",
-            "brace-expansion@>=2.0.0 <=2.0.1": ">=2.0.2",
+            "brace-expansion@>=5.0.0 <5.0.5": ">=5.0.5",
             "tar-fs@>=2.0.0 <2.1.4": ">=2.1.4",
-            "glob@>=10.2.0 <10.5.0": ">=10.5.0",
             "glob@>=11.0.0 <11.1.0": ">=11.1.0",
             "jws@=4.0.0": ">=4.0.1",
             "jws@<3.2.3": ">=3.2.3"
