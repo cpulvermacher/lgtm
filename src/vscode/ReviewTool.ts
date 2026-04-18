@@ -44,12 +44,9 @@ export class ReviewTool implements vscode.LanguageModelTool<ReviewInput> {
                 options.input.changeDescription;
         }
 
-        const result = await reviewDiff(
-            config,
-            reviewRequest,
-            undefined,
-            token
-        );
+        const result = await reviewDiff(config, reviewRequest, {
+            cancellationToken: token,
+        });
         const comments = result.fileComments.flatMap((fileComment) => {
             return fileComment.comments.map(
                 (comment) =>

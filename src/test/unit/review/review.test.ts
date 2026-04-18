@@ -5,8 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CancellationToken } from 'vscode';
 
 import { parseResponse } from '@/review/comment';
+import { reviewDiffWithCopilotCodeReview } from '@/review/copilotCodeReview';
+import { formatGatheringFilesMessage } from '@/review/formatGatheringFilesMessage';
 import { ModelRequest } from '@/review/ModelRequest';
-import { formatGatheringFilesMessage, reviewDiff } from '@/review/review';
+import { reviewDiff } from '@/review/review';
 import { Config } from '@/types/Config';
 import { FileComments } from '@/types/FileComments';
 import { Logger } from '@/types/Logger';
@@ -18,6 +20,10 @@ import { getConfig } from '@/vscode/config';
 
 vi.mock('@/vscode/config', () => ({
     getConfig: vi.fn(),
+}));
+
+vi.mock('@/review/copilotCodeReview', () => ({
+    reviewDiffWithCopilotCodeReview: vi.fn(),
 }));
 
 function createMockConfig(saveOutputToFile = false) {
@@ -161,8 +167,7 @@ describe('reviewDiff', () => {
         const result = await reviewDiff(
             config,
             { scope },
-            progress,
-            cancellationToken
+            { progress, cancellationToken }
         );
 
         expect(result.request.scope).toBe(scope);
@@ -203,8 +208,7 @@ describe('reviewDiff', () => {
         const result = await reviewDiff(
             config,
             { scope },
-            progress,
-            cancellationToken
+            { progress, cancellationToken }
         );
 
         expect(result.request.scope).toBe(scope);
@@ -232,8 +236,7 @@ describe('reviewDiff', () => {
         const result = await reviewDiff(
             config,
             { scope },
-            progress,
-            cancellationToken
+            { progress, cancellationToken }
         );
 
         expect(modelRequest.addDiff).toHaveBeenCalledTimes(2);
@@ -256,8 +259,7 @@ describe('reviewDiff', () => {
         const result = await reviewDiff(
             config,
             { scope },
-            progress,
-            cancellationToken
+            { progress, cancellationToken }
         );
 
         expect(result.request.scope).toBe(scope);
@@ -277,8 +279,7 @@ describe('reviewDiff', () => {
         const result = await reviewDiff(
             config,
             { scope },
-            progress,
-            cancellationToken
+            { progress, cancellationToken }
         );
 
         expect(modelRequest.addDiff).not.toHaveBeenCalled();
@@ -297,8 +298,7 @@ describe('reviewDiff', () => {
         const result = await reviewDiff(
             config,
             { scope },
-            progress,
-            cancellationToken
+            { progress, cancellationToken }
         );
 
         expect(result.request.scope).toBe(scope);
@@ -323,8 +323,7 @@ describe('reviewDiff', () => {
         const result = await reviewDiff(
             config,
             { scope },
-            progress,
-            cancellationToken
+            { progress, cancellationToken }
         );
 
         expect(modelRequest.addDiff).toHaveBeenCalledTimes(3);
@@ -351,8 +350,7 @@ describe('reviewDiff', () => {
         const result = await reviewDiff(
             config,
             { scope },
-            progress,
-            cancellationToken
+            { progress, cancellationToken }
         );
 
         expect(result.request.scope).toBe(scope);
@@ -375,8 +373,7 @@ describe('reviewDiff', () => {
         const result = await reviewDiff(
             config,
             { scope },
-            progress,
-            cancellationToken
+            { progress, cancellationToken }
         );
 
         expect(result.request.scope).toBe(scope);
@@ -395,8 +392,7 @@ describe('reviewDiff', () => {
         const result = await reviewDiff(
             config,
             { scope },
-            progress,
-            cancellationToken
+            { progress, cancellationToken }
         );
 
         expect(result.request.scope).toBe(scope);
@@ -407,7 +403,7 @@ describe('reviewDiff', () => {
         vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
         vi.mocked(parseResponse).mockReturnValue(mockComments);
 
-        await reviewDiff(config, { scope }, progress, cancellationToken);
+        await reviewDiff(config, { scope }, { progress, cancellationToken });
 
         expect(capturedContextFiles).toEqual([
             { path: 'AGENTS.md', content: 'Project rules' },
@@ -421,11 +417,74 @@ describe('reviewDiff', () => {
         await reviewDiff(
             config,
             { scope, contextFilesOverride: [] },
-            progress,
-            cancellationToken
+            { progress, cancellationToken }
         );
 
         expect(capturedContextFiles).toEqual([]);
+    });
+
+    it('uses the Copilot Code Review provider path when requested', async () => {
+        vi.mocked(reviewDiffWithCopilotCodeReview).mockResolvedValue({
+            request: { scope },
+            files: diffFiles,
+            fileComments: [],
+            errors: [],
+        });
+
+        await reviewDiff(
+            config,
+            { scope },
+            {
+                providerId: 'copilot-code-review',
+                progress,
+                cancellationToken,
+            }
+        );
+
+        expect(reviewDiffWithCopilotCodeReview).toHaveBeenCalledWith(
+            config,
+            { scope },
+            diffFiles,
+            progress,
+            cancellationToken
+        );
+        expect(modelRequest.addDiff).not.toHaveBeenCalled();
+    });
+
+    it('saves Copilot Code Review provider results when file output is enabled', async () => {
+        const { config, git } = createMockConfig(true);
+        attachTempWorkspaceRoot(config, tempDirs);
+        vi.mocked(getConfig).mockResolvedValue(config);
+        vi.mocked(git.getChangedFiles).mockResolvedValue([
+            { file: 'deleted.ts', status: 'D' },
+        ]);
+        const copilotResult = {
+            request: { scope },
+            files: [{ file: 'deleted.ts', status: 'D' }],
+            fileComments: [],
+            errors: [],
+        };
+        vi.mocked(reviewDiffWithCopilotCodeReview).mockResolvedValue(
+            copilotResult as never
+        );
+
+        const result = await reviewDiff(
+            config,
+            { scope },
+            {
+                providerId: 'copilot-code-review',
+            }
+        );
+
+        expect(reviewDiffWithCopilotCodeReview).toHaveBeenCalledWith(
+            config,
+            { scope },
+            [{ file: 'deleted.ts', status: 'D' }],
+            undefined,
+            undefined
+        );
+        expect(result).toBe(copilotResult);
+        expect(saveToFile).toHaveBeenCalledWith(config, copilotResult);
     });
 });
 

@@ -8,6 +8,7 @@ import type {
     ReviewFlowType,
 } from '@/types/Config';
 import type { Model } from '@/types/Model';
+import { isCopilotCodeReviewProviderId } from '@/types/ReviewProvider';
 import { createGit, type Git } from '@/utils/git';
 import { LgtmLogger } from './logger';
 import { getChatModel, getModelQuickPickItems } from './model';
@@ -55,7 +56,7 @@ async function initializeConfig(): Promise<Config> {
         gitRoot,
         getModel: (modelId?: string) => {
             const id = modelId ?? sessionModelIds[0] ?? getOptions().chatModel;
-            return loadModel(id);
+            return loadReviewProvider(id);
         },
         promptForSessionModelIds: async () => {
             const selectedModelIds = await promptForModelSelection(
@@ -127,26 +128,34 @@ async function getWorkspaceConfig(): Promise<{
     return { workspaceRoot, git, gitRoot };
 }
 
-/** get desired chat model.
+/** get desired review provider.
  *
  * If the model is not available, shows an error toast with possible options.
  * Note that this is rather slow (~1 sec), avoid repeated calls.
  */
-async function loadModel(modelId: string): Promise<Model> {
+async function loadReviewProvider(modelId: string): Promise<Model> {
     const { logger } = await getConfig();
-    logger.debug(`Loading chat model: ${modelId}`);
+    logger.debug(`Loading review provider: ${modelId}`);
+
+    if (isCopilotCodeReviewProviderId(modelId)) {
+        throw new Error(
+            'Copilot Code Review is a special review provider and cannot be loaded as a chat model.'
+        );
+    }
 
     try {
         return await getChatModel(modelId);
     } catch (error) {
         const errorMessage =
-            error instanceof Error ? error.message : 'Error loading chat model';
+            error instanceof Error
+                ? error.message
+                : 'Error loading review provider';
         logger.info(
-            `[Error] Failed to load chat model (was trying ${modelId}): ${errorMessage}`
+            `[Error] Failed to load review provider (was trying ${modelId}): ${errorMessage}`
         );
 
         const resetToDefaultOption = `Reset to Default (${defaultModelId})`;
-        const selectChatModelOption = 'Select Chat Model';
+        const selectChatModelOption = 'Select Review Provider';
         const options = [selectChatModelOption];
         if (modelId !== defaultModelId) {
             options.unshift(resetToDefaultOption);
@@ -154,21 +163,21 @@ async function loadModel(modelId: string): Promise<Model> {
 
         // Notify the user
         const option = await vscode.window.showErrorMessage(
-            `Failed to load chat model '${modelId}'. Reason: ${errorMessage}\nDo you want to reset to the default model or select a different one?`,
+            `Failed to load review provider '${modelId}'. Reason: ${errorMessage}\nDo you want to reset to the default provider or select a different one?`,
             ...options
         );
 
         if (option === resetToDefaultOption) {
             await setOption('chatModel', defaultModelId);
-            logger.info(`Chat model reset to default: ${defaultModelId}`);
-            return await loadModel(defaultModelId);
+            logger.info(`Review provider reset to default: ${defaultModelId}`);
+            return await loadReviewProvider(defaultModelId);
         } else if (option === selectChatModelOption) {
             await vscode.commands.executeCommand('lgtm.selectChatModel');
-            return await loadModel(getOptions().chatModel);
+            return await loadReviewProvider(getOptions().chatModel);
         }
 
         throw new Error(
-            `Couldn't find chat model. Please ensure the lgtm.chatModel setting is set to an available model ID. You can use the 'LGTM: Select Chat Model' command to pick one.`
+            `Couldn't find review provider. Please ensure the lgtm.chatModel setting is set to an available provider ID. You can use the 'LGTM: Select Chat Model' command to pick one.`
         );
     }
 }
@@ -253,35 +262,39 @@ async function promptForModelSelection(
     currentModelIds: string[]
 ): Promise<string[] | undefined> {
     const models = await vscode.lm.selectChatModels();
-    if (!models || models.length === 0) {
-        vscode.window.showWarningMessage('No chat models available.');
-        return undefined;
-    }
+    const quickPickItems = getModelQuickPickItems(models ?? []);
 
-    const quickPickItems = getModelQuickPickItems(models).map((item) => {
+    const itemsWithSelectionState = quickPickItems.map((item) => {
         if (item.kind === vscode.QuickPickItemKind.Separator) return item;
 
         const isPicked = currentModelIds.some((modelId) => {
-            if (!item.modelIdWithVendor) {
+            if (!item.providerId) {
                 return false;
             }
 
-            return modelId === item.modelIdWithVendor || modelId === item.id;
+            return (
+                modelId === item.providerId ||
+                modelId === item.modelIdWithVendor ||
+                modelId === item.id
+            );
         });
 
         return { ...item, picked: isPicked };
     });
-    const selectedItems = await vscode.window.showQuickPick(quickPickItems, {
-        placeHolder:
-            'Select one or more chat models for this review (use Space to select multiple)',
-        canPickMany: true,
-    });
+    const selectedItems = await vscode.window.showQuickPick(
+        itemsWithSelectionState,
+        {
+            placeHolder:
+                'Select one or more review providers for this review (use Space to select multiple)',
+            canPickMany: true,
+        }
+    );
 
     if (!selectedItems || selectedItems.length === 0) {
         return undefined;
     }
 
     return selectedItems
-        .filter((item) => item.modelIdWithVendor !== undefined)
-        .map((item) => item.modelIdWithVendor as string);
+        .filter((item) => item.providerId !== undefined)
+        .map((item) => item.providerId as string);
 }
