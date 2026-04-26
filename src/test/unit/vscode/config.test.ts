@@ -493,6 +493,19 @@ describe('Model quick pick items', () => {
         );
     });
 
+    it('should read model picker configuration once per invocation', () => {
+        getModelQuickPickItems([
+            fakeModel({ id: 'gpt-4.1', vendor: 'copilot' }),
+            fakeModel({ id: 'claude-sonnet-4.6', vendor: 'copilot' }),
+        ]);
+
+        const lgtmConfigCalls = vscodeMocks.getConfiguration.mock.calls.filter(
+            ([section]) => section === 'lgtm'
+        );
+
+        expect(lgtmConfigCalls).toHaveLength(1);
+    });
+
     it('should omit preferred providers from the other sections', () => {
         vscodeMocks.getConfiguration.mockReturnValue({
             get: <T>(key: string, fallback?: T) => {

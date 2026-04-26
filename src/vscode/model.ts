@@ -108,7 +108,10 @@ async function readStream(
     return text;
 }
 
-function getPreferredProviderIds(): string[] {
+function getModelPickerPreferences(): {
+    preferredProviderIds: string[];
+    useRecommendedModelsLabel: boolean;
+} {
     const config = vscode.workspace.getConfiguration('lgtm');
     const chatModel = config.get<string>('chatModel', defaultModelId);
     const preferredModels = config.get<string[]>(
@@ -116,24 +119,15 @@ function getPreferredProviderIds(): string[] {
         defaultPreferredModelIds
     );
 
-    return [...new Set([chatModel, ...preferredModels])];
-}
-
-function shouldUseRecommendedModelsLabel(): boolean {
-    const config = vscode.workspace.getConfiguration('lgtm');
-    const chatModel = config.get<string>('chatModel', defaultModelId);
-    const preferredModels = config.get<string[]>(
-        'preferredModels',
-        defaultPreferredModelIds
-    );
-
-    return (
-        chatModel === defaultModelId &&
-        preferredModels.length === defaultPreferredModelIds.length &&
-        preferredModels.every(
-            (modelId, index) => modelId === defaultPreferredModelIds[index]
-        )
-    );
+    return {
+        preferredProviderIds: [...new Set([chatModel, ...preferredModels])],
+        useRecommendedModelsLabel:
+            chatModel === defaultModelId &&
+            preferredModels.length === defaultPreferredModelIds.length &&
+            preferredModels.every(
+                (modelId, index) => modelId === defaultPreferredModelIds[index]
+            ),
+    };
 }
 
 export type ModelQuickPickItem = vscode.QuickPickItem & {
@@ -152,7 +146,8 @@ export type ModelQuickPickItem = vscode.QuickPickItem & {
 export function getModelQuickPickItems(
     models: vscode.LanguageModelChat[]
 ): ModelQuickPickItem[] {
-    const preferredProviderIds = getPreferredProviderIds();
+    const { preferredProviderIds, useRecommendedModelsLabel } =
+        getModelPickerPreferences();
     const preferredProviderIdSet = new Set(preferredProviderIds);
     const preferredModelsById = new Map<string, ModelQuickPickItem>();
     const reviewProviders: ModelQuickPickItem[] = [];
@@ -216,7 +211,7 @@ export function getModelQuickPickItems(
 
     if (preferredModels.length > 0) {
         preferredModels.unshift({
-            label: shouldUseRecommendedModelsLabel()
+            label: useRecommendedModelsLabel
                 ? 'Recommended Models'
                 : 'Preferred Models',
             kind: vscode.QuickPickItemKind.Separator,
