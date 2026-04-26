@@ -119,6 +119,23 @@ function getPreferredProviderIds(): string[] {
     return [...new Set([chatModel, ...preferredModels])];
 }
 
+function shouldUseRecommendedModelsLabel(): boolean {
+    const config = vscode.workspace.getConfiguration('lgtm');
+    const chatModel = config.get<string>('chatModel', defaultModelId);
+    const preferredModels = config.get<string[]>(
+        'preferredModels',
+        defaultPreferredModelIds
+    );
+
+    return (
+        chatModel === defaultModelId &&
+        preferredModels.length === defaultPreferredModelIds.length &&
+        preferredModels.every(
+            (modelId, index) => modelId === defaultPreferredModelIds[index]
+        )
+    );
+}
+
 export type ModelQuickPickItem = vscode.QuickPickItem & {
     id?: string;
     providerId?: string;
@@ -199,7 +216,9 @@ export function getModelQuickPickItems(
 
     if (preferredModels.length > 0) {
         preferredModels.unshift({
-            label: 'Preferred Models',
+            label: shouldUseRecommendedModelsLabel()
+                ? 'Recommended Models'
+                : 'Preferred Models',
             kind: vscode.QuickPickItemKind.Separator,
         });
     }

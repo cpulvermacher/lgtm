@@ -472,6 +472,27 @@ describe('Model quick pick items', () => {
         expect(otherModelIndex).toBeGreaterThan(currentModelIndex);
     });
 
+    it('should label the default preferred section as recommended models', () => {
+        const items = getModelQuickPickItems([
+            fakeModel({ id: 'gpt-4.1', vendor: 'copilot' }),
+            fakeModel({ id: 'claude-sonnet-4.5', vendor: 'copilot' }),
+            fakeModel({ id: 'claude-sonnet-4.6', vendor: 'copilot' }),
+            fakeModel({
+                id: 'claude-sonnet-4-5',
+                vendor: 'claude-model-provider',
+            }),
+            fakeModel({
+                id: 'claude-sonnet-4-6',
+                vendor: 'claude-model-provider',
+            }),
+        ]);
+
+        expect(items[0]?.label).toBe('Recommended Models');
+        expect(items.some((item) => item.label === 'Preferred Models')).toBe(
+            false
+        );
+    });
+
     it('should omit preferred providers from the other sections', () => {
         vscodeMocks.getConfiguration.mockReturnValue({
             get: <T>(key: string, fallback?: T) => {
