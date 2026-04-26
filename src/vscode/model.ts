@@ -7,6 +7,7 @@ import {
     copilotCodeReviewProviderName,
 } from '@/types/ReviewProvider';
 import { getConfig } from '@/vscode/config';
+import { isCopilotCodeReviewAvailable } from '@/vscode/copilotCodeReviewAvailability';
 
 /** Get given chat model (asks for permissions the first time) */
 export async function getChatModel(modelId: string): Promise<Model> {
@@ -137,19 +138,22 @@ export type ModelQuickPickItem = vscode.QuickPickItem & {
 export function getModelQuickPickItems(
     models: vscode.LanguageModelChat[]
 ): ModelQuickPickItem[] {
-    const recommendedModels: ModelQuickPickItem[] = [
-        {
+    const recommendedModels: ModelQuickPickItem[] = [];
+    const reviewProviders: ModelQuickPickItem[] = [];
+    let otherModels: ModelQuickPickItem[] = [];
+    const otherModelsByVendor: Record<string, ModelQuickPickItem[]> = {};
+    const unsupportedModels: ModelQuickPickItem[] = [];
+
+    if (isCopilotCodeReviewAvailable()) {
+        reviewProviders.push({
             id: copilotCodeReviewProviderId,
             providerId: copilotCodeReviewProviderId,
             label: copilotCodeReviewProviderName,
             description: copilotCodeReviewProviderId,
             name: copilotCodeReviewProviderName,
             vendor: 'copilot',
-        },
-    ];
-    let otherModels: ModelQuickPickItem[] = [];
-    const otherModelsByVendor: Record<string, ModelQuickPickItem[]> = {};
-    const unsupportedModels: ModelQuickPickItem[] = [];
+        });
+    }
 
     for (const model of models) {
         const modelIdWithVendor = `${model.vendor}:${model.id}`;
@@ -184,6 +188,12 @@ export function getModelQuickPickItems(
             kind: vscode.QuickPickItemKind.Separator,
         });
     }
+    if (reviewProviders.length > 0) {
+        reviewProviders.unshift({
+            label: 'Review Providers',
+            kind: vscode.QuickPickItemKind.Separator,
+        });
+    }
     if (Object.keys(otherModelsByVendor).length > 0) {
         otherModels = [
             ...Object.entries(otherModelsByVendor)
@@ -212,7 +222,12 @@ export function getModelQuickPickItems(
         });
     }
 
-    return [...recommendedModels, ...otherModels, ...unsupportedModels];
+    return [
+        ...recommendedModels,
+        ...reviewProviders,
+        ...otherModels,
+        ...unsupportedModels,
+    ];
 }
 
 export function isUnSupportedModel(model: vscode.LanguageModelChat): boolean {

@@ -26,6 +26,7 @@ const vscodeMocks = vi.hoisted(() => ({
     executeCommand: vi.fn(),
     getConfiguration: vi.fn(),
     onDidChangeConfiguration: vi.fn(),
+    getExtension: vi.fn(),
 }));
 
 const gitMocks = vi.hoisted(() => ({
@@ -51,6 +52,9 @@ vi.mock('vscode', () => ({
     },
     commands: {
         executeCommand: vscodeMocks.executeCommand,
+    },
+    extensions: {
+        getExtension: vscodeMocks.getExtension,
     },
 }));
 
@@ -168,6 +172,7 @@ describe('Session model selection logic', () => {
     }
 
     beforeEach(() => {
+        vscodeMocks.getExtension.mockReturnValue({});
         vscodeMocks.getConfiguration.mockReturnValue({
             get: <T>(_key: string, fallback?: T) => fallback,
             update: vi.fn(),
@@ -386,6 +391,15 @@ describe('Model quick pick items', () => {
         } as LanguageModelChat;
     }
 
+    beforeEach(() => {
+        vscodeMocks.getExtension.mockReturnValue({});
+        vscodeMocks.getConfiguration.mockReturnValue({
+            get: <T>(_key: string, fallback?: T) => fallback,
+            update: vi.fn(),
+            inspect: vi.fn().mockReturnValue(undefined),
+        });
+    });
+
     it('should include vendor and id in description', () => {
         const models = [fakeModel({ id: 'gpt-4', vendor: 'copilot' })];
 
@@ -397,11 +411,13 @@ describe('Model quick pick items', () => {
         expect(gpt4Item?.description).toBe('copilot:gpt-4');
     });
 
-    it('should include Copilot Code Review in Recommended Models', () => {
+    it('should include Copilot Code Review in a separate review providers section', () => {
+        vscodeMocks.getExtension.mockReturnValue({});
+
         const items = getModelQuickPickItems([]);
 
         const separatorIndex = items.findIndex(
-            (item) => item.label === 'Recommended Models'
+            (item) => item.label === 'Review Providers'
         );
         const providerIndex = items.findIndex(
             (item) => item.providerId === 'copilot-code-review'
@@ -410,6 +426,19 @@ describe('Model quick pick items', () => {
         expect(separatorIndex).toBe(0);
         expect(providerIndex).toBe(1);
         expect(items[providerIndex]?.label).toBe('Copilot Code Review');
+    });
+
+    it('should hide Copilot Code Review when unavailable', () => {
+        vscodeMocks.getExtension.mockReturnValue(undefined);
+
+        const items = getModelQuickPickItems([]);
+
+        expect(
+            items.some((item) => item.providerId === 'copilot-code-review')
+        ).toBe(false);
+        expect(items.some((item) => item.label === 'Review Providers')).toBe(
+            false
+        );
     });
 
     it('should use model.id as fallback when name is not available', () => {
