@@ -8,6 +8,10 @@ import {
 } from '@/types/ReviewProvider';
 import { getConfig } from '@/vscode/config';
 import { isCopilotCodeReviewAvailable } from '@/vscode/copilotCodeReviewAvailability';
+import {
+    defaultModelId,
+    defaultPreferredModelIds,
+} from '@/vscode/defaultModels';
 
 /** Get given chat model (asks for permissions the first time) */
 export async function getChatModel(modelId: string): Promise<Model> {
@@ -104,22 +108,15 @@ async function readStream(
     return text;
 }
 
-export function isRecommendedModel(model: vscode.LanguageModelChat): boolean {
-    const { vendor, id } = model;
-    if (vendor === 'copilot') {
-        return (
-            id === 'gpt-4.1' ||
-            id.startsWith('claude-sonnet-4.5') ||
-            id.startsWith('claude-sonnet-4.6')
-        );
-    }
-    if (vendor === 'claude-model-provider') {
-        return (
-            id.startsWith('claude-sonnet-4-5') ||
-            id.startsWith('claude-sonnet-4-6')
-        );
-    }
-    return false;
+function getPreferredProviderIds(): string[] {
+    const config = vscode.workspace.getConfiguration('lgtm');
+    const chatModel = config.get<string>('chatModel', defaultModelId);
+    const preferredModels = config.get<string[]>(
+        'preferredModels',
+        defaultPreferredModelIds
+    );
+
+    return [...new Set([chatModel, ...preferredModels])];
 }
 
 export type ModelQuickPickItem = vscode.QuickPickItem & {
@@ -131,28 +128,39 @@ export type ModelQuickPickItem = vscode.QuickPickItem & {
 };
 
 /**
- * Build a categorized list of model quick pick items (Recommended / Other / Unsupported)
+ * Build a categorized list of model quick pick items (Preferred / Review Providers / Other / Unsupported)
  * with separator headers.  Labels contain only the plain model name — callers
  * are responsible for adding any prefix / suffix decoration they need.
  */
 export function getModelQuickPickItems(
     models: vscode.LanguageModelChat[]
 ): ModelQuickPickItem[] {
-    const recommendedModels: ModelQuickPickItem[] = [];
+    const preferredProviderIds = getPreferredProviderIds();
+    const preferredProviderIdSet = new Set(preferredProviderIds);
+    const preferredModelsById = new Map<string, ModelQuickPickItem>();
     const reviewProviders: ModelQuickPickItem[] = [];
     let otherModels: ModelQuickPickItem[] = [];
     const otherModelsByVendor: Record<string, ModelQuickPickItem[]> = {};
     const unsupportedModels: ModelQuickPickItem[] = [];
 
     if (isCopilotCodeReviewAvailable()) {
-        reviewProviders.push({
+        const codeReviewItem: ModelQuickPickItem = {
             id: copilotCodeReviewProviderId,
             providerId: copilotCodeReviewProviderId,
             label: copilotCodeReviewProviderName,
             description: copilotCodeReviewProviderId,
             name: copilotCodeReviewProviderName,
             vendor: 'copilot',
-        });
+        };
+
+        if (preferredProviderIdSet.has(copilotCodeReviewProviderId)) {
+            preferredModelsById.set(
+                copilotCodeReviewProviderId,
+                codeReviewItem
+            );
+        } else {
+            reviewProviders.push(codeReviewItem);
+        }
     }
 
     for (const model of models) {
@@ -169,10 +177,12 @@ export function getModelQuickPickItems(
             vendor: model.vendor,
         };
 
-        if (isUnSupportedModel(model)) {
+        if (preferredProviderIdSet.has(modelIdWithVendor)) {
+            if (!isUnSupportedModel(model)) {
+                preferredModelsById.set(modelIdWithVendor, item);
+            }
+        } else if (isUnSupportedModel(model)) {
             unsupportedModels.push(item);
-        } else if (isRecommendedModel(model)) {
-            recommendedModels.push(item);
         } else {
             const vendor = item.vendor || '';
             if (!otherModelsByVendor[vendor]) {
@@ -182,9 +192,14 @@ export function getModelQuickPickItems(
         }
     }
 
-    if (recommendedModels.length > 0) {
-        recommendedModels.unshift({
-            label: 'Recommended Models',
+    const preferredModels = preferredProviderIds.flatMap((providerId) => {
+        const item = preferredModelsById.get(providerId);
+        return item ? [item] : [];
+    });
+
+    if (preferredModels.length > 0) {
+        preferredModels.unshift({
+            label: 'Preferred Models',
             kind: vscode.QuickPickItemKind.Separator,
         });
     }
@@ -223,7 +238,7 @@ export function getModelQuickPickItems(
     }
 
     return [
-        ...recommendedModels,
+        ...preferredModels,
         ...reviewProviders,
         ...otherModels,
         ...unsupportedModels,

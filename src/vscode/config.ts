@@ -10,13 +10,12 @@ import type {
 import type { Model } from '@/types/Model';
 import { isCopilotCodeReviewProviderId } from '@/types/ReviewProvider';
 import { createGit, type Git } from '@/utils/git';
+import { defaultModelId, defaultPreferredModelIds } from './defaultModels';
 import { LgtmLogger } from './logger';
 import { getChatModel, getModelQuickPickItems } from './model';
 
 // defined when built via `npm run dev`
 declare const __GIT_VERSION__: string | undefined;
-
-export const defaultModelId = 'copilot:gpt-4.1';
 
 let config: Config | undefined;
 
@@ -191,6 +190,10 @@ function getOptions(): Options {
     const excludeGlobs = config.get<string[]>('exclude', []);
     const enableDebugOutput = config.get<boolean>('enableDebugOutput', false);
     const chatModel = config.get<string>('chatModel', defaultModelId);
+    const preferredModels = config.get<string[]>(
+        'preferredModels',
+        defaultPreferredModelIds
+    );
     const selectChatModelForReview = config.get<ChatModelOnNewPromptType>(
         'selectChatModelForReview',
         'Use default'
@@ -229,6 +232,7 @@ function getOptions(): Options {
         excludeGlobs,
         enableDebugOutput,
         chatModel,
+        preferredModels,
         selectChatModelForReview,
         outputModeWithMultipleModels,
         maxInputTokensFraction,

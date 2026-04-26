@@ -13,6 +13,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LanguageModelChat } from 'vscode';
 
 import { getConfig } from '@/vscode/config';
+import { defaultPreferredModelIds } from '@/vscode/defaultModels';
 import { getModelQuickPickItems } from '@/vscode/model';
 
 vi.stubGlobal('__GIT_VERSION__', undefined);
@@ -118,7 +119,7 @@ describe('Config options', () => {
         string,
         {
             enum?: string[];
-            default?: string;
+            default?: string | string[];
         }
     >;
 
@@ -145,6 +146,13 @@ describe('Config options', () => {
                 'Merged with attribution',
             ]);
             expect(setting?.default).toBe('Separate sections');
+        });
+    });
+
+    describe('preferredModels option', () => {
+        it('should declare expected default in package contributions', () => {
+            const setting = properties['lgtm.preferredModels'];
+            expect(setting?.default).toEqual(defaultPreferredModelIds);
         });
     });
 
@@ -426,6 +434,78 @@ describe('Model quick pick items', () => {
         expect(separatorIndex).toBe(0);
         expect(providerIndex).toBe(1);
         expect(items[providerIndex]?.label).toBe('Copilot Code Review');
+    });
+
+    it('should include the current chat model in the preferred models section', () => {
+        vscodeMocks.getConfiguration.mockReturnValue({
+            get: <T>(key: string, fallback?: T) => {
+                if (key === 'chatModel') {
+                    return 'copilot:gpt-4.1' as T;
+                }
+                if (key === 'preferredModels') {
+                    return [] as T;
+                }
+
+                return fallback;
+            },
+            update: vi.fn(),
+            inspect: vi.fn().mockReturnValue(undefined),
+        });
+
+        const items = getModelQuickPickItems([
+            fakeModel({ id: 'gpt-4.1', vendor: 'copilot' }),
+            fakeModel({ id: 'gemini-pro', vendor: 'copilot' }),
+        ]);
+
+        const preferredSeparatorIndex = items.findIndex(
+            (item) => item.label === 'Preferred Models'
+        );
+        const currentModelIndex = items.findIndex(
+            (item) => item.providerId === 'copilot:gpt-4.1'
+        );
+        const otherModelIndex = items.findIndex(
+            (item) => item.providerId === 'copilot:gemini-pro'
+        );
+
+        expect(preferredSeparatorIndex).toBe(0);
+        expect(currentModelIndex).toBe(1);
+        expect(otherModelIndex).toBeGreaterThan(currentModelIndex);
+    });
+
+    it('should omit preferred providers from the other sections', () => {
+        vscodeMocks.getConfiguration.mockReturnValue({
+            get: <T>(key: string, fallback?: T) => {
+                if (key === 'chatModel') {
+                    return 'copilot:gpt-4.1' as T;
+                }
+                if (key === 'preferredModels') {
+                    return ['copilot-code-review'] as T;
+                }
+
+                return fallback;
+            },
+            update: vi.fn(),
+            inspect: vi.fn().mockReturnValue(undefined),
+        });
+
+        const items = getModelQuickPickItems([
+            fakeModel({ id: 'gpt-4.1', vendor: 'copilot' }),
+            fakeModel({ id: 'gemini-pro', vendor: 'copilot' }),
+        ]);
+
+        const reviewProvidersSeparator = items.find(
+            (item) => item.label === 'Review Providers'
+        );
+        const preferredLabels = items
+            .slice(0, 3)
+            .filter((item) => item.kind !== -1)
+            .map((item) => item.providerId);
+
+        expect(reviewProvidersSeparator).toBeUndefined();
+        expect(preferredLabels).toEqual([
+            'copilot:gpt-4.1',
+            'copilot-code-review',
+        ]);
     });
 
     it('should hide Copilot Code Review when unavailable', () => {
