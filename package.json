@@ -3,7 +3,7 @@
     "displayName": "LGTM - AI Code Review",
     "description": "Review pull requests or source code changes in Git using GitHub Copilot Chat",
     "publisher": "cpulvermacher",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "repository": {
         "type": "git",
         "url": "https://github.com/cpulvermacher/lgtm.git"
@@ -310,29 +310,20 @@
         "@biomejs/biome": "2.4.6",
         "@types/node": "22.x",
         "@types/vscode": "^1.104.0",
-        "@vitest/coverage-v8": "^4.0.18",
-        "@vscode/vsce": "^3.7.1",
+        "@vitest/coverage-v8": "^4.1.5",
+        "@vscode/vsce": "^3.9.1",
         "esbuild": "^0.28.0",
         "typescript": "^5.9.3",
-        "vitest": "^4.0.18"
+        "vitest": "^4.1.5"
     },
     "dependencies": {
         "fastest-levenshtein": "^1.0.16",
         "jsonc-parser": "^3.3.1",
         "minimatch": "^10.2.5",
-        "simple-git": "^3.35.2"
+        "simple-git": "^3.36.0"
     },
     "extensionDependencies": [
         "github.copilot-chat"
     ],
-    "pnpm": {
-        "overrides": {
-            "brace-expansion@>=1.0.0 <=1.1.11": ">=1.1.12",
-            "brace-expansion@>=5.0.0 <5.0.5": ">=5.0.5",
-            "tar-fs@>=2.0.0 <2.1.4": ">=2.1.4",
-            "glob@>=11.0.0 <11.1.0": ">=11.1.0",
-            "jws@=4.0.0": ">=4.0.1",
-            "jws@<3.2.3": ">=3.2.3"
-        }
-    }
+    "packageManager": "pnpm@11.0.0-rc.0+sha512.1f08eadeea025e91448de6d5dee42a6c94764257000c043a9e36b8ff12849a72ebcb9c65fc1885094747249e52f53d8b73ada1181446bba81866810c8a4d3f6c"
 }

@@ -39,7 +39,6 @@ Assuming you have staged changes, the agent will start a review using LGTM and t
 
 - **Only Copilot Required**: Uses Copilot Chat for reviewing changes. Both free and paid plans are supported.
 - **Model Selection**: Choose other language model available to VS Code via the **LGTM: Select Chat Model** command available in the Command Palette (press `Cmd+Shift+P` or `Ctrl+Shift+P`).
-- **Custom Instructions**: Add custom instructions via the `Lgtm: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the `comment` field.`).
 - **Pull Request Integration**: Review pull requests from the GitHub Pull Request or Bitbucket extensions.
 - **Agent Support**: Adds tools to enable automatic reviews in agent mode:
     - `#review`: Reviews changes between two git references (branches, tags, or commits)
@@ -48,6 +47,8 @@ Assuming you have staged changes, the agent will start a review using LGTM and t
     - Example usage: `After your changes, run all tests and run #reviewUnstaged to check your work.`
 - **Chat Integration**: Review content remains in chat history for follow-up questions by omitting `@lgtm`.
 - **Automatic Fixes**: Use the `Fix` action on a review comment to fix it automatically. This will use the language model configured for inline chat.
+- **Project-Specific Context Files**: By default,`AGENTS.md` is added to the review prompt. Can be configured using the `Lgtm: Context Files` setting.
+- **Custom Instructions**: Add global custom instructions via the `Lgtm: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the `comment` field.`).
 
 ## Limitations
 
@@ -57,7 +58,7 @@ Assuming you have staged changes, the agent will start a review using LGTM and t
 
 ## Data Usage
 
-Source code changes and commit messages selected for review are sent to the chat model configured in the extension settings (default: GitHub Copilot GPT-4.1).
+Source code changes and commit messages selected for review are sent to the chat model configured in the extension settings.
 
 ## Contributing
 
