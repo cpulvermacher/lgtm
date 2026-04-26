@@ -623,7 +623,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         expect(result.errors[0].message).toBe('Copilot Code Review cancelled.');
     });
 
-    it('rejects when the Copilot review command fails without a cancellation token', async () => {
+    it('returns an error when the Copilot review command fails without a cancellation token', async () => {
         const config = createConfig();
         const activate = vi.fn();
         const failure = new Error('command failed');
@@ -632,23 +632,27 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
         vscodeMocks.executeCommand.mockRejectedValue(failure);
 
-        await expect(
-            reviewDiffWithCopilotCodeReview(
-                config as unknown as Config,
-                {
-                    scope: {
-                        target: UncommittedRef.Staged,
-                        isCommitted: false,
-                        isTargetCheckedOut: true,
-                    },
-                } as never,
-                [{ file: 'src/file.ts', status: 'M' }],
-                { report: vi.fn() }
-            )
-        ).rejects.toBe(failure);
+        const result = await reviewDiffWithCopilotCodeReview(
+            config as unknown as Config,
+            {
+                scope: {
+                    target: UncommittedRef.Staged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            } as never,
+            [{ file: 'src/file.ts', status: 'M' }],
+            { report: vi.fn() }
+        );
+
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0].message).toBe(
+            'GitHub Copilot Chat code review failed: command failed'
+        );
     });
 
-    it('rejects when the Copilot review command fails while a cancellation token is active', async () => {
+    it('returns an error when the Copilot review command fails while a cancellation token is active', async () => {
         const config = createConfig();
         const activate = vi.fn();
         const failure = new Error('command failed with token');
@@ -658,24 +662,28 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
         vscodeMocks.executeCommand.mockRejectedValue(failure);
 
-        await expect(
-            reviewDiffWithCopilotCodeReview(
-                config as unknown as Config,
-                {
-                    scope: {
-                        target: UncommittedRef.Staged,
-                        isCommitted: false,
-                        isTargetCheckedOut: true,
-                    },
-                } as never,
-                [{ file: 'src/file.ts', status: 'M' }],
-                { report: vi.fn() },
-                {
-                    isCancellationRequested: false,
-                    onCancellationRequested: vi.fn(() => subscription),
-                } as never
-            )
-        ).rejects.toBe(failure);
+        const result = await reviewDiffWithCopilotCodeReview(
+            config as unknown as Config,
+            {
+                scope: {
+                    target: UncommittedRef.Staged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            } as never,
+            [{ file: 'src/file.ts', status: 'M' }],
+            { report: vi.fn() },
+            {
+                isCancellationRequested: false,
+                onCancellationRequested: vi.fn(() => subscription),
+            } as never
+        );
+
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0].message).toBe(
+            'GitHub Copilot Chat code review failed: command failed with token'
+        );
 
         expect(subscription.dispose).toHaveBeenCalledOnce();
     });

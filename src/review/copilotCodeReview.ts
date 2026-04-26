@@ -82,9 +82,9 @@ type FileSnapshotPair =
 /**
  * Run GitHub Copilot Chat's code review command for the prepared diff files.
  *
- * API-level failures and cancellations are returned in `ReviewResult.errors`
- * so callers can keep a normal review result shape. Command execution failures
- * are treated as infrastructure errors and still reject the call.
+ * Failures and cancellations are returned in `ReviewResult.errors` so callers
+ * can keep a normal review result shape and surface problems without aborting
+ * the overall review flow.
  */
 export async function reviewDiffWithCopilotCodeReview(
     config: Config,
@@ -439,7 +439,10 @@ async function runCopilotCodeReview(
     }
 
     if (result.type === 'error') {
-        throw result.error;
+        return {
+            type: 'error',
+            reason: formatCommandError(result.error),
+        };
     }
 
     if (!result.result) {
@@ -450,6 +453,11 @@ async function runCopilotCodeReview(
     }
 
     return result.result;
+}
+
+function formatCommandError(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+    return `GitHub Copilot Chat code review failed: ${message}`;
 }
 
 /**
