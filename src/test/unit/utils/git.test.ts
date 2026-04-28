@@ -36,11 +36,11 @@ index 44cbb3f..887431b 100644
 \\ No newline at end of file
 `;
 
-describe('git', () => {
-    vi.mock('simple-git', () => ({
-        default: vi.fn(),
-    }));
+vi.mock('simple-git', () => ({
+    default: vi.fn(),
+}));
 
+describe('git', () => {
     const mockSimpleGit = {
         revparse: vi.fn(),
         cwd: vi.fn(),

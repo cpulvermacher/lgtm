@@ -6,13 +6,13 @@ import type { Logger } from '@/types/Logger';
 import type { ReviewResult } from '@/types/ReviewResult';
 import { saveToFile } from '@/utils/saveToFile';
 
-describe('saveToFile', () => {
-    vi.mock('fs', () => ({
-        existsSync: vi.fn(),
-        mkdirSync: vi.fn(),
-        writeFileSync: vi.fn(),
-    }));
+vi.mock('fs', () => ({
+    existsSync: vi.fn(),
+    mkdirSync: vi.fn(),
+    writeFileSync: vi.fn(),
+}));
 
+describe('saveToFile', () => {
     const logger = {
         debug: vi.fn(),
         info: vi.fn(),
