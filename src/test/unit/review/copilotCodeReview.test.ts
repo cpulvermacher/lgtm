@@ -88,7 +88,6 @@ describe('reviewDiffWithCopilotCodeReview', () => {
     }
 
     beforeEach(() => {
-        vi.clearAllMocks();
         if (!fsPromisesMocks.actualRm) {
             throw new Error('Expected node:fs/promises.rm to be initialized.');
         }
