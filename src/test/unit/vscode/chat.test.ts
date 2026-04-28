@@ -431,6 +431,20 @@ describe('Chat multi-model review', () => {
         });
     });
 
+    describe('special review provider resolution', () => {
+        it('should resolve model:copilot-code-review inline', () => {
+            const result = resolveOneModelSpec('copilot-code-review', []);
+
+            expect(result).toEqual({ match: 'copilot-code-review' });
+        });
+
+        it('should display Copilot Code Review by name', () => {
+            expect(getModelDisplayName('copilot-code-review', [])).toBe(
+                'Copilot Code Review'
+            );
+        });
+    });
+
     describe('model display names', () => {
         it('should use model ID as fallback when name is unavailable', () => {
             expect(getModelDisplayName('copilot:gpt-4.1', [])).toBe('gpt-4.1');
@@ -575,6 +589,16 @@ describe('resolveOneModelSpec', () => {
     it('should prefer exact vendor:id over exact id match', () => {
         const result = resolveOneModelSpec('azure:gpt-4.1', sampleModels);
         expect(result).toEqual({ match: 'azure:gpt-4.1' });
+    });
+
+    it('should resolve Copilot Code Review by provider name prefix', () => {
+        const result = resolveOneModelSpec('copilot code', sampleModels);
+        expect(result).toEqual({ match: 'copilot-code-review' });
+    });
+
+    it('should not resolve Copilot Code Review for short or generic substrings', () => {
+        expect(resolveOneModelSpec('review', sampleModels)).toEqual({});
+        expect(resolveOneModelSpec('code', sampleModels)).toEqual({});
     });
 
     // ── Fix #4: colon handling ────────────────────────────────────────

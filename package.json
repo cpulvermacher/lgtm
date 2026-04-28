@@ -114,7 +114,7 @@
                 "commands": [
                     {
                         "name": "review",
-                        "description": "Review changes. Specify branches, commits, or tags, e.g. `/review develop main`. Use `model:id` to select models inline. Use `context:path` to override attached context files or `context:none` to disable them for one review. Leave empty for interactive."
+                        "description": "Review changes. Specify branches, commits, or tags, e.g. `/review develop main`. Use `model:id` to select review providers inline, including `model:copilot-code-review`. Use `context:path` to override attached context files or `context:none` to disable them for one review. Leave empty for interactive."
                     }
                 ]
             }
@@ -227,7 +227,20 @@
                 "lgtm.chatModel": {
                     "type": "string",
                     "default": "copilot:gpt-4.1",
-                    "markdownDescription": "Default chat model to use for generating review comments. Use the 'LGTM: Select Chat Model' command to choose from available models. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits."
+                    "markdownDescription": "Default review provider to use for generating review comments. Use the 'LGTM: Select Chat Model' command to choose from available chat models or the special `copilot-code-review` provider. Note that non-default chat models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits."
+                },
+                "lgtm.preferredModels": {
+                    "type": "array",
+                    "default": [
+                        "copilot:claude-sonnet-4.5",
+                        "copilot:claude-sonnet-4.6",
+                        "claude-model-provider:claude-sonnet-4-5",
+                        "claude-model-provider:claude-sonnet-4-6"
+                    ],
+                    "items": {
+                        "type": "string"
+                    },
+                    "markdownDescription": "Review providers to prioritize in the picker. The current `lgtm.chatModel` is always added to the Preferred Models section automatically. Entries that are unavailable or unsupported are ignored, and preferred providers are omitted from the other sections."
                 },
                 "lgtm.selectChatModelForReview": {
                     "type": "string",
@@ -237,10 +250,10 @@
                     ],
                     "default": "Use default",
                     "enumDescriptions": [
-                        "Use the model defined in 'Chat Model'",
-                        "Always ask which model to use when starting a new prompt (supports multi-selection)"
+                        "Use the provider defined in 'Chat Model'",
+                        "Always ask which review provider to use when starting a new prompt (supports multi-selection)"
                     ],
-                    "markdownDescription": "Controls which chat model to use when starting a new review prompt. When set to 'Always ask', you can select multiple models to compare their results."
+                    "markdownDescription": "Controls which review provider to use when starting a new review prompt. When set to 'Always ask', you can select multiple chat models and/or Copilot Code Review to compare their results."
                 },
                 "lgtm.outputModeWithMultipleModels": {
                     "type": "string",

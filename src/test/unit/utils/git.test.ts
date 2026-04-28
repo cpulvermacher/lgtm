@@ -23,10 +23,10 @@ index 44cbb3f..887431b 100644
 +    <scirpt src="index.js"></scirpt>
  </head>
  <body>
- 
+
 @@ -26,7 +27,7 @@
- 
- 
+
+
      <script>
 -        window['settings'] = {}
 +        window['settings'] = eval("(" + new URLSearchParams(window.location.search).get('settings') + ")");
@@ -46,6 +46,7 @@ describe('git', () => {
         cwd: vi.fn(),
         log: vi.fn(),
         diff: vi.fn(),
+        show: vi.fn(),
         diffSummary: vi.fn(),
         branch: vi.fn(),
         tags: vi.fn(),
@@ -226,30 +227,32 @@ rename to index.html'
 
             const result = await git.getFileDiff(scope, file);
 
-            expect(result).toMatchInlineSnapshot(`
-              "0	diff --git a/index.html b/index.html
-              0	index 44cbb3f..887431b 100644
-              0	--- a/index.html
-              0	+++ b/index.html
-              0	@@ -1,6 +1,7 @@
-              1	 <html>
-              2	 <head>
-              3	     <title>Home</title>
-              4	+    <scirpt src="index.js"></scirpt>
-              5	 </head>
-              6	 <body>
-              7	 
-              0	@@ -26,7 +27,7 @@
-              27	 
-              28	 
-              29	     <script>
-              0	-        window['settings'] = {}
-              30	+        window['settings'] = eval("(" + new URLSearchParams(window.location.search).get('settings') + ")");
-              31	     </script>
-              32	 </body>
-              33	 </html>
-              34	"
-            `);
+            const expected = [
+                '0\tdiff --git a/index.html b/index.html',
+                '0\tindex 44cbb3f..887431b 100644',
+                '0\t--- a/index.html',
+                '0\t+++ b/index.html',
+                '0\t@@ -1,6 +1,7 @@',
+                '1\t <html>',
+                '2\t <head>',
+                '3\t     <title>Home</title>',
+                '4\t+    <scirpt src="index.js"></scirpt>',
+                '5\t </head>',
+                '6\t <body>',
+                ['7', ''].join('\t'),
+                '0\t@@ -26,7 +27,7 @@',
+                ['27', ''].join('\t'),
+                ['28', ''].join('\t'),
+                '29\t     <script>',
+                "0\t-        window['settings'] = {}",
+                '30\t+        window[\'settings\'] = eval("(" + new URLSearchParams(window.location.search).get(\'settings\') + ")");',
+                '31\t     </script>',
+                '32\t </body>',
+                '33\t </html>',
+                ['34', ''].join('\t'),
+            ].join('\n');
+
+            expect(result).toBe(expected);
         });
     });
 
@@ -491,6 +494,88 @@ line3`;
             );
             await expect(git.getCommitRef('invalid')).rejects.toThrow(
                 `Invalid ref "invalid". Please provide a valid commit, branch, tag, or HEAD.`
+            );
+        });
+    });
+
+    describe('snapshot helpers', () => {
+        it('returns the merge base with trailing whitespace trimmed', async () => {
+            vi.mocked(mockSimpleGit.raw).mockResolvedValue('abc123\n');
+
+            await expect(git.getMergeBase('base', 'target')).resolves.toBe(
+                'abc123'
+            );
+            expect(mockSimpleGit.raw).toHaveBeenCalledWith([
+                'merge-base',
+                '--',
+                'base',
+                'target',
+            ]);
+        });
+
+        it('returns file content at a ref', async () => {
+            vi.mocked(mockSimpleGit.show).mockResolvedValue('file content');
+
+            await expect(
+                git.getFileContentAtRef('HEAD', 'src/file.ts')
+            ).resolves.toBe('file content');
+            expect(mockSimpleGit.show).toHaveBeenCalledWith([
+                '--textconv',
+                '--no-ext-diff',
+                '--end-of-options',
+                'HEAD:src/file.ts',
+            ]);
+        });
+
+        it('returns file content from the index', async () => {
+            vi.mocked(mockSimpleGit.show).mockResolvedValue('index content');
+
+            await expect(
+                git.getFileContentAtIndex('src/file.ts')
+            ).resolves.toBe('index content');
+            expect(mockSimpleGit.show).toHaveBeenCalledWith([
+                '--textconv',
+                '--no-ext-diff',
+                '--end-of-options',
+                ':src/file.ts',
+            ]);
+        });
+
+        it('returns undefined when a file is missing from the requested object', async () => {
+            vi.mocked(mockSimpleGit.show).mockRejectedValue(
+                new Error('path exists on disk, but not in HEAD')
+            );
+
+            await expect(
+                git.getFileContentAtRef('HEAD', 'missing.ts')
+            ).resolves.toBeUndefined();
+        });
+
+        it('rethrows unexpected git show errors', async () => {
+            const error = new Error('permission denied');
+            vi.mocked(mockSimpleGit.show).mockRejectedValue(error);
+
+            await expect(
+                git.getFileContentAtRef('HEAD', 'src/file.ts')
+            ).rejects.toBe(error);
+        });
+
+        it('does not treat unrelated pathspec errors as missing objects', async () => {
+            const error = new Error(
+                'pathspec magic is not supported by this command'
+            );
+            vi.mocked(mockSimpleGit.show).mockRejectedValue(error);
+
+            await expect(
+                git.getFileContentAtRef('HEAD', 'src/file.ts')
+            ).rejects.toBe(error);
+        });
+
+        it('rethrows non-Error show failures', async () => {
+            vi.mocked(mockSimpleGit.show).mockRejectedValue('bad failure');
+
+            await expect(git.getFileContentAtIndex('src/file.ts')).rejects.toBe(
+                'bad failure'
             );
         });
     });

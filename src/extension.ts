@@ -110,17 +110,13 @@ async function startReviewChat(target: string = '', base: string = '') {
 
 async function handleSelectChatModel() {
     const models = await vscode.lm.selectChatModels();
-    if (!models || models.length === 0) {
-        vscode.window.showWarningMessage('No chat models available.');
-        return;
-    }
-
     const config = await getConfig();
     const currentModelId = config.getOptions().chatModel;
-    const quickPickItems = getModelQuickPickItems(models).map((item) => {
+    const quickPickItems = getModelQuickPickItems(models ?? []).map((item) => {
         if (item.kind === vscode.QuickPickItemKind.Separator) return item;
 
         const isCurrentModel =
+            item.providerId === currentModelId ||
             item.modelIdWithVendor === currentModelId ||
             item.id === currentModelId;
         const prefix = isCurrentModel ? '$(check)' : '\u2003 ';
@@ -131,15 +127,12 @@ async function handleSelectChatModel() {
     });
     const selectedQuickPickItem = await vscode.window.showQuickPick(
         quickPickItems,
-        { placeHolder: 'Select a chat model for LGTM reviews' }
+        { placeHolder: 'Select a review provider for LGTM reviews' }
     );
-    if (selectedQuickPickItem?.modelIdWithVendor) {
-        await config.setOption(
-            'chatModel',
-            selectedQuickPickItem.modelIdWithVendor
-        );
+    if (selectedQuickPickItem?.providerId) {
+        await config.setOption('chatModel', selectedQuickPickItem.providerId);
         vscode.window.showInformationMessage(
-            `LGTM chat model set to: ${selectedQuickPickItem.name}`
+            `LGTM review provider set to: ${selectedQuickPickItem.name}`
         );
     }
 }

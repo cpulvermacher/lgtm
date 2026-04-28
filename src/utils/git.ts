@@ -231,6 +231,24 @@ export class Git {
         return logs.all.map((log) => log.message).join('\n');
     }
 
+    /** return the merge-base commit hash for the given refs */
+    async getMergeBase(refA: string, refB: string): Promise<string> {
+        return (await this.git.raw(['merge-base', '--', refA, refB])).trim();
+    }
+
+    /** return file contents at the given ref, or undefined if the file does not exist there */
+    async getFileContentAtRef(
+        ref: string,
+        filePath: string
+    ): Promise<string | undefined> {
+        return await this.getFileContentFromObject(`${ref}:${filePath}`);
+    }
+
+    /** return file contents from the git index, or undefined if the file is not present in the index */
+    async getFileContentAtIndex(filePath: string): Promise<string | undefined> {
+        return await this.getFileContentFromObject(`:${filePath}`);
+    }
+
     /** return true iff if the given refs refer to the same commit */
     async isSameRef(refA: string, refB: string) {
         return (
@@ -256,6 +274,24 @@ export class Git {
             throw new Error(
                 `Invalid ref "${ref}". Please provide a valid commit, branch, tag, or HEAD.`
             );
+        }
+    }
+
+    private async getFileContentFromObject(
+        objectSpec: string
+    ): Promise<string | undefined> {
+        try {
+            return await this.git.show([
+                '--textconv',
+                '--no-ext-diff',
+                '--end-of-options',
+                objectSpec,
+            ]);
+        } catch (error) {
+            if (isMissingGitObjectError(error)) {
+                return undefined;
+            }
+            throw error;
         }
     }
 
@@ -591,6 +627,28 @@ export class Git {
     async checkout(ref: string) {
         await this.git.checkout(['--end-of-options', ref]);
     }
+}
+
+/**
+ * Git reports missing objects and missing paths through stderr text rather than
+ * a dedicated error code we can reliably branch on here. These snippets cover
+ * the variants we currently normalize to `undefined` in getFileContentFromObject.
+ * Keep the list and tests aligned when broadening support for new git versions.
+ */
+function isMissingGitObjectError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+        return false;
+    }
+
+    const message = error.message.toLowerCase();
+
+    return [
+        /path '.*' does not exist in /,
+        /exists on disk, but not in /,
+        /pathspec '.*' did not match any file\(s\) known to git/,
+        /\bbad revision\b/,
+        /\bunknown revision or path not in the working tree\b/,
+    ].some((pattern) => pattern.test(message));
 }
 
 export type RefList = {

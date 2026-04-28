@@ -30,6 +30,7 @@ export type Options = {
     excludeGlobs: string[];
     enableDebugOutput: boolean;
     chatModel: string;
+    preferredModels: string[];
     selectChatModelForReview: ChatModelOnNewPromptType;
     outputModeWithMultipleModels: ReviewFlowType;
     maxInputTokensFraction: number;

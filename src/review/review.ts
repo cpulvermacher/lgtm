@@ -6,6 +6,7 @@ import { ModelError } from '@/types/ModelError';
 import type { PromptType } from '@/types/PromptType';
 import type { ReviewComment } from '@/types/ReviewComment';
 import type { ReviewContextFile } from '@/types/ReviewContextFile';
+import { isCopilotCodeReviewProviderId } from '@/types/ReviewProvider';
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import { parallelLimit } from '@/utils/async';
@@ -14,24 +15,54 @@ import { isPathNotExcluded } from '@/utils/glob';
 import { saveToFile } from '@/utils/saveToFile';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { loadReviewContextFiles } from './contextFiles';
+import { reviewDiffWithCopilotCodeReview } from './copilotCodeReview';
+import { formatGatheringFilesMessage } from './formatGatheringFilesMessage';
 import { ModelRequest } from './ModelRequest';
 import { defaultPromptType, toPromptTypes } from './prompt';
+
+type ReviewDiffOptions = {
+    providerId?: string;
+    progress?: Progress<{ message?: string; increment?: number }>;
+    cancellationToken?: CancellationToken;
+};
 
 export async function reviewDiff(
     config: Config,
     request: ReviewRequest,
-    progress?: Progress<{ message?: string; increment?: number }>,
-    cancellationToken?: CancellationToken
+    options?: ReviewDiffOptions
 ): Promise<ReviewResult> {
+    const providerId = options?.providerId ?? config.getOptions().chatModel;
+    const progress = options?.progress;
+    const cancellationToken = options?.cancellationToken;
     const diffFiles = await config.git.getChangedFiles(request.scope);
-    const options = config.getOptions();
+    const reviewOptions = config.getOptions();
     const files = diffFiles.filter(
         (file) =>
-            isPathNotExcluded(file.file, options.excludeGlobs) &&
-            file.status !== 'D' // ignore deleted files
+            isPathNotExcluded(file.file, reviewOptions.excludeGlobs) &&
+            // Copilot Code Review can review deleted files because it builds
+            // temporary before/after snapshots instead of reading only the
+            // current workspace file.
+            (isCopilotCodeReviewProviderId(providerId) || file.status !== 'D')
     );
+
+    if (isCopilotCodeReviewProviderId(providerId)) {
+        const result = await reviewDiffWithCopilotCodeReview(
+            config,
+            request,
+            files,
+            progress,
+            cancellationToken
+        );
+
+        if (reviewOptions.saveOutputToFile) {
+            saveToFile(config, result);
+        }
+
+        return result;
+    }
+
     const configuredContextFiles =
-        request.contextFilesOverride ?? options.contextFiles;
+        request.contextFilesOverride ?? reviewOptions.contextFiles;
     const contextFiles = await loadReviewContextFiles(configuredContextFiles);
 
     //TODO reorder to get relevant input files together, e.g.
@@ -69,7 +100,7 @@ export async function reviewDiff(
     };
 
     // Save to file if the setting is enabled
-    if (options.saveOutputToFile) {
+    if (reviewOptions.saveOutputToFile) {
         saveToFile(config, result);
     }
 
@@ -250,21 +281,4 @@ async function processRequest(
         commentsForFile.push(comment);
         commentsPerFile.set(comment.file, commentsForFile);
     }
-}
-
-export function formatGatheringFilesMessage(
-    files: DiffFile[],
-    numFileNamesShown = 4
-): string {
-    const fileNames = files
-        .slice(0, numFileNamesShown)
-        .map((f) => f.file.split('/').pop() || f.file)
-        .join(', ');
-    const remainingCount = files.length - numFileNamesShown;
-
-    if (remainingCount <= 0) {
-        return `Gathering changes for ${fileNames}...`;
-    }
-
-    return `Gathering changes for ${fileNames}, and ${remainingCount} other ${remainingCount === 1 ? 'file' : 'files'}...`;
 }

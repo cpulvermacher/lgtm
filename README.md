@@ -41,14 +41,14 @@ Assuming you have staged changes, the agent will start a review using LGTM and t
 - **Model Selection**: Choose other language model available to VS Code via the **LGTM: Select Chat Model** command available in the Command Palette (press `Cmd+Shift+P` or `Ctrl+Shift+P`).
 - **Pull Request Integration**: Review pull requests from the GitHub Pull Request or Bitbucket extensions.
 - **Agent Support**: Adds tools to enable automatic reviews in agent mode:
-    - `#review`: Reviews changes between two git references (branches, tags, or commits)
-    - `#reviewStaged`: Reviews only staged changes in your working directory
-    - `#reviewUnstaged`: Reviews only unstaged changes in your working directory
-    - Example usage: `After your changes, run all tests and run #reviewUnstaged to check your work.`
+  - `#review`: Reviews changes between two git references (branches, tags, or commits)
+  - `#reviewStaged`: Reviews only staged changes in your working directory
+  - `#reviewUnstaged`: Reviews only unstaged changes in your working directory
+  - Example usage: `After your changes, run all tests and run #reviewUnstaged to check your work.`
 - **Chat Integration**: Review content remains in chat history for follow-up questions by omitting `@lgtm`.
 - **Automatic Fixes**: Use the `Fix` action on a review comment to fix it automatically. This will use the language model configured for inline chat.
-- **Project-Specific Context Files**: By default,`AGENTS.md` is added to the review prompt. Can be configured using the `Lgtm: Context Files` setting.
-- **Custom Instructions**: Add global custom instructions via the `Lgtm: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the `comment` field.`).
+- **Project-Specific Context Files**: By default, `AGENTS.md` is added to the review prompt. Can be configured using the `Lgtm: Context Files` setting.
+- **Custom Instructions**: Add global custom instructions via the `Lgtm: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the 'comment' field.`).
 
 ## Limitations
 

@@ -5,6 +5,11 @@ import { Config } from '@/types/Config';
 import { Logger } from '@/types/Logger';
 import { UncommittedRef } from '@/types/Ref';
 import { ReviewComment } from '@/types/ReviewComment';
+import {
+    copilotCodeReviewProviderId,
+    copilotCodeReviewProviderName,
+    isCopilotCodeReviewProviderId,
+} from '@/types/ReviewProvider';
 import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
 
@@ -42,7 +47,7 @@ async function handleChat(
     if (chatRequest.command !== 'review') {
         stream.markdown(
             'Please use the /review command:\n' +
-                ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively. Use `/review staged` or `/review unstaged` to review uncommitted changes. Use `model:modelId` to specify models inline, e.g. `/review model:gpt-4.1 develop main`. Use `context:path` to override which context files are attached, or `context:none` to disable context for a single review.'
+                ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively. Use `/review staged` or `/review unstaged` to review uncommitted changes. Use `model:modelId` to specify review providers inline, e.g. `/review model:copilot-code-review develop main` or `/review model:gpt-4.1 develop main`. Use `context:path` to override which context files are attached, or `context:none` to disable context for a single review.'
         );
         return;
     }
@@ -324,6 +329,10 @@ export function getModelDisplayName(
     modelId: string,
     cachedModels: vscode.LanguageModelChat[]
 ): string {
+    if (isCopilotCodeReviewProviderId(modelId)) {
+        return copilotCodeReviewProviderName;
+    }
+
     if (cachedModels && cachedModels.length > 0) {
         // Model IDs are in format "vendor:id"
         const colonIdx = modelId.indexOf(':');
@@ -417,6 +426,15 @@ export function resolveOneModelSpec(
 ): ModelSpecResult {
     const toId = (m: ModelInfo) => `${m.vendor}:${m.id}`;
     const specLower = spec.toLowerCase();
+    const providerNameLower = copilotCodeReviewProviderName.toLowerCase();
+
+    if (specLower === copilotCodeReviewProviderId) {
+        return { match: copilotCodeReviewProviderId };
+    }
+
+    if (specLower.length >= 4 && providerNameLower.startsWith(specLower)) {
+        return { match: copilotCodeReviewProviderId };
+    }
 
     // If spec contains ':', try exact vendor:id match
     if (spec.includes(':')) {
@@ -579,12 +597,11 @@ async function reviewWithModel(
         getModel: () => config.getModel(modelId),
     };
 
-    const result = await reviewDiff(
-        modelConfig,
-        reviewRequest,
+    const result = await reviewDiff(modelConfig, reviewRequest, {
+        providerId: modelId,
         progress,
-        token
-    );
+        cancellationToken: token,
+    });
 
     return { modelId, modelName, result };
 }
