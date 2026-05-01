@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.5.0] (pre-release)
+- Add "Copilot Code Review" as a review provider, allowing the same kind of review you would get from assigning Copilot to a PR from within LGTM. Can be selected via the `LGTM: Select Chat Model` command. (Thanks to @Quicksaver!)
+
 ## [1.4.1]
 Same as 1.4.0.
 
