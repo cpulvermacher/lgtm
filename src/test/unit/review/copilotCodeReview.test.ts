@@ -17,6 +17,9 @@ type TestGit = {
 type TestConfig = {
     gitRoot: string;
     git: TestGit;
+    logger: {
+        debug: ReturnType<typeof vi.fn>;
+    };
 };
 
 const fsPromisesMocks = vi.hoisted(() => ({
@@ -39,6 +42,7 @@ const vscodeMocks = vi.hoisted(() => ({
     getExtension: vi.fn(),
     executeCommand: vi.fn(),
     getConfiguration: vi.fn(),
+    openTextDocument: vi.fn(),
 }));
 
 vi.mock('vscode', () => ({
@@ -56,6 +60,7 @@ vi.mock('vscode', () => ({
     },
     workspace: {
         getConfiguration: vscodeMocks.getConfiguration,
+        openTextDocument: vscodeMocks.openTextDocument,
     },
 }));
 
@@ -83,6 +88,9 @@ describe('reviewDiffWithCopilotCodeReview', () => {
                 getFileContentAtIndex: vi.fn(),
                 getMergeBase: vi.fn(),
             },
+            logger: {
+                debug: vi.fn(),
+            },
             ...overrides,
         };
     }
@@ -92,6 +100,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
             throw new Error('Expected node:fs/promises.rm to be initialized.');
         }
         fsPromisesMocks.rm.mockImplementation(fsPromisesMocks.actualRm);
+        vscodeMocks.openTextDocument.mockResolvedValue({});
         vscodeMocks.getConfiguration.mockReturnValue({
             get: vi.fn((_key: string, fallback?: boolean) => fallback),
         });
@@ -899,6 +908,70 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         expect(
             result.fileComments[0]?.comments.map((comment) => comment.severity)
         ).toEqual([3, 2]);
+    });
+
+    it('skips files that VS Code cannot open as text before starting Copilot review', async () => {
+        const config = createConfig();
+        createWorkspaceFile('good.ts', 'const ok = true;');
+        createWorkspaceFile('image.png', 'not really png data');
+        const activate = vi.fn();
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+        vscodeMocks.openTextDocument.mockImplementation(
+            async (uri: { fsPath: string }) => {
+                if (uri.fsPath === join(config.gitRoot, 'image.png')) {
+                    throw new Error(
+                        'File seems to be binary and cannot be opened as text'
+                    );
+                }
+
+                return {};
+            }
+        );
+        vscodeMocks.executeCommand.mockImplementation(
+            async (
+                _command: string,
+                args: {
+                    files: Array<{
+                        currentUri: { fsPath: string };
+                    }>;
+                }
+            ) => {
+                expect(args.files).toHaveLength(1);
+                expect(args.files[0]?.currentUri.fsPath).toBe(
+                    join(config.gitRoot, 'good.ts')
+                );
+
+                return {
+                    type: 'success',
+                    comments: [],
+                };
+            }
+        );
+
+        const result = await reviewDiffWithCopilotCodeReview(
+            config as unknown as Config,
+            {
+                scope: {
+                    target: UncommittedRef.Unstaged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            } as never,
+            [
+                { file: 'good.ts', status: 'M' },
+                { file: 'image.png', status: 'M' },
+            ],
+            { report: vi.fn() }
+        );
+
+        expect(activate).toHaveBeenCalledOnce();
+        expect(vscodeMocks.executeCommand).toHaveBeenCalledOnce();
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toEqual([]);
+        expect(config.logger.debug).toHaveBeenCalledWith(
+            'Skipping Copilot Code Review file "image.png": not readable as text.'
+        );
     });
 
     it('uses an empty current snapshot when the committed target content is missing', async () => {
