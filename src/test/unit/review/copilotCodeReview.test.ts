@@ -974,6 +974,104 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
     });
 
+    it('skips renamed files when the base snapshot is unreadable as text', async () => {
+        const config = createConfig();
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+        vscodeMocks.openTextDocument.mockImplementation(
+            async (uri: { fsPath: string }) => {
+                if (uri.fsPath.includes(join('src', 'old-name.ts'))) {
+                    throw new Error(
+                        'File seems to be binary and cannot be opened as text'
+                    );
+                }
+
+                return {};
+            }
+        );
+
+        const result = await reviewDiffWithCopilotCodeReview(
+            config as unknown as Config,
+            {
+                scope: {
+                    target: UncommittedRef.Unstaged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            } as never,
+            [{ file: 'src/new-name.ts', from: 'src/old-name.ts', status: 'D' }]
+        );
+
+        expect(vscodeMocks.executeCommand).not.toHaveBeenCalled();
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toEqual([]);
+        expect(config.logger.debug).toHaveBeenCalledWith(
+            'Skipping Copilot Code Review file "src/new-name.ts" because input "src/old-name.ts" failed the text-readability check: not readable as text.'
+        );
+    });
+
+    it('skips unreadable files for non-binary VS Code open errors and preserves the detail', async () => {
+        const config = createConfig();
+        createWorkspaceFile('good.ts', 'const ok = true;');
+        createWorkspaceFile('locked.txt', 'secret');
+        const activate = vi.fn();
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+        vscodeMocks.openTextDocument.mockImplementation(
+            async (uri: { fsPath: string }) => {
+                if (uri.fsPath === join(config.gitRoot, 'locked.txt')) {
+                    throw new Error(
+                        `Cannot open ${uri.fsPath}. Detail: Permission denied`
+                    );
+                }
+
+                return {};
+            }
+        );
+        vscodeMocks.executeCommand.mockImplementation(
+            async (
+                _command: string,
+                args: {
+                    files: Array<{
+                        currentUri: { fsPath: string };
+                    }>;
+                }
+            ) => {
+                expect(args.files).toHaveLength(1);
+                expect(args.files[0]?.currentUri.fsPath).toBe(
+                    join(config.gitRoot, 'good.ts')
+                );
+
+                return {
+                    type: 'success',
+                    comments: [],
+                };
+            }
+        );
+
+        const result = await reviewDiffWithCopilotCodeReview(
+            config as unknown as Config,
+            {
+                scope: {
+                    target: UncommittedRef.Unstaged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            } as never,
+            [
+                { file: 'good.ts', status: 'M' },
+                { file: 'locked.txt', status: 'M' },
+            ]
+        );
+
+        expect(activate).toHaveBeenCalledOnce();
+        expect(vscodeMocks.executeCommand).toHaveBeenCalledOnce();
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toEqual([]);
+        expect(config.logger.debug).toHaveBeenCalledWith(
+            'Skipping Copilot Code Review file "locked.txt": Permission denied.'
+        );
+    });
+
     it('returns early when every file is unreadable as text and normalizes wrapped VS Code errors', async () => {
         const config = createConfig();
         createWorkspaceFile('image.png', 'not really png data');

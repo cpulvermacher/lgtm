@@ -324,6 +324,8 @@ async function findUnreadableReviewInput(
 ): Promise<{ path: string; reason: string } | undefined> {
     for (const input of inputs) {
         try {
+            // Match the downstream review command's ability to open the input
+            // as text instead of relying on a separate binary-file heuristic.
             await vscode.workspace.openTextDocument(input.uri);
         } catch (error) {
             const reason =
