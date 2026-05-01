@@ -30,4 +30,4 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
       run: >-
-        bash .github/workflows/release.sh ${{ github.ref_name }}
+        bash .github/workflows/release.sh ${GITHUB_REF_NAME}
