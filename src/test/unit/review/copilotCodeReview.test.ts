@@ -974,6 +974,61 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
     });
 
+    it('returns early when every file is unreadable as text and normalizes wrapped VS Code errors', async () => {
+        const config = createConfig();
+        createWorkspaceFile('image.png', 'not really png data');
+        createWorkspaceFile('archive.bin', 'not really binary data');
+        const activate = vi.fn();
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+        vscodeMocks.openTextDocument.mockImplementation(
+            async (uri: { fsPath: string }) => {
+                if (uri.fsPath === join(config.gitRoot, 'image.png')) {
+                    throw new Error(
+                        `Cannot open ${uri.fsPath}. Detail: File seems to be binary and cannot be opened as text`
+                    );
+                }
+
+                if (uri.fsPath === join(config.gitRoot, 'archive.bin')) {
+                    throw new Error(
+                        'File seems to be binary and cannot be opened as text'
+                    );
+                }
+
+                return {};
+            }
+        );
+
+        const result = await reviewDiffWithCopilotCodeReview(
+            config as unknown as Config,
+            {
+                scope: {
+                    target: UncommittedRef.Unstaged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            } as never,
+            [
+                { file: 'image.png', status: 'M' },
+                { file: 'archive.bin', status: 'M' },
+            ],
+            { report: vi.fn() }
+        );
+
+        expect(activate).not.toHaveBeenCalled();
+        expect(vscodeMocks.executeCommand).not.toHaveBeenCalled();
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toEqual([]);
+        expect(config.logger.debug).toHaveBeenNthCalledWith(
+            1,
+            'Skipping Copilot Code Review file "image.png": not readable as text.'
+        );
+        expect(config.logger.debug).toHaveBeenNthCalledWith(
+            2,
+            'Skipping Copilot Code Review file "archive.bin": not readable as text.'
+        );
+    });
+
     it('uses an empty current snapshot when the committed target content is missing', async () => {
         const config = createConfig();
         const activate = vi.fn();
