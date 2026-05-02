@@ -338,5 +338,5 @@
     "extensionDependencies": [
         "github.copilot-chat"
     ],
-    "packageManager": "pnpm@11.0.0-rc.0+sha512.1f08eadeea025e91448de6d5dee42a6c94764257000c043a9e36b8ff12849a72ebcb9c65fc1885094747249e52f53d8b73ada1181446bba81866810c8a4d3f6c"
+    "packageManager": "pnpm@11.0.3+sha512.10448f2988933787c6699aef683174c741f6472ad91b7e3c8fe3e2bda57be8a0f7caf58949b8bc22e624578b3dc6e57876ba4c631928a1b84cc141e12c79bccd"
 }
