@@ -2,25 +2,12 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { type CancellationToken } from 'vscode';
 import { reviewDiffWithCopilotCodeReview } from '@/review/copilotCodeReview';
 import type { Config } from '@/types/Config';
 import { UncommittedRef } from '@/types/Ref';
+import type { ReviewScope } from '@/types/ReviewRequest';
 import { GIT_EMPTY_TREE_HASH } from '@/utils/git';
-
-type TestGit = {
-    getFileContentAtRef: ReturnType<typeof vi.fn>;
-    getFileContentAtIndex: ReturnType<typeof vi.fn>;
-    getMergeBase: ReturnType<typeof vi.fn>;
-};
-
-type TestConfig = {
-    gitRoot: string;
-    git: TestGit;
-    logger: {
-        debug: ReturnType<typeof vi.fn>;
-    };
-};
 
 const fsPromisesMocks = vi.hoisted(() => ({
     rm: vi.fn(),
@@ -77,7 +64,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         return fullPath;
     }
 
-    function createConfig(overrides?: Partial<TestConfig>): TestConfig {
+    function createConfig(overrides?: Partial<Config>) {
         const gitRoot = mkdtempSync(join(tmpdir(), 'lgtm-copilot-test-'));
         tempDirs.push(gitRoot);
 
@@ -92,7 +79,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
                 debug: vi.fn(),
             },
             ...overrides,
-        };
+        } as Config;
     }
 
     beforeEach(() => {
@@ -192,14 +179,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
 
         const progress = { report: vi.fn() };
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [
                 { file: 'src/file.ts', status: 'M' },
                 { file: 'src/deleted.ts', status: 'D' },
@@ -259,14 +246,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
 
         const progress = { report: vi.fn() };
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Unstaged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [
                 { file: 'file1.ts', status: 'M' },
                 { file: 'file2.ts', status: 'M' },
@@ -322,15 +309,15 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: 'feature',
                     base: 'main',
                     isCommitted: true,
                     isTargetCheckedOut: true,
-                },
-            } as never,
+                } as ReviewScope,
+            },
             [{ file: 'src/new.ts', status: 'A' }],
             { report: vi.fn() }
         );
@@ -350,15 +337,15 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vscodeMocks.executeCommand.mockResolvedValue(undefined);
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: 'feature',
                     base: GIT_EMPTY_TREE_HASH,
                     isCommitted: true,
                     isTargetCheckedOut: true,
-                },
-            } as never,
+                } as ReviewScope,
+            },
             [{ file: 'src/new.ts', status: 'A' }],
             { report: vi.fn() }
         );
@@ -376,15 +363,15 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('target');
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: 'feature',
                     base: GIT_EMPTY_TREE_HASH,
                     isCommitted: true,
                     isTargetCheckedOut: true,
-                },
-            } as never,
+                } as ReviewScope,
+            },
             [{ file: 'src/new.ts', status: 'A' }]
         );
 
@@ -403,15 +390,15 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('target');
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: 'feature',
                     base: GIT_EMPTY_TREE_HASH,
                     isCommitted: true,
                     isTargetCheckedOut: true,
-                },
-            } as never,
+                } as ReviewScope,
+            },
             [{ file: 'src/new.ts', status: 'A' }]
         );
 
@@ -426,17 +413,17 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         const config = createConfig();
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
-            { isCancellationRequested: true } as never
+            { isCancellationRequested: true } as CancellationToken
         );
 
         expect(result.fileComments).toEqual([]);
@@ -451,14 +438,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
 
         await expect(
             reviewDiffWithCopilotCodeReview(
-                config as unknown as Config,
+                config,
                 {
                     scope: {
                         target: UncommittedRef.Staged,
                         isCommitted: false,
                         isTargetCheckedOut: true,
                     },
-                } as never,
+                },
                 [{ file: '../escape.ts', status: 'M' }],
                 { report: vi.fn() }
             )
@@ -481,14 +468,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         };
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [
                 { file: 'src/file1.ts', status: 'M' },
                 { file: 'src/file2.ts', status: 'M' },
@@ -510,17 +497,17 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
-            { isCancellationRequested: true } as never
+            { isCancellationRequested: true } as CancellationToken
         );
 
         expect(activate).not.toHaveBeenCalled();
@@ -566,14 +553,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         };
 
         const reviewPromise = reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
             cancellationToken as never
@@ -611,14 +598,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
             cancellationToken as never
@@ -641,14 +628,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vscodeMocks.executeCommand.mockRejectedValue(failure);
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() }
         );
@@ -671,20 +658,20 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vscodeMocks.executeCommand.mockRejectedValue(failure);
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
             {
                 isCancellationRequested: false,
                 onCancellationRequested: vi.fn(() => subscription),
-            } as never
+            }
         );
 
         expect(result.fileComments).toEqual([]);
@@ -709,14 +696,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         fsPromisesMocks.rm.mockRejectedValue('cleanup failed');
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() }
         );
@@ -816,14 +803,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
 
         const progress = { report: vi.fn() };
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             files as never,
             progress
         );
@@ -893,14 +880,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Unstaged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/new-name.ts', from: 'src/old-name.ts', status: 'D' }]
         );
 
@@ -950,14 +937,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Unstaged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [
                 { file: 'good.ts', status: 'M' },
                 { file: 'image.png', status: 'M' },
@@ -990,14 +977,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Unstaged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/new-name.ts', from: 'src/old-name.ts', status: 'D' }]
         );
 
@@ -1049,14 +1036,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Unstaged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [
                 { file: 'good.ts', status: 'M' },
                 { file: 'locked.txt', status: 'M' },
@@ -1098,14 +1085,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Unstaged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [
                 { file: 'image.png', status: 'M' },
                 { file: 'archive.bin', status: 'M' },
@@ -1173,15 +1160,15 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: 'feature',
                     base: 'main',
                     isCommitted: true,
                     isTargetCheckedOut: true,
-                },
-            } as never,
+                } as ReviewScope,
+            },
             [{ file: 'src/file.ts', status: 'D' }]
         );
 

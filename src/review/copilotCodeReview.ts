@@ -107,7 +107,7 @@ export async function reviewDiffWithCopilotCodeReview(
 ): Promise<ReviewResult> {
     const errors: Error[] = [];
     const fileComments: FileComments[] = [];
-    let tempDir: string | undefined;
+    let tempDir = '';
 
     try {
         if (cancellationToken?.isCancellationRequested) {
@@ -119,10 +119,7 @@ export async function reviewDiffWithCopilotCodeReview(
             };
         }
 
-        const reviewTempDir = await mkdtemp(
-            join(tmpdir(), 'lgtm-copilot-review-')
-        );
-        tempDir = reviewTempDir;
+        tempDir = await mkdtemp(join(tmpdir(), 'lgtm-copilot-review-'));
         const preparedFiles: PreparedFile[] = [];
         const gatheringMessage = formatGatheringFilesMessage(files);
         const gatheringIncrement = files.length > 0 ? 100 / files.length : 0;
@@ -141,7 +138,7 @@ export async function reviewDiffWithCopilotCodeReview(
                 config,
                 request.scope,
                 file,
-                reviewTempDir
+                tempDir
             );
 
             if (preparedFile.type === 'skipped') {
