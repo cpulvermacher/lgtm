@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.5.1] (pre-release)
+- Skip binary files to avoid errors when using Copilot Code Review review provider. (Thanks to @Quicksaver!)
+
 ## [1.5.0] (pre-release)
 - Add "Copilot Code Review" as a review provider, allowing the same kind of review you would get from assigning Copilot to a PR from within LGTM. Can be selected via the `LGTM: Select Chat Model` command. (Thanks to @Quicksaver!)
 
