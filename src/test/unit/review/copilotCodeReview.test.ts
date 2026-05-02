@@ -2,22 +2,12 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { type CancellationToken } from 'vscode';
 import { reviewDiffWithCopilotCodeReview } from '@/review/copilotCodeReview';
 import type { Config } from '@/types/Config';
 import { UncommittedRef } from '@/types/Ref';
+import type { ReviewScope } from '@/types/ReviewRequest';
 import { GIT_EMPTY_TREE_HASH } from '@/utils/git';
-
-type TestGit = {
-    getFileContentAtRef: ReturnType<typeof vi.fn>;
-    getFileContentAtIndex: ReturnType<typeof vi.fn>;
-    getMergeBase: ReturnType<typeof vi.fn>;
-};
-
-type TestConfig = {
-    gitRoot: string;
-    git: TestGit;
-};
 
 const fsPromisesMocks = vi.hoisted(() => ({
     rm: vi.fn(),
@@ -39,6 +29,7 @@ const vscodeMocks = vi.hoisted(() => ({
     getExtension: vi.fn(),
     executeCommand: vi.fn(),
     getConfiguration: vi.fn(),
+    openTextDocument: vi.fn(),
 }));
 
 vi.mock('vscode', () => ({
@@ -56,6 +47,7 @@ vi.mock('vscode', () => ({
     },
     workspace: {
         getConfiguration: vscodeMocks.getConfiguration,
+        openTextDocument: vscodeMocks.openTextDocument,
     },
 }));
 
@@ -72,7 +64,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         return fullPath;
     }
 
-    function createConfig(overrides?: Partial<TestConfig>): TestConfig {
+    function createConfig(overrides?: Partial<Config>) {
         const gitRoot = mkdtempSync(join(tmpdir(), 'lgtm-copilot-test-'));
         tempDirs.push(gitRoot);
 
@@ -83,8 +75,11 @@ describe('reviewDiffWithCopilotCodeReview', () => {
                 getFileContentAtIndex: vi.fn(),
                 getMergeBase: vi.fn(),
             },
+            logger: {
+                debug: vi.fn(),
+            },
             ...overrides,
-        };
+        } as Config;
     }
 
     beforeEach(() => {
@@ -92,6 +87,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
             throw new Error('Expected node:fs/promises.rm to be initialized.');
         }
         fsPromisesMocks.rm.mockImplementation(fsPromisesMocks.actualRm);
+        vscodeMocks.openTextDocument.mockResolvedValue({});
         vscodeMocks.getConfiguration.mockReturnValue({
             get: vi.fn((_key: string, fallback?: boolean) => fallback),
         });
@@ -183,14 +179,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
 
         const progress = { report: vi.fn() };
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [
                 { file: 'src/file.ts', status: 'M' },
                 { file: 'src/deleted.ts', status: 'D' },
@@ -250,14 +246,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
 
         const progress = { report: vi.fn() };
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Unstaged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [
                 { file: 'file1.ts', status: 'M' },
                 { file: 'file2.ts', status: 'M' },
@@ -313,15 +309,15 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: 'feature',
                     base: 'main',
                     isCommitted: true,
                     isTargetCheckedOut: true,
-                },
-            } as never,
+                } as ReviewScope,
+            },
             [{ file: 'src/new.ts', status: 'A' }],
             { report: vi.fn() }
         );
@@ -341,15 +337,15 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vscodeMocks.executeCommand.mockResolvedValue(undefined);
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: 'feature',
                     base: GIT_EMPTY_TREE_HASH,
                     isCommitted: true,
                     isTargetCheckedOut: true,
-                },
-            } as never,
+                } as ReviewScope,
+            },
             [{ file: 'src/new.ts', status: 'A' }],
             { report: vi.fn() }
         );
@@ -367,15 +363,15 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('target');
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: 'feature',
                     base: GIT_EMPTY_TREE_HASH,
                     isCommitted: true,
                     isTargetCheckedOut: true,
-                },
-            } as never,
+                } as ReviewScope,
+            },
             [{ file: 'src/new.ts', status: 'A' }]
         );
 
@@ -394,15 +390,15 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('target');
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: 'feature',
                     base: GIT_EMPTY_TREE_HASH,
                     isCommitted: true,
                     isTargetCheckedOut: true,
-                },
-            } as never,
+                } as ReviewScope,
+            },
             [{ file: 'src/new.ts', status: 'A' }]
         );
 
@@ -417,17 +413,17 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         const config = createConfig();
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
-            { isCancellationRequested: true } as never
+            { isCancellationRequested: true } as CancellationToken
         );
 
         expect(result.fileComments).toEqual([]);
@@ -442,14 +438,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
 
         await expect(
             reviewDiffWithCopilotCodeReview(
-                config as unknown as Config,
+                config,
                 {
                     scope: {
                         target: UncommittedRef.Staged,
                         isCommitted: false,
                         isTargetCheckedOut: true,
                     },
-                } as never,
+                },
                 [{ file: '../escape.ts', status: 'M' }],
                 { report: vi.fn() }
             )
@@ -472,14 +468,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         };
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [
                 { file: 'src/file1.ts', status: 'M' },
                 { file: 'src/file2.ts', status: 'M' },
@@ -501,17 +497,17 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
-            { isCancellationRequested: true } as never
+            { isCancellationRequested: true } as CancellationToken
         );
 
         expect(activate).not.toHaveBeenCalled();
@@ -557,14 +553,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         };
 
         const reviewPromise = reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
             cancellationToken as never
@@ -602,14 +598,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
             cancellationToken as never
@@ -632,14 +628,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vscodeMocks.executeCommand.mockRejectedValue(failure);
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() }
         );
@@ -662,20 +658,20 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         vscodeMocks.executeCommand.mockRejectedValue(failure);
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
             {
                 isCancellationRequested: false,
                 onCancellationRequested: vi.fn(() => subscription),
-            } as never
+            }
         );
 
         expect(result.fileComments).toEqual([]);
@@ -700,14 +696,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         fsPromisesMocks.rm.mockRejectedValue('cleanup failed');
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() }
         );
@@ -807,14 +803,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
 
         const progress = { report: vi.fn() };
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Staged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             files as never,
             progress
         );
@@ -884,14 +880,14 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: UncommittedRef.Unstaged,
                     isCommitted: false,
                     isTargetCheckedOut: true,
                 },
-            } as never,
+            },
             [{ file: 'src/new-name.ts', from: 'src/old-name.ts', status: 'D' }]
         );
 
@@ -899,6 +895,223 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         expect(
             result.fileComments[0]?.comments.map((comment) => comment.severity)
         ).toEqual([3, 2]);
+    });
+
+    it('skips files that VS Code cannot open as text before starting Copilot review', async () => {
+        const config = createConfig();
+        createWorkspaceFile('good.ts', 'const ok = true;');
+        createWorkspaceFile('image.png', 'not really png data');
+        const activate = vi.fn();
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+        vscodeMocks.openTextDocument.mockImplementation(
+            async (uri: { fsPath: string }) => {
+                if (uri.fsPath === join(config.gitRoot, 'image.png')) {
+                    throw new Error(
+                        'File seems to be binary and cannot be opened as text'
+                    );
+                }
+
+                return {};
+            }
+        );
+        vscodeMocks.executeCommand.mockImplementation(
+            async (
+                _command: string,
+                args: {
+                    files: Array<{
+                        currentUri: { fsPath: string };
+                    }>;
+                }
+            ) => {
+                expect(args.files).toHaveLength(1);
+                expect(args.files[0]?.currentUri.fsPath).toBe(
+                    join(config.gitRoot, 'good.ts')
+                );
+
+                return {
+                    type: 'success',
+                    comments: [],
+                };
+            }
+        );
+
+        const result = await reviewDiffWithCopilotCodeReview(
+            config,
+            {
+                scope: {
+                    target: UncommittedRef.Unstaged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            },
+            [
+                { file: 'good.ts', status: 'M' },
+                { file: 'image.png', status: 'M' },
+            ],
+            { report: vi.fn() }
+        );
+
+        expect(activate).toHaveBeenCalledOnce();
+        expect(vscodeMocks.executeCommand).toHaveBeenCalledOnce();
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toEqual([]);
+        expect(config.logger.debug).toHaveBeenCalledWith(
+            'Skipping Copilot Code Review file "image.png": not readable as text.'
+        );
+    });
+
+    it('skips renamed files when the base snapshot is unreadable as text', async () => {
+        const config = createConfig();
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+        vscodeMocks.openTextDocument.mockImplementation(
+            async (uri: { fsPath: string }) => {
+                if (uri.fsPath.includes(join('src', 'old-name.ts'))) {
+                    throw new Error(
+                        'File seems to be binary and cannot be opened as text'
+                    );
+                }
+
+                return {};
+            }
+        );
+
+        const result = await reviewDiffWithCopilotCodeReview(
+            config,
+            {
+                scope: {
+                    target: UncommittedRef.Unstaged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            },
+            [{ file: 'src/new-name.ts', from: 'src/old-name.ts', status: 'D' }]
+        );
+
+        expect(vscodeMocks.executeCommand).not.toHaveBeenCalled();
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toEqual([]);
+        expect(config.logger.debug).toHaveBeenCalledWith(
+            'Skipping Copilot Code Review file "src/new-name.ts" because input "src/old-name.ts" failed the text-readability check: not readable as text.'
+        );
+    });
+
+    it('skips unreadable files for non-binary VS Code open errors and preserves the detail', async () => {
+        const config = createConfig();
+        createWorkspaceFile('good.ts', 'const ok = true;');
+        createWorkspaceFile('locked.txt', 'secret');
+        const activate = vi.fn();
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+        vscodeMocks.openTextDocument.mockImplementation(
+            async (uri: { fsPath: string }) => {
+                if (uri.fsPath === join(config.gitRoot, 'locked.txt')) {
+                    throw new Error(
+                        `Cannot open ${uri.fsPath}. Detail: Permission denied`
+                    );
+                }
+
+                return {};
+            }
+        );
+        vscodeMocks.executeCommand.mockImplementation(
+            async (
+                _command: string,
+                args: {
+                    files: Array<{
+                        currentUri: { fsPath: string };
+                    }>;
+                }
+            ) => {
+                expect(args.files).toHaveLength(1);
+                expect(args.files[0]?.currentUri.fsPath).toBe(
+                    join(config.gitRoot, 'good.ts')
+                );
+
+                return {
+                    type: 'success',
+                    comments: [],
+                };
+            }
+        );
+
+        const result = await reviewDiffWithCopilotCodeReview(
+            config,
+            {
+                scope: {
+                    target: UncommittedRef.Unstaged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            },
+            [
+                { file: 'good.ts', status: 'M' },
+                { file: 'locked.txt', status: 'M' },
+            ]
+        );
+
+        expect(activate).toHaveBeenCalledOnce();
+        expect(vscodeMocks.executeCommand).toHaveBeenCalledOnce();
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toEqual([]);
+        expect(config.logger.debug).toHaveBeenCalledWith(
+            'Skipping Copilot Code Review file "locked.txt": Permission denied.'
+        );
+    });
+
+    it('returns early when every file is unreadable as text and normalizes wrapped VS Code errors', async () => {
+        const config = createConfig();
+        createWorkspaceFile('image.png', 'not really png data');
+        createWorkspaceFile('archive.bin', 'not really binary data');
+        const activate = vi.fn();
+        vscodeMocks.getExtension.mockReturnValue({ activate });
+        vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
+        vscodeMocks.openTextDocument.mockImplementation(
+            async (uri: { fsPath: string }) => {
+                if (uri.fsPath === join(config.gitRoot, 'image.png')) {
+                    throw new Error(
+                        `Cannot open ${uri.fsPath}. Detail: File seems to be binary and cannot be opened as text`
+                    );
+                }
+
+                if (uri.fsPath === join(config.gitRoot, 'archive.bin')) {
+                    throw new Error(
+                        'File seems to be binary and cannot be opened as text'
+                    );
+                }
+
+                return {};
+            }
+        );
+
+        const result = await reviewDiffWithCopilotCodeReview(
+            config,
+            {
+                scope: {
+                    target: UncommittedRef.Unstaged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            },
+            [
+                { file: 'image.png', status: 'M' },
+                { file: 'archive.bin', status: 'M' },
+            ],
+            { report: vi.fn() }
+        );
+
+        expect(activate).not.toHaveBeenCalled();
+        expect(vscodeMocks.executeCommand).not.toHaveBeenCalled();
+        expect(result.fileComments).toEqual([]);
+        expect(result.errors).toEqual([]);
+        expect(config.logger.debug).toHaveBeenNthCalledWith(
+            1,
+            'Skipping Copilot Code Review file "image.png": not readable as text.'
+        );
+        expect(config.logger.debug).toHaveBeenNthCalledWith(
+            2,
+            'Skipping Copilot Code Review file "archive.bin": not readable as text.'
+        );
     });
 
     it('uses an empty current snapshot when the committed target content is missing', async () => {
@@ -947,15 +1160,15 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         );
 
         const result = await reviewDiffWithCopilotCodeReview(
-            config as unknown as Config,
+            config,
             {
                 scope: {
                     target: 'feature',
                     base: 'main',
                     isCommitted: true,
                     isTargetCheckedOut: true,
-                },
-            } as never,
+                } as ReviewScope,
+            },
             [{ file: 'src/file.ts', status: 'D' }]
         );
 

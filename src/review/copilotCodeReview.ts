@@ -67,6 +67,18 @@ type PreparedFile = {
     readonly input: CodeReviewFileInput;
 };
 
+type SkippedPreparedFile = {
+    readonly type: 'skipped';
+    readonly message: string;
+};
+
+type PreparedFileResult =
+    | {
+          readonly type: 'prepared';
+          readonly preparedFile: PreparedFile;
+      }
+    | SkippedPreparedFile;
+
 type FileSnapshotPair =
     | {
           readonly currentContent?: undefined;
@@ -95,7 +107,7 @@ export async function reviewDiffWithCopilotCodeReview(
 ): Promise<ReviewResult> {
     const errors: Error[] = [];
     const fileComments: FileComments[] = [];
-    let tempDir: string | undefined;
+    let tempDir = '';
 
     try {
         if (cancellationToken?.isCancellationRequested) {
@@ -122,9 +134,19 @@ export async function reviewDiffWithCopilotCodeReview(
                 increment: gatheringIncrement,
             });
 
-            preparedFiles.push(
-                await prepareFileForReview(config, request.scope, file, tempDir)
+            const preparedFile = await prepareFileForReview(
+                config,
+                request.scope,
+                file,
+                tempDir
             );
+
+            if (preparedFile.type === 'skipped') {
+                config.logger.debug(preparedFile.message);
+                continue;
+            }
+
+            preparedFiles.push(preparedFile.preparedFile);
         }
 
         if (
@@ -232,7 +254,7 @@ async function prepareFileForReview(
     scope: ReviewScope,
     file: DiffFile,
     tempDir: string
-): Promise<PreparedFile> {
+): Promise<PreparedFileResult> {
     const snapshot = await getFileSnapshotPair(config, scope, file);
 
     const currentUri = snapshot.useWorkspaceFileForCurrent
@@ -254,13 +276,91 @@ async function prepareFileForReview(
                   snapshot.baseContent
               );
 
+    const unreadableInput = await findUnreadableReviewInput([
+        {
+            uri: currentUri,
+            path: file.file,
+        },
+        ...(baseUri
+            ? [
+                  {
+                      uri: baseUri,
+                      path: file.from ?? file.file,
+                  },
+              ]
+            : []),
+    ]);
+
+    if (unreadableInput) {
+        return {
+            type: 'skipped',
+            message: formatUnreadableReviewInputMessage(
+                file.file,
+                unreadableInput
+            ),
+        };
+    }
+
     return {
-        file,
-        input: {
-            currentUri,
-            baseUri,
+        type: 'prepared',
+        preparedFile: {
+            file,
+            input: {
+                currentUri,
+                baseUri,
+            },
         },
     };
+}
+
+async function findUnreadableReviewInput(
+    inputs: ReadonlyArray<{
+        uri: vscode.Uri;
+        path: string;
+    }>
+): Promise<{ path: string; reason: string } | undefined> {
+    for (const input of inputs) {
+        try {
+            // Match the downstream review command's ability to open the input
+            // as text instead of relying on a separate binary-file heuristic.
+            await vscode.workspace.openTextDocument(input.uri);
+        } catch (error) {
+            const reason =
+                error instanceof Error ? error.message : String(error);
+            return {
+                path: input.path,
+                reason,
+            };
+        }
+    }
+
+    return undefined;
+}
+
+function formatUnreadableReviewInputMessage(
+    filePath: string,
+    unreadableInput: { path: string; reason: string }
+): string {
+    const normalizedReason = normalizeUnreadableReviewInputReason(
+        unreadableInput.reason
+    );
+
+    if (unreadableInput.path === filePath) {
+        return `Skipping Copilot Code Review file "${filePath}": ${normalizedReason}.`;
+    }
+
+    return `Skipping Copilot Code Review file "${filePath}" because input "${unreadableInput.path}" failed the text-readability check: ${normalizedReason}.`;
+}
+
+function normalizeUnreadableReviewInputReason(reason: string): string {
+    const detailMessage = /^cannot open .*?\. Detail: (.*)$/i.exec(reason)?.[1];
+    const normalizedReason = (detailMessage ?? reason).trim();
+
+    if (/cannot be opened as text|binary/i.test(normalizedReason)) {
+        return 'not readable as text';
+    }
+
+    return normalizedReason;
 }
 
 async function getFileSnapshotPair(
