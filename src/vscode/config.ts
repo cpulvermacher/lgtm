@@ -8,8 +8,8 @@ import type {
     ReviewFlowType,
 } from '@/types/Config';
 import type { Model } from '@/types/Model';
-import { isCopilotCodeReviewProviderId } from '@/types/ReviewProvider';
 import { createGit, type Git } from '@/utils/git';
+import { isCopilotCodeReviewProviderId } from '@/utils/reviewProvider';
 import { defaultModelId, defaultPreferredModelIds } from './defaultModels';
 import { LgtmLogger } from './logger';
 import { getChatModel, getModelQuickPickItems } from './model';

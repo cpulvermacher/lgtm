@@ -5,7 +5,7 @@ import { ModelError } from '@/types/ModelError';
 import {
     copilotCodeReviewProviderId,
     copilotCodeReviewProviderName,
-} from '@/types/ReviewProvider';
+} from '@/utils/reviewProvider';
 import { getConfig } from '@/vscode/config';
 import { isCopilotCodeReviewAvailable } from '@/vscode/copilotCodeReviewAvailability';
 import {
