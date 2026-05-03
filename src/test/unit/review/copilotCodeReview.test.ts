@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type CancellationToken } from 'vscode';
 import { reviewDiffWithCopilotCodeReview } from '@/review/copilotCodeReview';
 import type { Config } from '@/types/Config';
+import { DiffFile } from '@/types/DiffFile';
 import { UncommittedRef } from '@/types/Ref';
 import type { ReviewScope } from '@/types/ReviewRequest';
 import { GIT_EMPTY_TREE_HASH } from '@/utils/git';
@@ -460,7 +461,9 @@ describe('reviewDiffWithCopilotCodeReview', () => {
         const config = createConfig();
         vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('head');
         vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
-        const cancellationToken = { isCancellationRequested: false };
+        const cancellationToken = {
+            isCancellationRequested: false,
+        } as CancellationToken;
         const progress = {
             report: vi.fn(() => {
                 cancellationToken.isCancellationRequested = true;
@@ -481,7 +484,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
                 { file: 'src/file2.ts', status: 'M' },
             ],
             progress,
-            cancellationToken as never
+            cancellationToken
         );
 
         expect(result.fileComments).toEqual([]);
@@ -550,7 +553,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
                     dispose: vi.fn(),
                 };
             }),
-        };
+        } as unknown as CancellationToken;
 
         const reviewPromise = reviewDiffWithCopilotCodeReview(
             config,
@@ -563,7 +566,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
             },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
-            cancellationToken as never
+            cancellationToken
         );
 
         await listenerRegistered;
@@ -592,7 +595,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
                 return cancellationChecks >= 4;
             },
             onCancellationRequested: vi.fn(),
-        };
+        } as CancellationToken;
         vscodeMocks.getExtension.mockReturnValue({ activate });
         vi.mocked(config.git.getFileContentAtRef).mockResolvedValue('head');
         vi.mocked(config.git.getFileContentAtIndex).mockResolvedValue('index');
@@ -608,7 +611,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
             },
             [{ file: 'src/file.ts', status: 'M' }],
             { report: vi.fn() },
-            cancellationToken as never
+            cancellationToken
         );
 
         expect(activate).toHaveBeenCalledOnce();
@@ -734,20 +737,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
             [Symbol.iterator]: function* () {
                 yield { file: 'src/file.ts', status: 'M' };
             },
-        } as unknown as {
-            readonly slice: (
-                start: number,
-                end?: number
-            ) => Array<{
-                file: string;
-                status: string;
-            }>;
-            readonly [Symbol.iterator]: () => Iterator<{
-                file: string;
-                status: string;
-            }>;
-            readonly length: number;
-        };
+        } as unknown as DiffFile[];
 
         let lengthReads = 0;
         Object.defineProperty(files, 'length', {
@@ -811,7 +801,7 @@ describe('reviewDiffWithCopilotCodeReview', () => {
                     isTargetCheckedOut: true,
                 },
             },
-            files as never,
+            files,
             progress
         );
 
