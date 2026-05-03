@@ -305,7 +305,7 @@
                 "lgtm.includeDeletedFiles": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Include the content of deleted files as context in reviews. When enabled, the diff of deleted files is sent to the model alongside other changes."
+                    "description": "Include the content of deleted files in reviews. Consumes more tokens, but may provide more context. If disabled, deleted files are skipped entirely."
                 }
             }
         }
