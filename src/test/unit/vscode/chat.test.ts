@@ -1,5 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ChatResponseStream } from 'vscode';
+import type { Config } from '@/types/Config';
+import type { ReviewRequest } from '@/types/ReviewRequest';
+import type { ReviewResult } from '@/types/ReviewResult';
+import {
+    collectAttributedComments,
+    createSharedProgress,
+    getModelDisplayName,
+    getReviewRequest,
+    type ModelInfo,
+    type ModelReviewResult,
+    resolveOneModelSpec,
+    suggestClosestModelSpec,
+} from '@/vscode/chat';
+
 // Mock vscode and other modules imported by chat.ts
 vi.mock('vscode', () => ({
     lm: { selectChatModels: vi.fn() },
@@ -20,21 +35,6 @@ vi.mock('@/vscode/uri', () => ({
     toCommandLink: vi.fn(),
     toUri: vi.fn(),
 }));
-
-import type { ChatResponseStream } from 'vscode';
-import type { Config } from '@/types/Config';
-import type { ReviewRequest } from '@/types/ReviewRequest';
-import type { ReviewResult } from '@/types/ReviewResult';
-import {
-    collectAttributedComments,
-    createSharedProgress,
-    getModelDisplayName,
-    getReviewRequest,
-    type ModelInfo,
-    type ModelReviewResult,
-    resolveOneModelSpec,
-    suggestClosestModelSpec,
-} from '@/vscode/chat';
 
 // Store captured stream calls for verification
 let streamCalls: { method: string; args: unknown[] }[] = [];
