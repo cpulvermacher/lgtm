@@ -39,10 +39,7 @@ export async function reviewDiff(
     const files = diffFiles.filter(
         (file) =>
             isPathNotExcluded(file.file, reviewOptions.excludeGlobs) &&
-            // Copilot Code Review can review deleted files because it builds
-            // temporary before/after snapshots instead of reading only the
-            // current workspace file.
-            (isCopilotCodeReviewProviderId(providerId) || file.status !== 'D')
+            (reviewOptions.includeDeletedFiles || file.status !== 'D')
     );
 
     if (isCopilotCodeReviewProviderId(providerId)) {

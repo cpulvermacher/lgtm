@@ -38,6 +38,7 @@ export type Options = {
     comparePromptTypes?: string;
     saveOutputToFile: boolean;
     autoCheckoutTarget: AutoCheckoutTargetType;
+    includeDeletedFiles: boolean;
 };
 
 export type AutoCheckoutTargetType = 'ask' | 'always' | 'never';
