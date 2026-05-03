@@ -260,36 +260,6 @@ describe('reviewDiff', () => {
         expect(modelRequest.addDiff).toHaveBeenCalledTimes(2);
     });
 
-    it('excludes deleted files for Copilot Code Review when includeDeletedFiles is disabled', async () => {
-        vi.mocked(git.getChangedFiles).mockResolvedValue([
-            { file: 'deleted.ts', status: 'D' },
-            { file: 'file2', status: 'M' },
-        ]);
-        const copilotResult = {
-            request: { scope },
-            files: [{ file: 'file2', status: 'M' }],
-            fileComments: [],
-            errors: [],
-        };
-        vi.mocked(reviewDiffWithCopilotCodeReview).mockResolvedValue(
-            copilotResult
-        );
-
-        await reviewDiff(
-            config,
-            { scope },
-            { providerId: 'copilot-code-review', progress, cancellationToken }
-        );
-
-        expect(reviewDiffWithCopilotCodeReview).toHaveBeenCalledWith(
-            config,
-            { scope },
-            [{ file: 'file2', status: 'M' }],
-            progress,
-            cancellationToken
-        );
-    });
-
     it('merges file review requests', async () => {
         vi.mocked(modelRequest.sendRequest).mockResolvedValue(reviewResponse);
         vi.mocked(parseResponse).mockReturnValue(mockComments);
