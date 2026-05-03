@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { ChatResponseStream } from 'vscode';
 import type { Config } from '@/types/Config';
@@ -35,20 +35,10 @@ vi.mock('@/vscode/uri', () => ({
     toUri: vi.fn(),
 }));
 
-// Store captured stream calls for verification
-let streamCalls: { method: string; args: unknown[] }[] = [];
-
-// Mock stream
 const mockStream = {
-    markdown: vi.fn((...args) => {
-        streamCalls.push({ method: 'markdown', args });
-    }),
-    progress: vi.fn((...args) => {
-        streamCalls.push({ method: 'progress', args });
-    }),
-    anchor: vi.fn((...args) => {
-        streamCalls.push({ method: 'anchor', args });
-    }),
+    markdown: vi.fn(),
+    progress: vi.fn(),
+    anchor: vi.fn(),
 } as unknown as ChatResponseStream;
 
 // Mock review result factory
@@ -71,10 +61,6 @@ function createMockReviewResult(
 }
 
 describe('Chat multi-model review', () => {
-    beforeEach(() => {
-        streamCalls = [];
-    });
-
     describe('createSharedProgress', () => {
         it('should deduplicate progress messages', () => {
             const sharedProgress = createSharedProgress(mockStream);
