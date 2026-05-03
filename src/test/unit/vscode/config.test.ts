@@ -174,7 +174,7 @@ describe('Session model selection logic', () => {
             version: overrides.version ?? '1',
             maxInputTokens: overrides.maxInputTokens ?? 128000,
             countTokens: overrides.countTokens ?? (async () => 0),
-            sendRequest: overrides.sendRequest ?? (async () => ({}) as never),
+            sendRequest: overrides.sendRequest ?? (async () => ({})),
             ...overrides,
         } as LanguageModelChat;
     }
@@ -394,7 +394,7 @@ describe('Model quick pick items', () => {
             version: overrides.version ?? '1',
             maxInputTokens: overrides.maxInputTokens ?? 128000,
             countTokens: overrides.countTokens ?? (async () => 0),
-            sendRequest: overrides.sendRequest ?? (async () => ({}) as never),
+            sendRequest: overrides.sendRequest ?? (async () => ({})),
             ...overrides,
         } as LanguageModelChat;
     }

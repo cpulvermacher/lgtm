@@ -465,7 +465,7 @@ describe('reviewDiff', () => {
             errors: [],
         };
         vi.mocked(reviewDiffWithCopilotCodeReview).mockResolvedValue(
-            copilotResult as never
+            copilotResult
         );
 
         const result = await reviewDiff(

@@ -21,6 +21,8 @@ vi.mock('@/vscode/uri', () => ({
     toUri: vi.fn(),
 }));
 
+import type { ChatResponseStream } from 'vscode';
+import type { Config } from '@/types/Config';
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import {
@@ -48,7 +50,7 @@ const mockStream = {
     anchor: vi.fn((...args) => {
         streamCalls.push({ method: 'anchor', args });
     }),
-};
+} as unknown as ChatResponseStream;
 
 // Mock token
 const mockToken = {
@@ -91,7 +93,7 @@ describe('Chat multi-model review', () => {
 
     describe('createSharedProgress', () => {
         it('should deduplicate progress messages', () => {
-            const sharedProgress = createSharedProgress(mockStream as never);
+            const sharedProgress = createSharedProgress(mockStream);
 
             // Simulate multiple models reporting the same progress
             sharedProgress.report({ message: 'Gathering changes...' });
@@ -109,7 +111,7 @@ describe('Chat multi-model review', () => {
         });
 
         it('should not report empty messages', () => {
-            const sharedProgress = createSharedProgress(mockStream as never);
+            const sharedProgress = createSharedProgress(mockStream);
 
             sharedProgress.report({ message: '' });
             sharedProgress.report({ message: 'Reviewing...' });
@@ -136,7 +138,7 @@ describe('Chat multi-model review', () => {
                         changeDescription: 'Changes',
                     }),
                 },
-            } as never;
+            } as unknown as Config;
 
             const request = await getReviewRequest(
                 config,
@@ -165,7 +167,7 @@ describe('Chat multi-model review', () => {
                         changeDescription: 'Changes',
                     }),
                 },
-            } as never;
+            } as unknown as Config;
 
             const request = await getReviewRequest(
                 config,
