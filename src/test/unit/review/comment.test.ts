@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 
 import {
     parseComment,
@@ -100,6 +100,15 @@ describe('parseComment', () => {
 });
 
 describe('parseResponse', () => {
+    //silence console warings during test
+    let consoleWarnSpy: Mock<typeof console.warn>;
+    beforeEach(() => {
+        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
+    });
+    afterEach(() => {
+        consoleWarnSpy.mockRestore();
+    });
+
     const responseJsonString = JSON.stringify(responseExample, undefined, 2);
 
     it('normal', () => {

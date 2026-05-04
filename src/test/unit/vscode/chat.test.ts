@@ -1,28 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-// Mock vscode and other modules imported by chat.ts
-vi.mock('vscode', () => ({
-    lm: { selectChatModels: vi.fn() },
-    window: { showWarningMessage: vi.fn() },
-    chat: { createChatParticipant: vi.fn() },
-    Uri: { joinPath: vi.fn() },
-    CancellationTokenSource: class {},
-    LanguageModelChatMessage: { User: vi.fn(), Assistant: vi.fn() },
-}));
-vi.mock('@/review/review', () => ({ reviewDiff: vi.fn() }));
-vi.mock('@/vscode/config', () => ({ getConfig: vi.fn() }));
-vi.mock('@/vscode/ui', () => ({
-    pickRef: vi.fn(),
-    pickRefs: vi.fn(),
-    promptToCheckout: vi.fn(),
-}));
-vi.mock('@/vscode/uri', () => ({
-    toCommandLink: vi.fn(),
-    toUri: vi.fn(),
-}));
+import { describe, expect, it, vi } from 'vitest';
 
 import type { ChatResponseStream } from 'vscode';
 import type { Config } from '@/types/Config';
+import type { FileComments } from '@/types/FileComments';
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import {
@@ -36,39 +16,34 @@ import {
     suggestClosestModelSpec,
 } from '@/vscode/chat';
 
-// Store captured stream calls for verification
-let streamCalls: { method: string; args: unknown[] }[] = [];
+// Mock vscode and other modules imported by chat.ts
+vi.mock('vscode', () => ({
+    lm: { selectChatModels: vi.fn() },
+    window: { showWarningMessage: vi.fn() },
+    chat: { createChatParticipant: vi.fn() },
+    Uri: { joinPath: vi.fn() },
+}));
+vi.mock('@/review/review', () => ({ reviewDiff: vi.fn() }));
+vi.mock('@/vscode/config', () => ({ getConfig: vi.fn() }));
+vi.mock('@/vscode/ui', () => ({
+    pickRef: vi.fn(),
+    pickRefs: vi.fn(),
+    promptToCheckout: vi.fn(),
+}));
+vi.mock('@/vscode/uri', () => ({
+    toCommandLink: vi.fn(),
+    toUri: vi.fn(),
+}));
 
-// Mock stream
 const mockStream = {
-    markdown: vi.fn((...args) => {
-        streamCalls.push({ method: 'markdown', args });
-    }),
-    progress: vi.fn((...args) => {
-        streamCalls.push({ method: 'progress', args });
-    }),
-    anchor: vi.fn((...args) => {
-        streamCalls.push({ method: 'anchor', args });
-    }),
+    markdown: vi.fn(),
+    progress: vi.fn(),
+    anchor: vi.fn(),
 } as unknown as ChatResponseStream;
-
-// Mock token
-const mockToken = {
-    isCancellationRequested: false,
-};
 
 // Mock review result factory
 function createMockReviewResult(
-    fileComments: Array<{
-        target: string;
-        comments: Array<{
-            file: string;
-            line: number;
-            comment: string;
-            severity: number;
-        }>;
-        maxSeverity: number;
-    }> = []
+    fileComments: FileComments[] = []
 ): ReviewResult {
     return {
         request: {
@@ -86,11 +61,6 @@ function createMockReviewResult(
 }
 
 describe('Chat multi-model review', () => {
-    beforeEach(() => {
-        streamCalls = [];
-        mockToken.isCancellationRequested = false;
-    });
-
     describe('createSharedProgress', () => {
         it('should deduplicate progress messages', () => {
             const sharedProgress = createSharedProgress(mockStream);
@@ -465,8 +435,6 @@ describe('Chat multi-model review', () => {
 
     describe('review cancellation', () => {
         it('should handle cancellation with partial results', () => {
-            mockToken.isCancellationRequested = true;
-
             const results: ModelReviewResult[] = [
                 {
                     modelId: 'copilot:gpt-4',
@@ -496,8 +464,6 @@ describe('Chat multi-model review', () => {
         });
 
         it('should handle cancellation with no results', () => {
-            mockToken.isCancellationRequested = true;
-
             const results: ModelReviewResult[] = [
                 {
                     modelId: 'copilot:gpt-4',

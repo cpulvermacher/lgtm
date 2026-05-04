@@ -5,16 +5,15 @@ import { Config } from '@/types/Config';
 import { Logger } from '@/types/Logger';
 import { UncommittedRef } from '@/types/Ref';
 import { ReviewComment } from '@/types/ReviewComment';
+import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
+import { ReviewResult } from '@/types/ReviewResult';
+import { correctFilename } from '@/utils/filenames';
+import { extractModelSpecs, parseArguments } from '@/utils/parseArguments';
 import {
     copilotCodeReviewProviderId,
     copilotCodeReviewProviderName,
     isCopilotCodeReviewProviderId,
-} from '@/types/ReviewProvider';
-import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
-import { ReviewResult } from '@/types/ReviewResult';
-
-import { correctFilename } from '@/utils/filenames';
-import { extractModelSpecs, parseArguments } from '@/utils/parseArguments';
+} from '@/utils/reviewProvider';
 import { getConfig } from './config';
 import { FixCommentArgs } from './fix';
 import { pickRef, pickRefs, promptToCheckout } from './ui';

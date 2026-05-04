@@ -26,7 +26,10 @@ vi.mock('@/review/copilotCodeReview', () => ({
     reviewDiffWithCopilotCodeReview: vi.fn(),
 }));
 
-function createMockConfig(saveOutputToFile = false) {
+function createMockConfig(
+    saveOutputToFile = false,
+    includeDeletedFiles = false
+) {
     const git = {
         getChangedFiles: vi.fn(),
         getFileDiff: vi.fn((_, __, path) => `diff for ${path}`),
@@ -50,6 +53,7 @@ function createMockConfig(saveOutputToFile = false) {
             enableDebugOutput: false,
             maxConcurrentModelRequests: 1,
             saveOutputToFile,
+            includeDeletedFiles,
         })),
         getModel: async () => 'model',
         logger,
@@ -227,6 +231,33 @@ describe('reviewDiff', () => {
 
         expect(modelRequest.addDiff).toHaveBeenCalledTimes(1);
         expect(parseResponse).toHaveBeenCalledWith('model response');
+    });
+
+    it('includes deleted files when includeDeletedFiles is enabled', async () => {
+        const { config, git } = createMockConfig(false, true);
+        attachTempWorkspaceRoot(config, tempDirs);
+        vi.mocked(getConfig).mockResolvedValue(config);
+        vi.mocked(git.getChangedFiles).mockResolvedValue([
+            { file: 'deleted.ts', status: 'D' },
+            { file: 'file2', status: 'M' },
+        ]);
+
+        vi.mocked(modelRequest.sendRequest).mockResolvedValueOnce(
+            reviewResponse
+        );
+        vi.mocked(parseResponse).mockReturnValue(mockComments);
+
+        const result = await reviewDiff(
+            config,
+            { scope },
+            { progress, cancellationToken }
+        );
+
+        expect(result.files).toEqual([
+            { file: 'deleted.ts', status: 'D' },
+            { file: 'file2', status: 'M' },
+        ]);
+        expect(modelRequest.addDiff).toHaveBeenCalledTimes(2);
     });
 
     it('merges file review requests', async () => {
@@ -456,11 +487,11 @@ describe('reviewDiff', () => {
         attachTempWorkspaceRoot(config, tempDirs);
         vi.mocked(getConfig).mockResolvedValue(config);
         vi.mocked(git.getChangedFiles).mockResolvedValue([
-            { file: 'deleted.ts', status: 'D' },
+            { file: 'changed.ts', status: 'M' },
         ]);
         const copilotResult = {
             request: { scope },
-            files: [{ file: 'deleted.ts', status: 'D' }],
+            files: [{ file: 'changed.ts', status: 'M' }],
             fileComments: [],
             errors: [],
         };
@@ -479,7 +510,7 @@ describe('reviewDiff', () => {
         expect(reviewDiffWithCopilotCodeReview).toHaveBeenCalledWith(
             config,
             { scope },
-            [{ file: 'deleted.ts', status: 'D' }],
+            [{ file: 'changed.ts', status: 'M' }],
             undefined,
             undefined
         );

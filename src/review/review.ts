@@ -6,12 +6,12 @@ import { ModelError } from '@/types/ModelError';
 import type { PromptType } from '@/types/PromptType';
 import type { ReviewComment } from '@/types/ReviewComment';
 import type { ReviewContextFile } from '@/types/ReviewContextFile';
-import { isCopilotCodeReviewProviderId } from '@/types/ReviewProvider';
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import { parallelLimit } from '@/utils/async';
 import { correctFilename } from '@/utils/filenames';
 import { isPathNotExcluded } from '@/utils/glob';
+import { isCopilotCodeReviewProviderId } from '@/utils/reviewProvider';
 import { saveToFile } from '@/utils/saveToFile';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { loadReviewContextFiles } from './contextFiles';
@@ -39,10 +39,7 @@ export async function reviewDiff(
     const files = diffFiles.filter(
         (file) =>
             isPathNotExcluded(file.file, reviewOptions.excludeGlobs) &&
-            // Copilot Code Review can review deleted files because it builds
-            // temporary before/after snapshots instead of reading only the
-            // current workspace file.
-            (isCopilotCodeReviewProviderId(providerId) || file.status !== 'D')
+            (reviewOptions.includeDeletedFiles || file.status !== 'D')
     );
 
     if (isCopilotCodeReviewProviderId(providerId)) {

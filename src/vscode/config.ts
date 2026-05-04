@@ -8,8 +8,8 @@ import type {
     ReviewFlowType,
 } from '@/types/Config';
 import type { Model } from '@/types/Model';
-import { isCopilotCodeReviewProviderId } from '@/types/ReviewProvider';
 import { createGit, type Git } from '@/utils/git';
+import { isCopilotCodeReviewProviderId } from '@/utils/reviewProvider';
 import { defaultModelId, defaultPreferredModelIds } from './defaultModels';
 import { LgtmLogger } from './logger';
 import { getChatModel, getModelQuickPickItems } from './model';
@@ -220,6 +220,10 @@ function getOptions(): Options {
         'autoCheckoutTarget',
         'ask'
     );
+    const includeDeletedFiles = config.get<boolean>(
+        'includeDeletedFiles',
+        true
+    );
 
     // hidden experimental setting for comparing prompts. Comma-separated list of prompt types to compare.
     // if empty, will only create a single review using the default prompt type.
@@ -240,6 +244,7 @@ function getOptions(): Options {
         comparePromptTypes,
         saveOutputToFile,
         autoCheckoutTarget,
+        includeDeletedFiles,
     };
 }
 
