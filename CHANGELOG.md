@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.5.2] (pre-release)
+- Include deleted files in review by default. Configurable via `Lgtm: Include Deleted Files` setting.
+
 ## [1.5.1] (pre-release)
 - Skip binary files to avoid errors when using Copilot Code Review review provider. (Thanks to @Quicksaver!)
 
