@@ -325,7 +325,7 @@
         "checkall": "pnpm test && pnpm lint && pnpm build"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.4.6",
+        "@biomejs/biome": "2.4.14",
         "@types/node": "22.x",
         "@types/vscode": "^1.104.0",
         "@vitest/coverage-v8": "^4.1.5",

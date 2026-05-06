@@ -134,7 +134,7 @@ export class Git {
     }): refs is
         | { target: string; base: string }
         | { target: UncommittedRef; base: undefined } {
-        if (!refs || !refs.target) {
+        if (!refs?.target) {
             return false;
         }
         if (this.isUncommitted(refs.target)) {
