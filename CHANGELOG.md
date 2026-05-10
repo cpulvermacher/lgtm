@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.5.3]
+Same as 1.5.2.
+
 ## [1.5.2] (pre-release)
 - Include deleted files in review by default. Configurable via `Lgtm: Include Deleted Files` setting.
 
