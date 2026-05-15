@@ -442,7 +442,7 @@ export class Git {
      * Returns undefined if HEAD is not detached
      */
     async getDetachedHead(): Promise<
-        { ref: string; description?: string } | undefined
+        { ref: string; name: string; description?: string } | undefined
     > {
         const branches = await this.git.branch();
 
@@ -450,11 +450,15 @@ export class Git {
             return undefined;
         }
 
-        const commitHash = branches.current;
-        const description = formatDescription(true, commitHash, undefined);
+        const commitHash = await this.git.revparse(['HEAD']);
+        const name = branches.current;
+        const description = commitHash.startsWith(name)
+            ? '(current)'
+            : formatDescription(true, commitHash, undefined);
 
         return {
             ref: commitHash,
+            name,
             description,
         };
     }

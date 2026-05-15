@@ -69,7 +69,7 @@ export async function pickRef(
         });
         const detachedIcon = new vscode.ThemeIcon('git-commit');
         quickPickOptions.push({
-            label: detachedHead.ref.substring(0, shortHashLength),
+            label: detachedHead.name,
             ref: detachedHead.ref,
             description: detachedHead.description,
             iconPath: detachedIcon,

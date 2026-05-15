@@ -94,7 +94,7 @@ describe('git', () => {
                     { file: 'file1', status: 'M', from: 'othername' },
                     { file: 'file2' },
                 ],
-            } as unknown as DiffResult);
+            } as DiffResult);
 
             const result = await git.getChangedFiles(scope);
 
@@ -1050,22 +1050,47 @@ line3`;
     });
 
     describe('getDetachedHead', () => {
-        it('returns detached HEAD info when HEAD is detached', async () => {
+        it('returns detached HEAD info when HEAD is detached at a commit', async () => {
             vi.mocked(mockSimpleGit.branch).mockResolvedValue({
                 all: ['branch1', 'branch2'],
-                current: 'abc1234567890', // detached at this commit
+                current: 'abc1234', // short hash shown by git branch
                 detached: true,
                 branches: {
                     branch1: { current: false, commit: 'def456' },
                     branch2: { current: false, commit: 'ghi789' },
                 },
             } as unknown as BranchSummary);
+            vi.mocked(mockSimpleGit.revparse).mockResolvedValue(
+                'abc1234567890abcdef'
+            );
 
             const result = await git.getDetachedHead();
 
             expect(mockSimpleGit.branch).toHaveBeenCalledWith();
+            expect(mockSimpleGit.revparse).toHaveBeenCalledWith(['HEAD']);
             expect(result).toEqual({
-                ref: 'abc1234567890',
+                ref: 'abc1234567890abcdef',
+                name: 'abc1234',
+                description: '(current)',
+            });
+        });
+
+        it('uses remote branch name as label when detached at a remote branch', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: [],
+                current: 'Quicksaver/feature/model-per-session',
+                detached: true,
+                branches: {},
+            } as unknown as BranchSummary);
+            vi.mocked(mockSimpleGit.revparse).mockResolvedValue(
+                'abc1234567890abcdef'
+            );
+
+            const result = await git.getDetachedHead();
+
+            expect(result).toEqual({
+                ref: 'abc1234567890abcdef',
+                name: 'Quicksaver/feature/model-per-session',
                 description: '(current) abc1234',
             });
         });
@@ -1099,22 +1124,6 @@ line3`;
             const result = await git.getDetachedHead();
 
             expect(result).toBeUndefined();
-        });
-
-        it('shortens commit hash in description', async () => {
-            const longHash = 'abc1234567890def';
-            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
-                all: ['branch1'],
-                current: longHash,
-                detached: true,
-                branches: {
-                    branch1: { current: false, commit: 'xyz123' },
-                },
-            } as unknown as BranchSummary);
-
-            const result = await git.getDetachedHead();
-
-            expect(result?.description).toBe('(current) abc1234');
         });
     });
 
