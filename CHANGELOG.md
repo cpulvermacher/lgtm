@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.5.4] (pre-release)
+- Fix display of origin branch detached HEAD.
+
 ## [1.5.3]
 Same as 1.5.2.
 
