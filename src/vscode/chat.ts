@@ -89,21 +89,11 @@ async function handleChat(
         return;
     }
 
-    const modelNames = selectedModelIds.map((id) =>
-        getModelDisplayName(id, availableModels)
-    );
-    const modelNamesDisplay =
-        modelNames.length === 1
-            ? `**${modelNames[0]}**`
-            : modelNames.map((n) => `**${n}**`).join(', ');
+    const modelNames = getModelDisplayNames(selectedModelIds, availableModels);
 
     if (!reviewRequest.scope.isCommitted) {
-        const targetLabel =
-            reviewRequest.scope.target === UncommittedRef.Staged
-                ? 'staged'
-                : 'unstaged';
         stream.markdown(
-            `Reviewing ${targetLabel} changes using ${modelNamesDisplay}...\n\n`
+            `${await formatReviewStartMessage(config, reviewRequest, modelNames, 'markdown')}\n\n`
         );
     } else {
         const { base, target } = reviewRequest.scope;
@@ -113,11 +103,8 @@ async function handleChat(
             reviewRequest.scope = await config.git.getReviewScope(target, base);
         }
 
-        const targetIsBranch = await config.git.isBranch(target);
         stream.markdown(
-            `Reviewing changes ${
-                targetIsBranch ? 'on' : 'at'
-            } \`${target}\` compared to \`${base}\` using ${modelNamesDisplay}...\n\n`
+            `${await formatReviewStartMessage(config, reviewRequest, modelNames, 'markdown')}\n\n`
         );
         if (await config.git.isSameRef(base, target)) {
             stream.markdown('No changes found.');
@@ -128,36 +115,14 @@ async function handleChat(
     // Create a shared progress reporter that deduplicates messages across all models
     const sharedProgress = createSharedProgress(stream);
 
-    // Run reviews for all selected models with bounded concurrency
-    const reviewTasks = selectedModelIds.map(
-        (modelId, index) => () =>
-            reviewWithModel(
-                config,
-                reviewRequest,
-                modelId,
-                modelNames[index],
-                sharedProgress,
-                token
-            )
+    const { results } = await runReviewWithModels(
+        config,
+        reviewRequest,
+        selectedModelIds,
+        modelNames,
+        sharedProgress,
+        token
     );
-    const settledResults = await runWithConcurrency(
-        reviewTasks,
-        options.maxConcurrentModelRequests
-    );
-
-    // Collect successful results and log failures
-    const results: ModelReviewResult[] = [];
-    for (let i = 0; i < settledResults.length; i++) {
-        const settled = settledResults[i];
-        if (settled.status === 'fulfilled') {
-            results.push(settled.value);
-        } else {
-            config.logger.info(
-                `Model ${modelNames[i]} failed:`,
-                settled.reason
-            );
-        }
-    }
 
     // Display results based on outputModeWithMultipleModels setting
     if (
@@ -357,6 +322,48 @@ export function getModelDisplayName(
     return modelId;
 }
 
+/** Maps configured provider IDs to user-facing names for status messages. */
+export function getModelDisplayNames(
+    modelIds: string[],
+    cachedModels: vscode.LanguageModelChat[]
+): string[] {
+    return modelIds.map((id) => getModelDisplayName(id, cachedModels));
+}
+
+/**
+ * Builds the common "Reviewing..." status text used by chat output and the
+ * background command notification, with optional markdown formatting.
+ */
+export async function formatReviewStartMessage(
+    config: Config,
+    reviewRequest: ReviewRequest,
+    modelNames: string[],
+    format: 'markdown' | 'plain'
+): Promise<string> {
+    const modelNamesDisplay =
+        format === 'markdown'
+            ? modelNames.length === 1
+                ? `**${modelNames[0]}**`
+                : modelNames.map((name) => `**${name}**`).join(', ')
+            : modelNames.join(', ');
+
+    if (!reviewRequest.scope.isCommitted) {
+        const targetLabel =
+            reviewRequest.scope.target === UncommittedRef.Staged
+                ? 'staged'
+                : 'unstaged';
+        return `Reviewing ${targetLabel} changes using ${modelNamesDisplay}...`;
+    }
+
+    const { base, target } = reviewRequest.scope;
+    const targetIsBranch = await config.git.isBranch(target);
+    const targetDisplay = format === 'markdown' ? `\`${target}\`` : target;
+    const baseDisplay = format === 'markdown' ? `\`${base}\`` : base;
+    return `Reviewing changes ${
+        targetIsBranch ? 'on' : 'at'
+    } ${targetDisplay} compared to ${baseDisplay} using ${modelNamesDisplay}...`;
+}
+
 /**
  * Resolve model specs from inline `model:xxx` syntax against available VS Code models.
  * Supports exact match on id, vendor:id, or substring match on id/name.
@@ -511,9 +518,16 @@ export type ModelReviewResult = {
     result: ReviewResult;
 };
 
+/** Captures a model-level failure together with the model that produced it. */
+export type ModelReviewError = {
+    modelId: string;
+    modelName: string;
+    error: unknown;
+};
+
 /** Progress reporter interface */
 type Progress = {
-    report: (value: { message: string }) => void;
+    report: (value: { message: string; increment?: number }) => void;
 };
 
 /** Creates a shared progress reporter that deduplicates messages across all models */
@@ -529,6 +543,59 @@ export function createSharedProgress(
             }
         },
     };
+}
+
+/**
+ * Runs the same review request across multiple models using the extension's
+ * configured concurrency limit, returning successful results and per-model
+ * failures separately so callers can decide how to present them.
+ */
+export async function runReviewWithModels(
+    config: Config,
+    reviewRequest: ReviewRequest,
+    modelIds: string[],
+    modelNames: string[],
+    progress: Progress,
+    token: vscode.CancellationToken
+): Promise<{ results: ModelReviewResult[]; errors: ModelReviewError[] }> {
+    // Run reviews for all selected models with bounded concurrency
+    const reviewTasks = modelIds.map(
+        (modelId, index) => () =>
+            reviewWithModel(
+                config,
+                reviewRequest,
+                modelId,
+                modelNames[index],
+                progress,
+                token
+            )
+    );
+    const settledResults = await runWithConcurrency(
+        reviewTasks,
+        config.getOptions().maxConcurrentModelRequests
+    );
+
+    // Collect successful results and log failures
+    const results: ModelReviewResult[] = [];
+    const errors: ModelReviewError[] = [];
+    for (let i = 0; i < settledResults.length; i++) {
+        const settled = settledResults[i];
+        if (settled.status === 'fulfilled') {
+            results.push(settled.value);
+        } else {
+            errors.push({
+                modelId: modelIds[i],
+                modelName: modelNames[i],
+                error: settled.reason,
+            });
+            config.logger.info(
+                `Model ${modelNames[i]} failed:`,
+                settled.reason
+            );
+        }
+    }
+
+    return { results, errors };
 }
 
 async function runWithConcurrency<T>(

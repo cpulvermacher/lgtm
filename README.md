@@ -35,6 +35,44 @@ LGTM is also available in agent mode, so you can include it as part of your work
 For example, you might ask the agent to `Review the current changes using #reviewStaged and fix any severe issues.`
 Assuming you have staged changes, the agent will start a review using LGTM and then act on the review comments. Consider specifying the severity of issues to fix, e.g. `... and fix any issues with severity >= 3.`
 
+## Programmatic Use
+
+Extensions and VS Code automation can call the hidden `lgtm.reviewChanges` command directly. It runs the same review flow in the background with a cancellable progress notification, then resolves with structured review comments, per-model results, and any errors.
+
+```ts
+// Review staged changes using the configured `lgtm.chatModel`.
+const staged = await vscode.commands.executeCommand('lgtm.reviewChanges', 'staged');
+
+// Review unstaged changes with one explicit review provider.
+const unstaged = await vscode.commands.executeCommand(
+    'lgtm.reviewChanges',
+    'unstaged',
+    'copilot:gpt-4.1'
+);
+
+// Review a topic/base pair with all configured preferred providers.
+const branchReview = await vscode.commands.executeCommand(
+    'lgtm.reviewChanges',
+    'feature-branch',
+    'main',
+    'preferred'
+);
+
+// Use an options object when that is clearer for typed integrations.
+const optionsReview = await vscode.commands.executeCommand('lgtm.reviewChanges', {
+    topic: 'feature-branch',
+    base: 'origin/main',
+    models: ['copilot:gpt-4.1', 'copilot-code-review'],
+});
+
+// Equivalent staged/unstaged object forms are also supported.
+await vscode.commands.executeCommand('lgtm.reviewChanges', { staged: true });
+await vscode.commands.executeCommand('lgtm.reviewChanges', {
+    scope: 'unstaged',
+    models: 'preferred',
+});
+```
+
 ## Features
 
 - **Only Copilot Required**: Defaults to using Copilot Chat for reviewing changes. Both free and paid plans are supported.

@@ -1,18 +1,27 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ChatResponseStream } from 'vscode';
+import type {
+    CancellationToken,
+    ChatResponseStream,
+    LanguageModelChat,
+} from 'vscode';
+import { reviewDiff } from '@/review/review';
 import type { Config } from '@/types/Config';
 import type { FileComments } from '@/types/FileComments';
+import { UncommittedRef } from '@/types/Ref';
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import {
     collectAttributedComments,
     createSharedProgress,
+    formatReviewStartMessage,
     getModelDisplayName,
+    getModelDisplayNames,
     getReviewRequest,
     type ModelInfo,
     type ModelReviewResult,
     resolveOneModelSpec,
+    runReviewWithModels,
     suggestClosestModelSpec,
 } from '@/vscode/chat';
 
@@ -429,6 +438,188 @@ describe('Chat multi-model review', () => {
         it('should preserve full ID tail for model IDs with multiple colons', () => {
             expect(getModelDisplayName('vendor:group:sub:model', [])).toBe(
                 'group:sub:model'
+            );
+        });
+
+        it('should map model IDs to display names in order', () => {
+            expect(
+                getModelDisplayNames(
+                    ['copilot:gpt-4.1', 'copilot-code-review', 'missing'],
+                    [
+                        model(
+                            'copilot',
+                            'gpt-4.1',
+                            'GPT 4.1'
+                        ) as LanguageModelChat,
+                    ]
+                )
+            ).toEqual(['GPT 4.1', 'Copilot Code Review', 'missing']);
+        });
+    });
+
+    describe('formatReviewStartMessage', () => {
+        it('should format uncommitted review messages', async () => {
+            const config = {
+                git: { isBranch: vi.fn() },
+            } as unknown as Config;
+            const request = {
+                scope: {
+                    target: UncommittedRef.Staged,
+                    isCommitted: false,
+                    isTargetCheckedOut: true,
+                },
+            } as ReviewRequest;
+
+            await expect(
+                formatReviewStartMessage(config, request, ['GPT 4.1'], 'plain')
+            ).resolves.toBe('Reviewing staged changes using GPT 4.1...');
+        });
+
+        it('should format committed review messages as markdown', async () => {
+            const config = {
+                git: { isBranch: vi.fn().mockResolvedValue(true) },
+            } as unknown as Config;
+            const request = {
+                scope: {
+                    target: 'feature',
+                    base: 'main',
+                    isCommitted: true,
+                    isTargetCheckedOut: true,
+                },
+            } as ReviewRequest;
+
+            await expect(
+                formatReviewStartMessage(
+                    config,
+                    request,
+                    ['GPT 4.1', 'Claude'],
+                    'markdown'
+                )
+            ).resolves.toBe(
+                'Reviewing changes on `feature` compared to `main` using **GPT 4.1**, **Claude**...'
+            );
+        });
+
+        it('should use "at" for non-branch committed targets', async () => {
+            const config = {
+                git: { isBranch: vi.fn().mockResolvedValue(false) },
+            } as unknown as Config;
+            const request = {
+                scope: {
+                    target: 'abc1234',
+                    base: 'main',
+                    isCommitted: true,
+                    isTargetCheckedOut: false,
+                },
+            } as ReviewRequest;
+
+            await expect(
+                formatReviewStartMessage(config, request, ['GPT 4.1'], 'plain')
+            ).resolves.toBe(
+                'Reviewing changes at abc1234 compared to main using GPT 4.1...'
+            );
+        });
+    });
+
+    describe('runReviewWithModels', () => {
+        it('should run reviews for each model and return results', async () => {
+            vi.mocked(reviewDiff).mockImplementation(
+                async (_config, request, options) => ({
+                    ...createMockReviewResult([]),
+                    request,
+                    errors: [],
+                    files: [
+                        {
+                            file: `${options?.providerId ?? 'default'}.ts`,
+                            status: 'M',
+                        },
+                    ],
+                })
+            );
+            const config = {
+                getOptions: vi.fn(() => ({ maxConcurrentModelRequests: 2 })),
+                getModel: vi.fn(),
+                logger: { info: vi.fn() },
+            } as unknown as Config;
+            const request = {
+                scope: {
+                    target: 'feature',
+                    base: 'main',
+                    isCommitted: true,
+                    isTargetCheckedOut: true,
+                },
+            } as ReviewRequest;
+            const progress = { report: vi.fn() };
+            const token = {
+                isCancellationRequested: false,
+            } as CancellationToken;
+
+            const result = await runReviewWithModels(
+                config,
+                request,
+                ['copilot:gpt-4.1', 'copilot:claude'],
+                ['GPT 4.1', 'Claude'],
+                progress,
+                token
+            );
+
+            expect(result.errors).toEqual([]);
+            expect(result.results.map((item) => item.modelName)).toEqual([
+                'GPT 4.1',
+                'Claude',
+            ]);
+            expect(reviewDiff).toHaveBeenCalledTimes(2);
+            expect(reviewDiff).toHaveBeenCalledWith(
+                expect.objectContaining({ getModel: expect.any(Function) }),
+                request,
+                expect.objectContaining({
+                    providerId: 'copilot:gpt-4.1',
+                    progress,
+                    cancellationToken: token,
+                })
+            );
+        });
+
+        it('should return per-model errors without dropping successful results', async () => {
+            const failure = new Error('model failed');
+            vi.mocked(reviewDiff)
+                .mockResolvedValueOnce(createMockReviewResult([]))
+                .mockRejectedValueOnce(failure);
+            const logger = { info: vi.fn() };
+            const config = {
+                getOptions: vi.fn(() => ({ maxConcurrentModelRequests: 1 })),
+                getModel: vi.fn(),
+                logger,
+            } as unknown as Config;
+            const request = {
+                scope: {
+                    target: 'feature',
+                    base: 'main',
+                    isCommitted: true,
+                    isTargetCheckedOut: true,
+                },
+            } as ReviewRequest;
+
+            const result = await runReviewWithModels(
+                config,
+                request,
+                ['copilot:gpt-4.1', 'copilot:claude'],
+                ['GPT 4.1', 'Claude'],
+                { report: vi.fn() },
+                { isCancellationRequested: false } as CancellationToken
+            );
+
+            expect(result.results).toHaveLength(1);
+            expect(result.errors).toEqual([
+                {
+                    modelId: 'copilot:claude',
+                    modelName: 'Claude',
+                    error: failure,
+                },
+            ]);
+            expect(logger.info).toHaveBeenCalledWith(
+                'Model Claude failed:',
+                failure
             );
         });
     });
