@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-
 import type {
     CancellationToken,
     ChatResponseStream,
     LanguageModelChat,
 } from 'vscode';
+import * as vscode from 'vscode';
 import { reviewDiff } from '@/review/review';
 import type { Config } from '@/types/Config';
 import type { FileComments } from '@/types/FileComments';
@@ -20,10 +20,12 @@ import {
     getReviewRequest,
     type ModelInfo,
     type ModelReviewResult,
+    registerChatParticipant,
     resolveOneModelSpec,
     runReviewWithModels,
     suggestClosestModelSpec,
 } from '@/vscode/chat';
+import { getConfig } from '@/vscode/config';
 
 // Mock vscode and other modules imported by chat.ts
 vi.mock('vscode', () => ({
@@ -672,6 +674,80 @@ describe('Chat multi-model review', () => {
     });
 
     describe('error handling', () => {
+        it('should report model-level failures in chat output', async () => {
+            vi.clearAllMocks();
+
+            let participantHandler:
+                | Parameters<typeof vscode.chat.createChatParticipant>[1]
+                | undefined;
+
+            vi.mocked(vscode.chat.createChatParticipant).mockImplementation(
+                (_id, handler) => {
+                    participantHandler = handler;
+                    return {} as vscode.ChatParticipant;
+                }
+            );
+            vi.mocked(vscode.Uri.joinPath).mockReturnValue({} as vscode.Uri);
+            vi.mocked(vscode.lm.selectChatModels).mockResolvedValue([
+                model('copilot', 'gpt-4.1', 'GPT 4.1') as LanguageModelChat,
+                model('copilot', 'claude', 'Claude') as LanguageModelChat,
+            ]);
+
+            const config = {
+                getOptions: vi.fn(() => ({
+                    chatModel: 'copilot:gpt-4.1',
+                    selectChatModelForReview: 'Always ask',
+                    outputModeWithMultipleModels: 'Separate sections',
+                    maxConcurrentModelRequests: 1,
+                    minSeverity: 1,
+                })),
+                promptForSessionModelIds: vi
+                    .fn()
+                    .mockResolvedValue(['copilot:gpt-4.1', 'copilot:claude']),
+                getModel: vi.fn(),
+                logger: { info: vi.fn() },
+                git: {
+                    getCommitRef: vi.fn(async (ref: string) => ref),
+                    isUncommitted: vi.fn(() => false),
+                    isValidRefPair: vi.fn(() => true),
+                    isSameRef: vi.fn().mockResolvedValue(false),
+                    isBranch: vi.fn().mockResolvedValue(true),
+                    getReviewScope: vi.fn().mockResolvedValue({
+                        target: 'feature',
+                        base: 'main',
+                        isCommitted: true,
+                        isTargetCheckedOut: true,
+                    }),
+                },
+            } as unknown as Config;
+            vi.mocked(getConfig).mockResolvedValue(config);
+
+            const failure = new Error('provider unavailable');
+            vi.mocked(reviewDiff)
+                .mockResolvedValueOnce(createMockReviewResult([]))
+                .mockRejectedValueOnce(failure);
+
+            registerChatParticipant({
+                extensionUri: {} as vscode.Uri,
+            } as vscode.ExtensionContext);
+
+            await participantHandler?.(
+                {
+                    command: 'review',
+                    prompt: 'feature main',
+                } as vscode.ChatRequest,
+                {} as vscode.ChatContext,
+                mockStream,
+                { isCancellationRequested: false } as CancellationToken
+            );
+
+            expect(mockStream.markdown).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    'Claude (copilot:claude) failed: provider unavailable'
+                )
+            );
+        });
+
         it('should aggregate errors from multiple models', () => {
             const results: ModelReviewResult[] = [
                 {

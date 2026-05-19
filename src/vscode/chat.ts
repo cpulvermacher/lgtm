@@ -115,7 +115,7 @@ async function handleChat(
     // Create a shared progress reporter that deduplicates messages across all models
     const sharedProgress = createSharedProgress(stream);
 
-    const { results } = await runReviewWithModels(
+    const { results, errors } = await runReviewWithModels(
         config,
         reviewRequest,
         selectedModelIds,
@@ -134,6 +134,8 @@ async function handleChat(
         // Separate sections (default)
         showSeparateReviewResults(config, results, stream, token);
     }
+
+    reportErrors(config.logger, errors.map(formatModelReviewError), stream);
 }
 
 async function maybeCheckoutTarget(
@@ -646,6 +648,23 @@ function reportErrors(
     stream.markdown(
         `\n${errors.length} error(s) occurred during review:\n${errorString}\n`
     );
+}
+
+function formatModelReviewError({
+    modelId,
+    modelName,
+    error,
+}: ModelReviewError) {
+    const message = error instanceof Error ? error.message : String(error);
+    const formattedError = new Error(
+        `${modelName} (${modelId}) failed: ${message}`
+    );
+
+    if (error instanceof Error) {
+        formattedError.stack = error.stack;
+    }
+
+    return formattedError;
 }
 
 /** Reviews changes with a specific model */
