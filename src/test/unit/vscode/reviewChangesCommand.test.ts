@@ -110,7 +110,12 @@ function createConfig(): Config {
         git,
         getModel: vi.fn(),
         getOptions: vi.fn(() => createOptions()),
-        logger: { info: vi.fn() },
+        logger: {
+            debug: vi.fn(),
+            info: vi.fn(),
+            setEnableDebug: vi.fn(),
+            isDebugEnabled: vi.fn(),
+        },
     } as unknown as Config;
 }
 
@@ -199,6 +204,26 @@ describe('reviewChangesCommand', () => {
                 message: 'Recoverable copilot:gpt-4.1 error',
             }),
         ]);
+        expect(config.logger.info).toHaveBeenCalledWith(
+            'lgtm.reviewChanges called',
+            { args: ['staged'] }
+        );
+        expect(config.logger.info).toHaveBeenCalledWith(
+            'lgtm.reviewChanges resolved',
+            expect.objectContaining({
+                prompt: 'staged',
+                scope: {
+                    kind: 'staged',
+                    target: UncommittedRef.Staged,
+                },
+                models: [
+                    {
+                        id: 'copilot:gpt-4.1',
+                        name: 'GPT 4.1',
+                    },
+                ],
+            })
+        );
     });
 
     it('should review unstaged changes from object-style arguments', async () => {
@@ -233,6 +258,25 @@ describe('reviewChangesCommand', () => {
             'copilot:claude',
             'copilot-code-review',
         ]);
+        expect(config.logger.info).toHaveBeenCalledWith(
+            'lgtm.reviewChanges resolved',
+            expect.objectContaining({
+                prompt: 'feature-branch main',
+                scope: expect.objectContaining({
+                    kind: 'branch',
+                    target: 'feature-branch',
+                    base: 'main',
+                    revisionRangeDiff: 'main...feature-branch',
+                    revisionRangeLog: 'main..feature-branch',
+                    isTargetCheckedOut: true,
+                }),
+                models: [
+                    { id: 'copilot:gpt-4.1', name: 'GPT 4.1' },
+                    { id: 'copilot:claude', name: 'Claude' },
+                    { id: 'copilot-code-review', name: 'Copilot Code Review' },
+                ],
+            })
+        );
     });
 
     it('should accept positional topic/base refs and explicit models', async () => {

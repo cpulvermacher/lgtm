@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 
+import type { Config } from '@/types/Config';
+import { UncommittedRef } from '@/types/Ref';
 import type { ReviewComment } from '@/types/ReviewComment';
+import type { ReviewScope } from '@/types/ReviewRequest';
 import {
     formatReviewStartMessage,
     getModelDisplayNames,
@@ -60,6 +63,8 @@ export async function reviewChangesCommand(
     ...args: unknown[]
 ): Promise<ReviewChangesResult> {
     const config = await getConfig({ refreshWorkspace: true });
+    config.logger.info('lgtm.reviewChanges called', { args });
+
     const normalized = normalizeReviewChangesArgs(args);
     const availableModels = await vscode.lm.selectChatModels();
     const modelIds = resolveReviewModelIds(
@@ -72,6 +77,14 @@ export async function reviewChangesCommand(
     if (!reviewRequest) {
         throw new Error('Could not create a review request.');
     }
+    config.logger.info('lgtm.reviewChanges resolved', {
+        prompt: normalized.prompt,
+        scope: await createReviewScopeLog(config, reviewRequest.scope),
+        models: modelIds.map((id, index) => ({
+            id,
+            name: modelNames[index],
+        })),
+    });
 
     const message = await formatReviewStartMessage(
         config,
@@ -253,6 +266,29 @@ function resolveReviewModelIds(
     }
 
     return uniqueModelIds;
+}
+
+/**
+ * Produces a compact log payload for the resolved review scope so callers can
+ * diagnose whether the command reviewed the intended refs or uncommitted set.
+ */
+async function createReviewScopeLog(config: Config, scope: ReviewScope) {
+    if (!scope.isCommitted) {
+        return {
+            kind:
+                scope.target === UncommittedRef.Staged ? 'staged' : 'unstaged',
+            target: scope.target,
+        };
+    }
+
+    return {
+        kind: (await config.git.isBranch(scope.target)) ? 'branch' : 'ref',
+        target: scope.target,
+        base: scope.base,
+        revisionRangeDiff: scope.revisionRangeDiff,
+        revisionRangeLog: scope.revisionRangeLog,
+        isTargetCheckedOut: scope.isTargetCheckedOut,
+    };
 }
 
 /**
