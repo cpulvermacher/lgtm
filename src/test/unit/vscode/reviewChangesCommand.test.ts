@@ -223,12 +223,13 @@ describe('reviewChangesCommand', () => {
         );
         expect(vscode.window.withProgress).toHaveBeenCalledWith(
             expect.objectContaining({
-                title: 'Reviewing changes on feature-branch compared to main using Claude, Copilot Code Review...',
+                title: 'Reviewing changes on feature-branch compared to main using GPT 4.1, Claude, Copilot Code Review...',
             }),
             expect.any(Function)
         );
-        expect(reviewDiff).toHaveBeenCalledTimes(2);
+        expect(reviewDiff).toHaveBeenCalledTimes(3);
         expect(result.results.map((item) => item.modelId)).toEqual([
+            'copilot:gpt-4.1',
             'copilot:claude',
             'copilot-code-review',
         ]);
@@ -297,15 +298,20 @@ describe('reviewChangesCommand', () => {
         );
     });
 
-    it('should reject an empty preferred model configuration', async () => {
+    it('should use the default model when preferred model configuration is empty', async () => {
         vi.mocked(config.getOptions).mockReturnValue(
             createOptions({
                 preferredModels: [],
             })
         );
 
-        await expect(
-            reviewChangesCommand({ staged: true, models: 'preferred' })
-        ).rejects.toThrow('Expected at least one review model.');
+        const result = await reviewChangesCommand({
+            staged: true,
+            models: 'preferred',
+        });
+
+        expect(result.results.map((item) => item.modelId)).toEqual([
+            'copilot:gpt-4.1',
+        ]);
     });
 });

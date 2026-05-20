@@ -244,7 +244,7 @@ function resolveReviewModelIds(
 
     const requestedModels = typeof models === 'string' ? [models] : models;
     const modelIds = requestedModels.flatMap((modelId) =>
-        modelId === 'preferred' ? preferredModels : [modelId]
+        modelId === 'preferred' ? [chatModel, ...preferredModels] : [modelId]
     );
     const uniqueModelIds = [...new Set(modelIds)];
 
