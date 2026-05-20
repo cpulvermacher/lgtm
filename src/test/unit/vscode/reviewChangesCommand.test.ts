@@ -10,12 +10,14 @@ import type { Git } from '@/utils/git';
 import { getConfig } from '@/vscode/config';
 import { reviewChangesCommand } from '@/vscode/reviewChangesCommand';
 
+const progressReport = vi.hoisted(() => vi.fn());
+
 vi.mock('vscode', () => ({
     ProgressLocation: { Notification: 15 },
     lm: { selectChatModels: vi.fn() },
     window: {
         withProgress: vi.fn((_options, task) =>
-            task({ report: vi.fn() }, { isCancellationRequested: false })
+            task({ report: progressReport }, { isCancellationRequested: false })
         ),
     },
     chat: { createChatParticipant: vi.fn() },
@@ -143,6 +145,7 @@ describe('reviewChangesCommand', () => {
     let config: Config;
 
     beforeEach(() => {
+        vi.clearAllMocks();
         config = createConfig();
         vi.mocked(getConfig).mockResolvedValue(config);
         vi.mocked(vscode.lm.selectChatModels).mockResolvedValue([
@@ -294,6 +297,47 @@ describe('reviewChangesCommand', () => {
         );
     });
 
+    it('should treat staged and unstaged option targets as refs when base is provided', async () => {
+        await reviewChangesCommand({ target: 'staged', base: 'main' });
+
+        expect(config.git.getReviewScope).toHaveBeenCalledWith(
+            'staged',
+            'main'
+        );
+    });
+
+    it('should forward notification increments without duplicating progress messages', async () => {
+        vi.mocked(reviewDiff).mockImplementation(
+            async (_config, request, options) => {
+                options?.progress?.report({
+                    message: 'Gathering changes...',
+                    increment: 10,
+                });
+                options?.progress?.report({
+                    message: 'Gathering changes...',
+                    increment: 15,
+                });
+                options?.progress?.report({
+                    message: '',
+                    increment: 5,
+                });
+                return createReviewResult(
+                    request,
+                    options?.providerId ?? 'copilot:gpt-4.1'
+                );
+            }
+        );
+
+        await reviewChangesCommand('staged');
+
+        expect(progressReport).toHaveBeenCalledWith({
+            message: 'Gathering changes...',
+            increment: 10,
+        });
+        expect(progressReport).toHaveBeenCalledWith({ increment: 15 });
+        expect(progressReport).toHaveBeenCalledWith({ increment: 5 });
+    });
+
     it('should return command-level model failures with successful results', async () => {
         const failure = new Error('hard model failure');
         vi.mocked(reviewDiff)
@@ -338,6 +382,19 @@ describe('reviewChangesCommand', () => {
             'Expected a base ref after the target ref.'
         );
         await expect(reviewChangesCommand('staged', 123)).rejects.toThrow(
+            "Expected models to be omitted, 'preferred', a model ID, or an array of model IDs."
+        );
+        await expect(
+            reviewChangesCommand({ staged: true, unstaged: true })
+        ).rejects.toThrow(
+            "Expected exactly one change scope: 'staged' or 'unstaged'."
+        );
+        await expect(
+            reviewChangesCommand({
+                staged: true,
+                models: [123] as unknown as string[],
+            })
+        ).rejects.toThrow(
             "Expected models to be omitted, 'preferred', a model ID, or an array of model IDs."
         );
     });

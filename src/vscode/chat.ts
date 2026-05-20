@@ -560,6 +560,10 @@ export async function runReviewWithModels(
     progress: Progress,
     token: vscode.CancellationToken
 ): Promise<{ results: ModelReviewResult[]; errors: ModelReviewError[] }> {
+    if (modelIds.length !== modelNames.length) {
+        throw new Error('Expected one display name for each review model.');
+    }
+
     // Run reviews for all selected models with bounded concurrency
     const reviewTasks = modelIds.map(
         (modelId, index) => () =>

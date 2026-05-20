@@ -52,12 +52,8 @@ export async function parseArguments(
         };
     }
 
-    if (target === 'staged' || target === 'unstaged') {
-        if (base) {
-            throw new Error(
-                `Expected no argument after '${target}'. ${usageHint}`
-            );
-        }
+    const isUncommittedScope = target === 'staged' || target === 'unstaged';
+    if (isUncommittedScope && !base) {
         return {
             target:
                 target === 'staged'
@@ -66,7 +62,14 @@ export async function parseArguments(
             ...withModelIds(modelIds),
             ...withContextFilesOverride(contextFilesOverride),
         };
-    } else if (!(await isCommitRef(git, target))) {
+    }
+
+    if (!(await isCommitRef(git, target))) {
+        if (isUncommittedScope) {
+            throw new Error(
+                `Expected no argument after '${target}'. ${usageHint}`
+            );
+        }
         throw new Error(`Could not find target ref '${target}'. ${usageHint}`);
     }
     if (!base) {

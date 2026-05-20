@@ -166,8 +166,22 @@ function normalizeReviewChangesArgs(
 function normalizeOptionsObject(
     options: ReviewChangesCommandOptions
 ): NormalizedReviewChangesArgs {
-    const models =
-        options.models ?? options.modelIds ?? options.reviewProviderIds;
+    const models = normalizeModelArgument(
+        options.models ?? options.modelIds ?? options.reviewProviderIds
+    );
+    const requestedScopes = new Set(
+        [
+            options.staged ? 'staged' : undefined,
+            options.unstaged ? 'unstaged' : undefined,
+            options.scope,
+        ].filter((scope): scope is 'staged' | 'unstaged' => Boolean(scope))
+    );
+
+    if (requestedScopes.size > 1) {
+        throw new Error(
+            "Expected exactly one change scope: 'staged' or 'unstaged'."
+        );
+    }
 
     if (options.staged || options.scope === 'staged') {
         return {
@@ -177,20 +191,6 @@ function normalizeOptionsObject(
     }
 
     if (options.unstaged || options.scope === 'unstaged') {
-        return {
-            prompt: 'unstaged',
-            models,
-        };
-    }
-
-    if (options.target === 'staged' || options.topic === 'staged') {
-        return {
-            prompt: 'staged',
-            models,
-        };
-    }
-
-    if (options.target === 'unstaged' || options.topic === 'unstaged') {
         return {
             prompt: 'unstaged',
             models,
@@ -247,15 +247,20 @@ function normalizeModelArgument(value: unknown): ModelSelection | undefined {
  * remains the single authority for model availability and errors.
  */
 function resolveReviewModelIds(
-    models: ModelSelection | undefined,
+    models: unknown,
     chatModel: string,
     preferredModels: string[]
 ): string[] {
-    if (!models) {
+    const normalizedModels = normalizeModelArgument(models);
+
+    if (!normalizedModels) {
         return [chatModel];
     }
 
-    const requestedModels = typeof models === 'string' ? [models] : models;
+    const requestedModels =
+        typeof normalizedModels === 'string'
+            ? [normalizedModels]
+            : normalizedModels;
     const modelIds = requestedModels.flatMap((modelId) =>
         modelId === 'preferred' ? [chatModel, ...preferredModels] : [modelId]
     );
@@ -300,13 +305,26 @@ function createNotificationProgress(
 ) {
     const reportedMessages = new Set<string>();
     return {
-        report: (value: { message: string; increment?: number }) => {
-            if (!value.message || reportedMessages.has(value.message)) {
+        report: (value: { message?: string; increment?: number }) => {
+            const reportValue: { message?: string; increment?: number } = {};
+
+            if (value.increment !== undefined) {
+                reportValue.increment = value.increment;
+            }
+
+            if (value.message && !reportedMessages.has(value.message)) {
+                reportedMessages.add(value.message);
+                reportValue.message = value.message;
+            }
+
+            if (
+                reportValue.message === undefined &&
+                reportValue.increment === undefined
+            ) {
                 return;
             }
 
-            reportedMessages.add(value.message);
-            progress.report(value);
+            progress.report(reportValue);
         },
     };
 }

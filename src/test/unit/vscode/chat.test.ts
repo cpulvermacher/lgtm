@@ -624,6 +624,37 @@ describe('Chat multi-model review', () => {
                 failure
             );
         });
+
+        it('should reject mismatched model IDs and display names', async () => {
+            const config = {
+                getOptions: vi.fn(() => ({ maxConcurrentModelRequests: 1 })),
+                getModel: vi.fn(),
+                logger: { info: vi.fn() },
+            } as unknown as Config;
+            const request = {
+                scope: {
+                    target: 'feature',
+                    base: 'main',
+                    isCommitted: true,
+                    isTargetCheckedOut: true,
+                },
+            } as ReviewRequest;
+
+            await expect(
+                runReviewWithModels(
+                    config,
+                    request,
+                    ['copilot:gpt-4.1', 'copilot:claude'],
+                    ['GPT 4.1'],
+                    { report: vi.fn() },
+                    { isCancellationRequested: false } as CancellationToken
+                )
+            ).rejects.toThrow(
+                'Expected one display name for each review model.'
+            );
+
+            expect(reviewDiff).not.toHaveBeenCalled();
+        });
     });
 
     describe('review cancellation', () => {
