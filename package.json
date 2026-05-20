@@ -29,7 +29,6 @@
   "icon": "images/icon.png",
   "license": "SEE LICENSE IN LICENSE",
   "activationEvents": [
-    "onStartupFinished",
     "onChatParticipant:lgtm"
   ],
   "main": "./out/extension.js",
