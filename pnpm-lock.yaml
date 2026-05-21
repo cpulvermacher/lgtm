@@ -6,7 +6,7 @@ settings:
 
 overrides:
   brace-expansion@>=1.0.0 <=1.1.11: '>=1.1.12'
-  brace-expansion@>=5.0.0 <5.0.5: '>=5.0.5'
+  brace-expansion@>=5.0.0 <5.0.6: '>=5.0.6'
   tar-fs@>=2.0.0 <2.1.4: '>=2.1.4'
   glob@>=11.0.0 <11.1.0: '>=11.1.0'
   jws@=4.0.0: '>=4.0.1'
@@ -934,8 +934,8 @@ packages:
   boundary@2.0.0:
     resolution: {integrity: sha512-rJKn5ooC9u8q13IMCrW0RSp31pxBCHE3y9V/tp3TdWSLf8Em3p6Di4NBpfzbJge9YjjFEsD0RtFEjtvHL5VyEA==}
 
-  brace-expansion@5.0.5:
-    resolution: {integrity: sha512-VZznLgtwhn+Mact9tfiwx64fA9erHH/MCXEUfB/0bX/6Fz6ny5EGTXYltMocqg4xFAQZtnO3DHWWXi8RiuN7cQ==}
+  brace-expansion@5.0.6:
+    resolution: {integrity: sha512-kLpxurY4Z4r9sgMsyG0Z9uzsBlgiU/EFKhj/h91/8yHu0edo7XuixOIH3VcJ8kkxs6/jPzoI6U9Vj3WqbMQ94g==}
     engines: {node: 18 || 20 || >=22}
 
   braces@3.0.3:
@@ -2672,7 +2672,7 @@ snapshots:
 
   boundary@2.0.0: {}
 
-  brace-expansion@5.0.5:
+  brace-expansion@5.0.6:
     dependencies:
       balanced-match: 4.0.3
 
@@ -3220,11 +3220,11 @@ snapshots:
 
   minimatch@10.2.5:
     dependencies:
-      brace-expansion: 5.0.5
+      brace-expansion: 5.0.6
 
   minimatch@3.1.2:
     dependencies:
-      brace-expansion: 5.0.5
+      brace-expansion: 5.0.6
 
   minimist@1.2.8:
     optional: true
