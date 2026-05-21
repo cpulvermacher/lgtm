@@ -14,6 +14,7 @@ import type { ReviewResult } from '@/types/ReviewResult';
 import {
     collectAttributedComments,
     createSharedProgress,
+    formatModelReviewError,
     formatReviewStartMessage,
     getModelDisplayName,
     getModelDisplayNames,
@@ -705,6 +706,29 @@ describe('Chat multi-model review', () => {
     });
 
     describe('error handling', () => {
+        it('should keep formatted error stacks consistent with their messages', () => {
+            const failure = new Error('provider unavailable');
+            failure.stack =
+                'Error: provider unavailable\n    at reviewDiff (review.ts:1:1)';
+
+            const formatted = formatModelReviewError({
+                modelId: 'copilot:claude',
+                modelName: 'Claude',
+                error: failure,
+            });
+
+            expect(formatted.message).toBe(
+                'Claude (copilot:claude) failed: provider unavailable'
+            );
+            expect(formatted.cause).toBe(failure);
+            expect(formatted.stack?.split('\n')[0]).toBe(
+                'Error: Claude (copilot:claude) failed: provider unavailable'
+            );
+            expect(formatted.stack).toContain(
+                '    at reviewDiff (review.ts:1:1)'
+            );
+        });
+
         it('should report model-level failures in chat output', async () => {
             vi.clearAllMocks();
 

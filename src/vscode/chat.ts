@@ -654,18 +654,24 @@ function reportErrors(
     );
 }
 
-function formatModelReviewError({
+export function formatModelReviewError({
     modelId,
     modelName,
     error,
 }: ModelReviewError) {
     const message = error instanceof Error ? error.message : String(error);
-    const formattedError = new Error(
-        `${modelName} (${modelId}) failed: ${message}`
-    );
+    const formattedMessage = `${modelName} (${modelId}) failed: ${message}`;
+    const formattedError =
+        error instanceof Error
+            ? new Error(formattedMessage, { cause: error })
+            : new Error(formattedMessage);
 
-    if (error instanceof Error) {
-        formattedError.stack = error.stack;
+    if (error instanceof Error && error.stack) {
+        const stackLines = error.stack.split('\n');
+        formattedError.stack = [
+            `${formattedError.name}: ${formattedError.message}`,
+            ...stackLines.slice(1),
+        ].join('\n');
     }
 
     return formattedError;
