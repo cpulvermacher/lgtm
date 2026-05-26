@@ -729,6 +729,33 @@ describe('Chat multi-model review', () => {
             );
         });
 
+        it('should preserve formatted model error names', () => {
+            class ModelPermissionError extends Error {
+                constructor(message: string) {
+                    super(message);
+                    this.name = 'ModelPermissionError';
+                }
+            }
+
+            const failure = new ModelPermissionError('permission denied');
+            failure.stack =
+                'ModelPermissionError: permission denied\n    at getModel (model.ts:1:1)';
+
+            const formatted = formatModelReviewError({
+                modelId: 'copilot:gpt-4.1',
+                modelName: 'GPT-4.1',
+                error: failure,
+            });
+
+            expect(formatted.name).toBe('ModelPermissionError');
+            expect(formatted.message).toBe(
+                'GPT-4.1 (copilot:gpt-4.1) failed: permission denied'
+            );
+            expect(formatted.stack?.split('\n')[0]).toBe(
+                'ModelPermissionError: GPT-4.1 (copilot:gpt-4.1) failed: permission denied'
+            );
+        });
+
         it('should report model-level failures in chat output', async () => {
             vi.clearAllMocks();
 

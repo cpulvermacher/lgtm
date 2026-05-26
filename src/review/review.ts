@@ -6,6 +6,7 @@ import { ModelError } from '@/types/ModelError';
 import type { PromptType } from '@/types/PromptType';
 import type { ReviewComment } from '@/types/ReviewComment';
 import type { ReviewContextFile } from '@/types/ReviewContextFile';
+import type { ReviewProgressValue } from '@/types/ReviewProgress';
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import { parallelLimit } from '@/utils/async';
@@ -22,7 +23,7 @@ import { defaultPromptType, toPromptTypes } from './prompt';
 
 type ReviewDiffOptions = {
     providerId?: string;
-    progress?: Progress<{ message?: string; increment?: number }>;
+    progress?: Progress<ReviewProgressValue>;
     cancellationToken?: CancellationToken;
 };
 
@@ -109,7 +110,7 @@ async function aggregateFileDiffs(
     request: ReviewRequest,
     contextFiles: ReviewContextFile[],
     files: DiffFile[],
-    progress?: Progress<{ message?: string; increment?: number }>,
+    progress?: Progress<ReviewProgressValue>,
     cancellationToken?: CancellationToken
 ) {
     const model = await config.getModel();
@@ -169,7 +170,7 @@ async function aggregateFileDiffs(
 async function generateReviewComments(
     config: Config,
     modelRequests: ModelRequest[],
-    progress?: Progress<{ message?: string; increment?: number }>,
+    progress?: Progress<ReviewProgressValue>,
     cancellationToken?: CancellationToken
 ) {
     const options = config.getOptions();

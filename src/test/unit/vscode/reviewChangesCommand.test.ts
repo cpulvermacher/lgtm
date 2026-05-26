@@ -212,7 +212,7 @@ describe('reviewChangesCommand', () => {
             { args: ['staged'] }
         );
         expect(config.logger.info).toHaveBeenCalledWith(
-            'lgtm.reviewChanges resolved',
+            'lgtm.reviewChanges invoked',
             expect.objectContaining({
                 prompt: 'staged',
                 scope: {
@@ -262,7 +262,7 @@ describe('reviewChangesCommand', () => {
             'copilot-code-review',
         ]);
         expect(config.logger.info).toHaveBeenCalledWith(
-            'lgtm.reviewChanges resolved',
+            'lgtm.reviewChanges invoked',
             expect.objectContaining({
                 prompt: 'feature-branch main',
                 scope: expect.objectContaining({

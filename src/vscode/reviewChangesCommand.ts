@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import type { Config } from '@/types/Config';
 import { UncommittedRef } from '@/types/Ref';
 import type { ReviewComment } from '@/types/ReviewComment';
+import type { ReviewProgressValue } from '@/types/ReviewProgress';
 import type { ReviewScope } from '@/types/ReviewRequest';
 import {
     formatReviewStartMessage,
@@ -14,7 +15,7 @@ import {
 } from '@/vscode/chat';
 import { getConfig } from '@/vscode/config';
 
-type ModelSelection = string | string[];
+type ModelSelection = string[];
 
 export type ReviewChangesCommandOptions = {
     target?: string;
@@ -65,19 +66,20 @@ export async function reviewChangesCommand(
     const config = await getConfig({ refreshWorkspace: true });
     config.logger.info('lgtm.reviewChanges called', { args });
 
+    const { chatModel, minSeverity, preferredModels } = config.getOptions();
     const normalized = normalizeReviewChangesArgs(args);
     const availableModels = await vscode.lm.selectChatModels();
     const modelIds = resolveReviewModelIds(
         normalized.models,
-        config.getOptions().chatModel,
-        config.getOptions().preferredModels
+        chatModel,
+        preferredModels
     );
     const modelNames = getModelDisplayNames(modelIds, availableModels);
     const reviewRequest = await getReviewRequest(config, normalized.prompt);
     if (!reviewRequest) {
         throw new Error('Could not create a review request.');
     }
-    config.logger.info('lgtm.reviewChanges resolved', {
+    config.logger.info('lgtm.reviewChanges invoked', {
         prompt: normalized.prompt,
         scope: await createReviewScopeLog(config, reviewRequest.scope),
         models: modelIds.map((id, index) => ({
@@ -114,7 +116,7 @@ export async function reviewChangesCommand(
                 token.isCancellationRequested,
                 results,
                 errors,
-                config.getOptions().minSeverity
+                minSeverity
             );
         }
     );
@@ -226,7 +228,7 @@ function normalizeModelArgument(value: unknown): ModelSelection | undefined {
     }
 
     if (typeof value === 'string') {
-        return value;
+        return [value];
     }
 
     if (
@@ -247,30 +249,18 @@ function normalizeModelArgument(value: unknown): ModelSelection | undefined {
  * remains the single authority for model availability and errors.
  */
 function resolveReviewModelIds(
-    models: unknown,
+    models: ModelSelection | undefined,
     chatModel: string,
     preferredModels: string[]
 ): string[] {
-    const normalizedModels = normalizeModelArgument(models);
-
-    if (!normalizedModels) {
+    if (!models) {
         return [chatModel];
     }
 
-    const requestedModels =
-        typeof normalizedModels === 'string'
-            ? [normalizedModels]
-            : normalizedModels;
-    const modelIds = requestedModels.flatMap((modelId) =>
+    const modelIds = models.flatMap((modelId) =>
         modelId === 'preferred' ? [chatModel, ...preferredModels] : [modelId]
     );
-    const uniqueModelIds = [...new Set(modelIds)];
-
-    if (uniqueModelIds.length === 0) {
-        throw new Error('Expected at least one review model.');
-    }
-
-    return uniqueModelIds;
+    return [...new Set(modelIds)];
 }
 
 /**
@@ -301,12 +291,12 @@ async function createReviewScopeLog(config: Config, scope: ReviewScope) {
  * and deduplicates repeated messages from parallel model reviews.
  */
 function createNotificationProgress(
-    progress: vscode.Progress<{ message?: string; increment?: number }>
+    progress: vscode.Progress<ReviewProgressValue>
 ) {
     const reportedMessages = new Set<string>();
     return {
-        report: (value: { message?: string; increment?: number }) => {
-            const reportValue: { message?: string; increment?: number } = {};
+        report: (value: ReviewProgressValue) => {
+            const reportValue: ReviewProgressValue = {};
 
             if (value.increment !== undefined) {
                 reportValue.increment = value.increment;

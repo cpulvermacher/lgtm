@@ -5,6 +5,7 @@ import { Config } from '@/types/Config';
 import { Logger } from '@/types/Logger';
 import { UncommittedRef } from '@/types/Ref';
 import { ReviewComment } from '@/types/ReviewComment';
+import type { ReviewProgress } from '@/types/ReviewProgress';
 import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
 import { correctFilename } from '@/utils/filenames';
@@ -527,18 +528,13 @@ export type ModelReviewError = {
     error: unknown;
 };
 
-/** Progress reporter interface */
-type Progress = {
-    report: (value: { message: string; increment?: number }) => void;
-};
-
 /** Creates a shared progress reporter that deduplicates messages across all models */
 export function createSharedProgress(
     stream: vscode.ChatResponseStream
-): Progress {
+): ReviewProgress {
     const reportedMessages = new Set<string>();
     return {
-        report: ({ message }: { message: string }) => {
+        report: ({ message }) => {
             if (message && !reportedMessages.has(message)) {
                 reportedMessages.add(message);
                 stream.progress(message);
@@ -557,7 +553,7 @@ export async function runReviewWithModels(
     reviewRequest: ReviewRequest,
     modelIds: string[],
     modelNames: string[],
-    progress: Progress,
+    progress: ReviewProgress,
     token: vscode.CancellationToken
 ): Promise<{ results: ModelReviewResult[]; errors: ModelReviewError[] }> {
     if (modelIds.length !== modelNames.length) {
@@ -666,6 +662,10 @@ export function formatModelReviewError({
             ? new Error(formattedMessage, { cause: error })
             : new Error(formattedMessage);
 
+    if (error instanceof Error) {
+        formattedError.name = error.name;
+    }
+
     if (error instanceof Error && error.stack) {
         const stackLines = error.stack.split('\n');
         formattedError.stack = [
@@ -683,7 +683,7 @@ async function reviewWithModel(
     reviewRequest: ReviewRequest,
     modelId: string,
     modelName: string,
-    progress: Progress,
+    progress: ReviewProgress,
     token: vscode.CancellationToken
 ): Promise<ModelReviewResult> {
     // Create a config that uses the specific model

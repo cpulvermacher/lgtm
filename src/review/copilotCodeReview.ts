@@ -10,13 +10,10 @@ import type { DiffFile } from '@/types/DiffFile';
 import type { FileComments } from '@/types/FileComments';
 import { UncommittedRef } from '@/types/Ref';
 import type { ReviewComment } from '@/types/ReviewComment';
+import type { ReviewProgress } from '@/types/ReviewProgress';
 import type { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import { GIT_EMPTY_TREE_HASH } from '@/utils/git';
-
-type Progress = {
-    report: (value: { message?: string; increment?: number }) => void;
-};
 
 type CodeReviewFileInput = {
     readonly currentUri: vscode.Uri;
@@ -102,7 +99,7 @@ export async function reviewDiffWithCopilotCodeReview(
     config: Config,
     request: ReviewRequest,
     files: DiffFile[],
-    progress?: Progress,
+    progress?: ReviewProgress,
     cancellationToken?: vscode.CancellationToken
 ): Promise<ReviewResult> {
     const errors: Error[] = [];
