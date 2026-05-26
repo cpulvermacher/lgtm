@@ -15,7 +15,8 @@ import {
 } from '@/vscode/chat';
 import { getConfig } from '@/vscode/config';
 
-type ModelSelection = string[];
+type ModelSelection = string | string[];
+type NormalizedModelSelection = string[];
 
 export type ReviewChangesCommandOptions = {
     target?: string;
@@ -52,7 +53,7 @@ export type ReviewChangesResult = {
 
 type NormalizedReviewChangesArgs = {
     prompt: string;
-    models?: ModelSelection;
+    models?: NormalizedModelSelection;
 };
 
 /**
@@ -222,7 +223,9 @@ function isOptionsObject(value: unknown): value is ReviewChangesCommandOptions {
  * can pass one provider ID, multiple provider IDs, `preferred`, or omit it to
  * use the configured default.
  */
-function normalizeModelArgument(value: unknown): ModelSelection | undefined {
+function normalizeModelArgument(
+    value: unknown
+): NormalizedModelSelection | undefined {
     if (value === undefined || value === null) {
         return undefined;
     }
@@ -249,7 +252,7 @@ function normalizeModelArgument(value: unknown): ModelSelection | undefined {
  * remains the single authority for model availability and errors.
  */
 function resolveReviewModelIds(
-    models: ModelSelection | undefined,
+    models: NormalizedModelSelection | undefined,
     chatModel: string,
     preferredModels: string[]
 ): string[] {
@@ -260,7 +263,13 @@ function resolveReviewModelIds(
     const modelIds = models.flatMap((modelId) =>
         modelId === 'preferred' ? [chatModel, ...preferredModels] : [modelId]
     );
-    return [...new Set(modelIds)];
+    const uniqueModelIds = [...new Set(modelIds)];
+    if (uniqueModelIds.length === 0) {
+        throw new Error(
+            "Expected models to include at least one model ID or 'preferred'."
+        );
+    }
+    return uniqueModelIds;
 }
 
 /**

@@ -8,7 +8,10 @@ import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import type { Git } from '@/utils/git';
 import { getConfig } from '@/vscode/config';
-import { reviewChangesCommand } from '@/vscode/reviewChangesCommand';
+import {
+    type ReviewChangesCommandOptions,
+    reviewChangesCommand,
+} from '@/vscode/reviewChangesCommand';
 
 const progressReport = vi.hoisted(() => vi.fn());
 
@@ -239,11 +242,13 @@ describe('reviewChangesCommand', () => {
     });
 
     it('should review topic/base refs and expand preferred models', async () => {
-        const result = await reviewChangesCommand({
+        const options: ReviewChangesCommandOptions = {
             topic: 'feature-branch',
             base: 'main',
             models: 'preferred',
-        });
+        };
+
+        const result = await reviewChangesCommand(options);
 
         expect(config.git.getReviewScope).toHaveBeenCalledWith(
             'feature-branch',
@@ -295,6 +300,19 @@ describe('reviewChangesCommand', () => {
             expect.any(Object),
             expect.objectContaining({ providerId: 'copilot:claude' })
         );
+    });
+
+    it('should accept string provider aliases from object-style arguments', async () => {
+        const options: ReviewChangesCommandOptions = {
+            staged: true,
+            reviewProviderIds: 'copilot:claude',
+        };
+
+        const result = await reviewChangesCommand(options);
+
+        expect(result.results.map((item) => item.modelId)).toEqual([
+            'copilot:claude',
+        ]);
     });
 
     it('should treat staged and unstaged option targets as refs when base is provided', async () => {
@@ -396,6 +414,14 @@ describe('reviewChangesCommand', () => {
             })
         ).rejects.toThrow(
             "Expected models to be omitted, 'preferred', a model ID, or an array of model IDs."
+        );
+        await expect(
+            reviewChangesCommand({
+                staged: true,
+                models: [],
+            })
+        ).rejects.toThrow(
+            "Expected models to include at least one model ID or 'preferred'."
         );
     });
 
