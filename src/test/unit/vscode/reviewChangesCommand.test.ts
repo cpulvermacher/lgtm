@@ -215,7 +215,7 @@ describe('reviewChangesCommand', () => {
             { args: ['staged'] }
         );
         expect(config.logger.info).toHaveBeenCalledWith(
-            'lgtm.reviewChanges invoked',
+            'lgtm.reviewChanges prepared',
             expect.objectContaining({
                 prompt: 'staged',
                 scope: {
@@ -267,7 +267,7 @@ describe('reviewChangesCommand', () => {
             'copilot-code-review',
         ]);
         expect(config.logger.info).toHaveBeenCalledWith(
-            'lgtm.reviewChanges invoked',
+            'lgtm.reviewChanges prepared',
             expect.objectContaining({
                 prompt: 'feature-branch main',
                 scope: expect.objectContaining({
@@ -419,6 +419,14 @@ describe('reviewChangesCommand', () => {
             reviewChangesCommand({
                 staged: true,
                 models: [],
+            })
+        ).rejects.toThrow(
+            "Expected models to include at least one model ID or 'preferred'."
+        );
+        await expect(
+            reviewChangesCommand({
+                staged: true,
+                models: [' ', '\t'],
             })
         ).rejects.toThrow(
             "Expected models to include at least one model ID or 'preferred'."

@@ -1,4 +1,4 @@
-import type { CancellationToken, Progress } from 'vscode';
+import type { CancellationToken } from 'vscode';
 
 import type { Config } from '@/types/Config';
 import type { DiffFile } from '@/types/DiffFile';
@@ -6,7 +6,7 @@ import { ModelError } from '@/types/ModelError';
 import type { PromptType } from '@/types/PromptType';
 import type { ReviewComment } from '@/types/ReviewComment';
 import type { ReviewContextFile } from '@/types/ReviewContextFile';
-import type { ReviewProgressValue } from '@/types/ReviewProgress';
+import type { ReviewProgress } from '@/types/ReviewProgress';
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import { parallelLimit } from '@/utils/async';
@@ -23,7 +23,7 @@ import { defaultPromptType, toPromptTypes } from './prompt';
 
 type ReviewDiffOptions = {
     providerId?: string;
-    progress?: Progress<ReviewProgressValue>;
+    progress?: ReviewProgress;
     cancellationToken?: CancellationToken;
 };
 
@@ -110,7 +110,7 @@ async function aggregateFileDiffs(
     request: ReviewRequest,
     contextFiles: ReviewContextFile[],
     files: DiffFile[],
-    progress?: Progress<ReviewProgressValue>,
+    progress?: ReviewProgress,
     cancellationToken?: CancellationToken
 ) {
     const model = await config.getModel();
@@ -170,7 +170,7 @@ async function aggregateFileDiffs(
 async function generateReviewComments(
     config: Config,
     modelRequests: ModelRequest[],
-    progress?: Progress<ReviewProgressValue>,
+    progress?: ReviewProgress,
     cancellationToken?: CancellationToken
 ) {
     const options = config.getOptions();

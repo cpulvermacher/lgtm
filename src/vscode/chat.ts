@@ -534,6 +534,8 @@ export function createSharedProgress(
 ): ReviewProgress {
     const reportedMessages = new Set<string>();
     return {
+        // Chat streams only support textual progress, so numeric increments are
+        // intentionally ignored here. Notification progress preserves them.
         report: ({ message }) => {
             if (message && !reportedMessages.has(message)) {
                 reportedMessages.add(message);

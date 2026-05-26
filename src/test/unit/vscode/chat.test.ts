@@ -96,6 +96,7 @@ describe('Chat multi-model review', () => {
             const sharedProgress = createSharedProgress(mockStream);
 
             sharedProgress.report({ message: '' });
+            sharedProgress.report({ increment: 10 });
             sharedProgress.report({ message: 'Reviewing...' });
 
             expect(mockStream.progress).toHaveBeenCalledTimes(1);

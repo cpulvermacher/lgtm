@@ -3,7 +3,10 @@ import * as vscode from 'vscode';
 import type { Config } from '@/types/Config';
 import { UncommittedRef } from '@/types/Ref';
 import type { ReviewComment } from '@/types/ReviewComment';
-import type { ReviewProgressValue } from '@/types/ReviewProgress';
+import type {
+    ReviewProgress,
+    ReviewProgressValue,
+} from '@/types/ReviewProgress';
 import type { ReviewScope } from '@/types/ReviewRequest';
 import {
     formatReviewStartMessage,
@@ -80,7 +83,7 @@ export async function reviewChangesCommand(
     if (!reviewRequest) {
         throw new Error('Could not create a review request.');
     }
-    config.logger.info('lgtm.reviewChanges invoked', {
+    config.logger.info('lgtm.reviewChanges prepared', {
         prompt: normalized.prompt,
         scope: await createReviewScopeLog(config, reviewRequest.scope),
         models: modelIds.map((id, index) => ({
@@ -260,9 +263,15 @@ function resolveReviewModelIds(
         return [chatModel];
     }
 
-    const modelIds = models.flatMap((modelId) =>
-        modelId === 'preferred' ? [chatModel, ...preferredModels] : [modelId]
-    );
+    const modelIds = models
+        .flatMap((modelId) => {
+            const normalizedModelId = modelId.trim();
+            return normalizedModelId === 'preferred'
+                ? [chatModel, ...preferredModels]
+                : [normalizedModelId];
+        })
+        .map((modelId) => modelId.trim())
+        .filter((modelId) => modelId.length > 0);
     const uniqueModelIds = [...new Set(modelIds)];
     if (uniqueModelIds.length === 0) {
         throw new Error(
@@ -301,7 +310,7 @@ async function createReviewScopeLog(config: Config, scope: ReviewScope) {
  */
 function createNotificationProgress(
     progress: vscode.Progress<ReviewProgressValue>
-) {
+): ReviewProgress {
     const reportedMessages = new Set<string>();
     return {
         report: (value: ReviewProgressValue) => {
