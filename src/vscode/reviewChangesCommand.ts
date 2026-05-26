@@ -19,7 +19,7 @@ import {
 import { getConfig } from '@/vscode/config';
 
 type ModelSelection = string | string[];
-type NormalizedModelSelection = string[];
+type ModelSelectionList = string[];
 
 export type ReviewChangesCommandOptions = {
     target?: string;
@@ -56,7 +56,7 @@ export type ReviewChangesResult = {
 
 type NormalizedReviewChangesArgs = {
     prompt: string;
-    models?: NormalizedModelSelection;
+    models?: ModelSelectionList;
 };
 
 /**
@@ -226,22 +226,25 @@ function isOptionsObject(value: unknown): value is ReviewChangesCommandOptions {
  * can pass one provider ID, multiple provider IDs, `preferred`, or omit it to
  * use the configured default.
  */
-function normalizeModelArgument(
-    value: unknown
-): NormalizedModelSelection | undefined {
+function normalizeModelArgument(value: unknown) {
     if (value === undefined || value === null) {
         return undefined;
     }
 
     if (typeof value === 'string') {
-        return [value];
+        const modelId = value.trim();
+        return modelId.length > 0 ? [modelId] : undefined;
     }
 
     if (
         Array.isArray(value) &&
         value.every((item) => typeof item === 'string')
     ) {
-        return value;
+        const modelIds = value
+            .map((modelId) => modelId.trim())
+            .filter((modelId) => modelId.length > 0);
+
+        return modelIds.length > 0 ? modelIds : undefined;
     }
 
     throw new Error(
@@ -255,30 +258,18 @@ function normalizeModelArgument(
  * remains the single authority for model availability and errors.
  */
 function resolveReviewModelIds(
-    models: NormalizedModelSelection | undefined,
+    models: ModelSelectionList | undefined,
     chatModel: string,
     preferredModels: string[]
-): string[] {
+) {
     if (!models) {
         return [chatModel];
     }
 
-    const modelIds = models
-        .flatMap((modelId) => {
-            const normalizedModelId = modelId.trim();
-            return normalizedModelId === 'preferred'
-                ? [chatModel, ...preferredModels]
-                : [normalizedModelId];
-        })
-        .map((modelId) => modelId.trim())
-        .filter((modelId) => modelId.length > 0);
-    const uniqueModelIds = [...new Set(modelIds)];
-    if (uniqueModelIds.length === 0) {
-        throw new Error(
-            "Expected models to include at least one model ID or 'preferred'."
-        );
-    }
-    return uniqueModelIds;
+    const modelIds = models.flatMap((modelId) =>
+        modelId === 'preferred' ? [chatModel, ...preferredModels] : [modelId]
+    );
+    return [...new Set(modelIds)];
 }
 
 /**

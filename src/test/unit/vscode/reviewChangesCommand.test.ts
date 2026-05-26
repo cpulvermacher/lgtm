@@ -415,22 +415,24 @@ describe('reviewChangesCommand', () => {
         ).rejects.toThrow(
             "Expected models to be omitted, 'preferred', a model ID, or an array of model IDs."
         );
-        await expect(
-            reviewChangesCommand({
-                staged: true,
-                models: [],
-            })
-        ).rejects.toThrow(
-            "Expected models to include at least one model ID or 'preferred'."
+    });
+
+    it('should use the default model when model arguments normalize to empty', async () => {
+        const resultFromEmptyList = await reviewChangesCommand({
+            staged: true,
+            models: [],
+        });
+        const resultFromBlankValues = await reviewChangesCommand({
+            staged: true,
+            models: [' ', '\t'],
+        });
+
+        expect(resultFromEmptyList.results.map((item) => item.modelId)).toEqual(
+            ['copilot:gpt-4.1']
         );
-        await expect(
-            reviewChangesCommand({
-                staged: true,
-                models: [' ', '\t'],
-            })
-        ).rejects.toThrow(
-            "Expected models to include at least one model ID or 'preferred'."
-        );
+        expect(
+            resultFromBlankValues.results.map((item) => item.modelId)
+        ).toEqual(['copilot:gpt-4.1']);
     });
 
     it('should use the default model when preferred model configuration is empty', async () => {
