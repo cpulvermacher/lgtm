@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.5.5] (pre-release)
+- Fix pull request support for GitHub Enterprise remotes.
+
 ## [1.5.4] (pre-release)
 - Fix display of origin branch detached HEAD.
 
