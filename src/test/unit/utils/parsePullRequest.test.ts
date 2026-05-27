@@ -248,4 +248,36 @@ describe('parsePullRequest', () => {
             parsePullRequest(config, gheModel)
         ).rejects.toThrow(GitHubRemoteNotFound);
     });
+
+    it('ignores remotes with unparseable URLs', async () => {
+        getRemotes.mockResolvedValue([
+            { name: 'bad', url: 'not-a-valid-url' },
+            { name: 'origin', url: 'https://github.mycompany.com/owner1/repo1.git' },
+            { name: 'fork', url: 'https://github.mycompany.com/owner2/repo2.git' },
+        ]);
+        getCommitRef.mockResolvedValue('abc');
+
+        const result = await parsePullRequest(config, gheModel);
+
+        expect(result).toEqual({
+            target: 'fork/feature-branch',
+            base: 'origin/main',
+        });
+    });
+
+    it('ignores remotes with URLs that have no owner/repo path', async () => {
+        getRemotes.mockResolvedValue([
+            { name: 'bad', url: 'https://github.mycompany.com' },
+            { name: 'origin', url: 'https://github.mycompany.com/owner1/repo1.git' },
+            { name: 'fork', url: 'https://github.mycompany.com/owner2/repo2.git' },
+        ]);
+        getCommitRef.mockResolvedValue('abc');
+
+        const result = await parsePullRequest(config, gheModel);
+
+        expect(result).toEqual({
+            target: 'fork/feature-branch',
+            base: 'origin/main',
+        });
+    });
 });

@@ -21,7 +21,7 @@ export default defineConfig({
                 ...coverageConfigDefaults.exclude,
             ],
             thresholds: {
-                lines: 98.73,
+                lines: 98.86,
                 functions: 98.6,
                 autoUpdate: true,
             },
