@@ -126,10 +126,12 @@ function parseGitHubRemoteUrl(url: string) {
         return undefined;
     }
 
-    const [, owner, repoWithGit] = parsed.pathname.split('/');
-    if (!owner || !repoWithGit) {
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    if (parts.length < 2) {
         return undefined;
     }
+    const owner = parts[parts.length - 2];
+    const repoWithGit = parts[parts.length - 1];
     const repo = repoWithGit.endsWith('.git')
         ? repoWithGit.slice(0, -4)
         : repoWithGit;
