@@ -95,6 +95,7 @@ async function getRemoteBranchFromRef(
         return (
             parsedRemote &&
             parsedRefCloneUrl &&
+            parsedRemote.host === parsedRefCloneUrl.host &&
             parsedRemote.owner === parsedRefCloneUrl.owner &&
             parsedRemote.repo === parsedRefCloneUrl.repo
         );
@@ -116,23 +117,22 @@ async function getRemoteBranchFromRef(
 }
 
 function parseGitHubRemoteUrl(url: string) {
-    // HTTPS URL, e.g. https://github.com/user/repo.git
-    let separator = 'github.com/';
-    if (!url.startsWith('https://')) {
-        // SSH URL, e.g. git@github.com:user/repo.git
-
-        if (url.includes('github.com:')) separator = 'github.com:';
-    }
-    const ownerRepo = url.split(separator, 2)[1];
-    if (!ownerRepo) {
+    // Normalize SSH URL (git@host:owner/repo.git) to a parseable form
+    const normalized = url.replace(/^git@([^:]+):/, 'ssh://git@$1/');
+    let parsed: URL;
+    try {
+        parsed = new URL(normalized);
+    } catch {
         return undefined;
     }
 
-    let [owner, repo] = ownerRepo.split('/', 2);
-    //remove .git from repo (if exists)
-    if (url.endsWith('.git')) {
-        repo = repo.slice(0, -4);
+    const [, owner, repoWithGit] = parsed.pathname.split('/');
+    if (!owner || !repoWithGit) {
+        return undefined;
     }
+    const repo = repoWithGit.endsWith('.git')
+        ? repoWithGit.slice(0, -4)
+        : repoWithGit;
 
-    return { owner, repo };
+    return { host: parsed.hostname, owner, repo };
 }

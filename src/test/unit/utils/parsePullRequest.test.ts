@@ -173,4 +173,79 @@ describe('parsePullRequest', () => {
             UnsupportedModelError
         );
     });
+
+    const gheModel = {
+        pullRequestModel: {
+            item: {
+                head: {
+                    ref: 'feature-branch',
+                    repo: {
+                        owner: 'owner2',
+                        name: 'repo2',
+                        cloneUrl: 'https://github.mycompany.com/owner2/repo2',
+                    },
+                },
+                base: {
+                    ref: 'main',
+                    repo: {
+                        owner: 'owner1',
+                        name: 'repo1',
+                        cloneUrl: 'https://github.mycompany.com/owner1/repo1',
+                    },
+                },
+            },
+        },
+    } as GitHubPullRequestModel;
+
+    it('parses github enterprise pull request model (HTTPS remotes)', async () => {
+        getRemotes.mockResolvedValue([
+            {
+                name: 'origin',
+                url: 'https://github.mycompany.com/owner1/repo1.git',
+            },
+            {
+                name: 'fork',
+                url: 'https://github.mycompany.com/owner2/repo2.git',
+            },
+        ]);
+        getCommitRef.mockResolvedValue('abc');
+
+        const result = await parsePullRequest(config, gheModel);
+
+        expect(result).toEqual({
+            target: 'fork/feature-branch',
+            base: 'origin/main',
+        });
+    });
+
+    it('parses github enterprise pull request model (SSH remotes)', async () => {
+        getRemotes.mockResolvedValue([
+            {
+                name: 'origin',
+                url: 'git@github.mycompany.com:owner1/repo1.git',
+            },
+            {
+                name: 'fork',
+                url: 'git@github.mycompany.com:owner2/repo2.git',
+            },
+        ]);
+        getCommitRef.mockResolvedValue('abc');
+
+        const result = await parsePullRequest(config, gheModel);
+
+        expect(result).toEqual({
+            target: 'fork/feature-branch',
+            base: 'origin/main',
+        });
+    });
+
+    it('does not match github.com remote for github enterprise PR', async () => {
+        getRemotes.mockResolvedValue([
+            { name: 'origin', url: 'git@github.com:owner1/repo1.git' },
+        ]);
+
+        await expect(() =>
+            parsePullRequest(config, gheModel)
+        ).rejects.toThrow(GitHubRemoteNotFound);
+    });
 });
