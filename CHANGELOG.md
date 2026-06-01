@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.6.0] (pre-release)
+- Add `lgtm.reviewChanges` command for programmatic use by other extensions or automation. See "Programmatic Use" section in README.md for details. (Thanks to @Quicksaver!)
+
 ## [1.5.6]
 Same as 1.5.5.
 
