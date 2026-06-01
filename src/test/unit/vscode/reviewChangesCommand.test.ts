@@ -4,14 +4,12 @@ import * as vscode from 'vscode';
 import { reviewDiff } from '@/review/review';
 import type { Config, Options } from '@/types/Config';
 import { UncommittedRef } from '@/types/Ref';
+import type { ReviewChangesCommandOptions } from '@/types/ReviewChangesCommand';
 import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import type { Git } from '@/utils/git';
 import { getConfig } from '@/vscode/config';
-import {
-    type ReviewChangesCommandOptions,
-    reviewChangesCommand,
-} from '@/vscode/reviewChangesCommand';
+import { reviewChangesCommand } from '@/vscode/reviewChangesCommand';
 
 const progressReport = vi.hoisted(() => vi.fn());
 

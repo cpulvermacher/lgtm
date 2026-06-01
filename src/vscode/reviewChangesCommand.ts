@@ -26,14 +26,6 @@ import { getConfig } from '@/vscode/config';
 
 type ModelSelectionList = Extract<ModelSelection, string[]>;
 
-export type {
-    ModelSelection,
-    ReviewChangesCommandOptions,
-    ReviewChangesComment,
-    ReviewChangesError,
-    ReviewChangesResult,
-} from '@/types/ReviewChangesCommand';
-
 type NormalizedReviewChangesArgs = {
     prompt: string;
     models?: ModelSelectionList;
