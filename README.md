@@ -1,7 +1,6 @@
 # LGTM - AI Code Review
 
 [![Latest Release](https://flat.badgen.net/github/release/cpulvermacher/lgtm)](https://github.com/cpulvermacher/lgtm/releases)
-[![Status](https://flat.badgen.net/github/checks/cpulvermacher/lgtm)](https://github.com/cpulvermacher/lgtm/actions/workflows/node.js.yml)
 [![License](https://flat.badgen.net/github/license/cpulvermacher/lgtm)](./LICENSE)
 
 Use GitHub Copilot Chat to review pull requests or source code changes in Git, and catch bugs, areas for improvement, and other issues before merging.
