@@ -113,10 +113,20 @@ describe('parseArguments', () => {
         expect(mockGit.getCommitRef).toHaveBeenCalledTimes(0);
     });
 
-    it('throws for additional arguments after an uncomitted ref', async () => {
+    it('throws for additional arguments after an uncommitted ref', async () => {
+        vi.mocked(mockGit.getCommitRef).mockRejectedValueOnce(new Error());
+
         await expect(parseArguments(mockGit, 'staged extra')).rejects.toThrow(
             "Expected no argument after 'staged'."
         );
+    });
+
+    it('parses staged as a branch ref when a base ref is provided', async () => {
+        vi.mocked(mockGit.getCommitRef).mockResolvedValue('');
+
+        const result = await parseArguments(mockGit, 'staged base');
+
+        expect(result).toEqual({ target: 'staged', base: 'base' });
     });
 
     describe('inline model specs', () => {

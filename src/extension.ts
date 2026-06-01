@@ -11,6 +11,7 @@ import {
 import { registerChatParticipant } from './vscode/chat';
 import { fixComment } from './vscode/fix';
 import { getModelQuickPickItems } from './vscode/model';
+import { reviewChangesCommand } from './vscode/reviewChangesCommand';
 import { promptToFetchRemotes } from './vscode/ui';
 
 // called the first time a command is executed
@@ -37,6 +38,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(
             'lgtm.reviewPullRequest',
             reviewPullRequestCommand
+        ),
+        vscode.commands.registerCommand(
+            'lgtm.reviewChanges',
+            reviewChangesCommand
         ),
         vscode.commands.registerCommand('lgtm.fixComment', fixComment)
     );

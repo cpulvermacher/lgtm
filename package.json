@@ -75,6 +75,11 @@
                     "light": "images/icon.png",
                     "dark": "images/icon.png"
                 }
+            },
+            {
+                "command": "lgtm.reviewChanges",
+                "title": "Review Changes",
+                "category": "LGTM"
             }
         ],
         "menus": {
@@ -100,6 +105,10 @@
             "commandPalette": [
                 {
                     "command": "lgtm.reviewPullRequest",
+                    "when": "false"
+                },
+                {
+                    "command": "lgtm.reviewChanges",
                     "when": "false"
                 }
             ]
