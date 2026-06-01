@@ -2,7 +2,13 @@ import * as vscode from 'vscode';
 
 import type { Config } from '@/types/Config';
 import { UncommittedRef } from '@/types/Ref';
-import type { ReviewComment } from '@/types/ReviewComment';
+import type {
+    ModelSelection,
+    ReviewChangesCommandOptions,
+    ReviewChangesComment,
+    ReviewChangesError,
+    ReviewChangesResult,
+} from '@/types/ReviewChangesCommand';
 import type {
     ReviewProgress,
     ReviewProgressValue,
@@ -18,41 +24,15 @@ import {
 } from '@/vscode/chat';
 import { getConfig } from '@/vscode/config';
 
-type ModelSelection = string | string[];
-type ModelSelectionList = string[];
+type ModelSelectionList = Extract<ModelSelection, string[]>;
 
-export type ReviewChangesCommandOptions = {
-    target?: string;
-    topic?: string;
-    base?: string;
-    scope?: 'staged' | 'unstaged';
-    staged?: boolean;
-    unstaged?: boolean;
-    models?: ModelSelection;
-    modelIds?: ModelSelection;
-    reviewProviderIds?: ModelSelection;
-};
-
-export type ReviewChangesComment = ReviewComment & {
-    modelId: string;
-    modelName: string;
-};
-
-export type ReviewChangesError = {
-    modelId?: string;
-    modelName?: string;
-    name: string;
-    message: string;
-    stack?: string;
-};
-
-export type ReviewChangesResult = {
-    message: string;
-    cancelled: boolean;
-    comments: ReviewChangesComment[];
-    errors: ReviewChangesError[];
-    results: ModelReviewResult[];
-};
+export type {
+    ModelSelection,
+    ReviewChangesCommandOptions,
+    ReviewChangesComment,
+    ReviewChangesError,
+    ReviewChangesResult,
+} from '@/types/ReviewChangesCommand';
 
 type NormalizedReviewChangesArgs = {
     prompt: string;

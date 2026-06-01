@@ -38,6 +38,7 @@ Assuming you have staged changes, the agent will start a review using LGTM and t
 ## Programmatic Use
 
 Extensions and VS Code automation can call the hidden `lgtm.reviewChanges` command directly. It runs the same review flow in the background with a cancellable progress notification, then resolves with structured review comments, per-model results, and any errors.
+Consumers that need to verify the command API can check the shared types in `src/types/ReviewChangesCommand.ts`.
 
 ```ts
 // Review staged changes using the configured `lgtm.chatModel`.
