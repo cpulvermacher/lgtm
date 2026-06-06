@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.6.1] (pre-release)
+- Lower default of `Lgtm: Max Input Tokens Fraction` setting to 80% to avoid running out of output tokens.
+
 ## [1.6.0] (pre-release)
 - Add `lgtm.reviewChanges` command for programmatic use by other extensions or automation. See "Programmatic Use" section in README.md for details. (Thanks to @Quicksaver!)
 
