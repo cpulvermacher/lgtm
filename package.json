@@ -279,7 +279,7 @@
                 },
                 "lgtm.maxInputTokensFraction": {
                     "type": "number",
-                    "default": 0.95,
+                    "default": 0.8,
                     "description": "Fraction of the chat model's input token limit to use for requests. Lower values may increase quality of e.g. function level comments, but reduce the available context; higher values may improve the models understanding on how different changes relate to each other. The maximum allowed value is 0.95 to avoid token limit errors.",
                     "minimum": 0.05,
                     "maximum": 0.95

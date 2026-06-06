@@ -204,7 +204,7 @@ function getOptions(): Options {
     );
     let maxInputTokensFraction = config.get<number>(
         'maxInputTokensFraction',
-        0.95
+        0.8
     );
     if (maxInputTokensFraction > 0.95) {
         maxInputTokensFraction = 0.95;
