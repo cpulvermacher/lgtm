@@ -125,28 +125,17 @@ function createConfig(): Config {
 function createOptions(overrides: Partial<Options> = {}): Options {
     return {
         minSeverity: 3,
-        customPrompt: '',
-        contextFiles: [],
-        excludeGlobs: [],
-        enableDebugOutput: false,
         chatModel: 'copilot:gpt-4.1',
         preferredModels: ['copilot:claude', 'copilot-code-review'],
-        selectChatModelForReview: 'Use default',
-        outputModeWithMultipleModels: 'Separate sections',
-        maxInputTokensFraction: 0.95,
         maxConcurrentModelRequests: 2,
-        saveOutputToFile: false,
-        autoCheckoutTarget: 'never',
-        includeDeletedFiles: true,
         ...overrides,
-    };
+    } as Options;
 }
 
 describe('reviewChangesCommand', () => {
     let config: Config;
 
     beforeEach(() => {
-        vi.clearAllMocks();
         config = createConfig();
         vi.mocked(getConfig).mockResolvedValue(config);
         vi.mocked(vscode.lm.selectChatModels).mockResolvedValue([
