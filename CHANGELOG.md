@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.6.2]
+Same as 1.6.1.
+
 ## [1.6.1] (pre-release)
 - Lower default of `Lgtm: Max Input Tokens Fraction` setting to 80% to avoid running out of output tokens.
 
