@@ -105,6 +105,9 @@ async function startReviewChat(target: string = '', base: string = '') {
     const delayMs = 200;
     await new Promise((resolve) => setTimeout(resolve, delayMs));
 
+    // start a fresh chat session so the review isn't appended to existing history
+    await vscode.commands.executeCommand('workbench.action.chat.newChat');
+
     const query = `@lgtm /review ${target} ${base}`.trim();
 
     await vscode.commands.executeCommand('workbench.action.chat.open', {

@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.7.0] (pre-release)
+- Reviews started via the `LGTM: Start Code Review` command now open in a new chat session instead of being appended to the current conversation. Previous chats remain available in the chat history.
+
 ## [1.6.2]
 Same as 1.6.1.
 
