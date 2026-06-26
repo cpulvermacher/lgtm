@@ -9,7 +9,15 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 import type { LanguageModelChat } from 'vscode';
 
 import { getConfig } from '@/vscode/config';
@@ -620,6 +628,7 @@ describe('Model quick pick items', () => {
 
 describe('loadReviewProvider fallback offer', () => {
     let updateMock: ReturnType<typeof vi.fn>;
+    let consoleInfoSpy: ReturnType<typeof vi.spyOn>;
 
     function fakeModel(id: string, vendor: string): LanguageModelChat {
         return {
@@ -635,6 +644,8 @@ describe('loadReviewProvider fallback offer', () => {
     }
 
     beforeEach(() => {
+        // silence the logger's console.info output from the error path
+        consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(vi.fn());
         updateMock = vi.fn();
         vscodeMocks.getExtension.mockReturnValue({});
         vscodeMocks.getConfiguration.mockReturnValue({
@@ -648,6 +659,10 @@ describe('loadReviewProvider fallback offer', () => {
         gitMocks.createGit.mockResolvedValue({
             getGitRoot: () => '/workspace',
         });
+    });
+
+    afterEach(() => {
+        consoleInfoSpy.mockRestore();
     });
 
     it('offers the fallback when the default model is unavailable and persists the choice', async () => {
