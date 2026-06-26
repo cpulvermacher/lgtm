@@ -265,6 +265,7 @@ export function isUnSupportedModel(model: vscode.LanguageModelChat): boolean {
             //these return code: model_not_supported
             'claude-3.7-sonnet',
             'claude-3.7-sonnet-thought',
+            'copilot-utility',
             // Endpoint not found for model auto
             'auto',
         ];
