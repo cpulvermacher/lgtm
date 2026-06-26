@@ -10,7 +10,12 @@ import type {
 import type { Model } from '@/types/Model';
 import { createGit, type Git } from '@/utils/git';
 import { isCopilotCodeReviewProviderId } from '@/utils/reviewProvider';
-import { defaultModelId, defaultPreferredModelIds } from './defaultModels';
+import {
+    defaultFallbackModelId,
+    defaultFallbackModelName,
+    defaultModelId,
+    defaultPreferredModelIds,
+} from './defaultModels';
 import { LgtmLogger } from './logger';
 import { getChatModel, getModelQuickPickItems } from './model';
 
@@ -154,15 +159,22 @@ async function loadReviewProvider(modelId: string): Promise<Model> {
         );
 
         const resetToDefaultOption = `Reset to Default (${defaultModelId})`;
+        const useFallbackOption = `Switch to ${defaultFallbackModelName}`;
         const selectChatModelOption = 'Select Review Provider';
         const options = [selectChatModelOption];
         if (modelId !== defaultModelId) {
+            // a non-default model failed (incl. a failed fallback): offer to
+            // reset to the default
             options.unshift(resetToDefaultOption);
+        } else {
+            // the default itself is unavailable (e.g. gpt-4.1 on free plans):
+            // offer the broadly-available fallback and persist the choice
+            options.unshift(useFallbackOption);
         }
 
         // Notify the user
         const option = await vscode.window.showErrorMessage(
-            `Failed to load review provider '${modelId}'. Reason: ${errorMessage}\nDo you want to reset to the default provider or select a different one?`,
+            `Failed to load review provider '${modelId}'. Reason: ${errorMessage}\nDo you want to switch to a different provider?`,
             ...options
         );
 
@@ -170,6 +182,12 @@ async function loadReviewProvider(modelId: string): Promise<Model> {
             await setOption('chatModel', defaultModelId);
             logger.info(`Review provider reset to default: ${defaultModelId}`);
             return await loadReviewProvider(defaultModelId);
+        } else if (option === useFallbackOption) {
+            await setOption('chatModel', defaultFallbackModelId);
+            logger.info(
+                `Review provider switched to fallback: ${defaultFallbackModelId}`
+            );
+            return await loadReviewProvider(defaultFallbackModelId);
         } else if (option === selectChatModelOption) {
             await vscode.commands.executeCommand('lgtm.selectChatModel');
             return await loadReviewProvider(getOptions().chatModel);

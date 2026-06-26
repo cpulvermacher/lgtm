@@ -13,7 +13,12 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LanguageModelChat } from 'vscode';
 
 import { getConfig } from '@/vscode/config';
-import { defaultPreferredModelIds } from '@/vscode/defaultModels';
+import {
+    defaultFallbackModelId,
+    defaultFallbackModelName,
+    defaultModelId,
+    defaultPreferredModelIds,
+} from '@/vscode/defaultModels';
 import { getModelQuickPickItems } from '@/vscode/model';
 
 vi.stubGlobal('__GIT_VERSION__', undefined);
@@ -610,5 +615,79 @@ describe('Model quick pick items', () => {
             .filter((item) => item.kind !== -1)
             .map((item) => item.label);
         expect(betaModels).toEqual(['alpha', 'zeta']);
+    });
+});
+
+describe('loadReviewProvider fallback offer', () => {
+    let updateMock: ReturnType<typeof vi.fn>;
+
+    function fakeModel(id: string, vendor: string): LanguageModelChat {
+        return {
+            id,
+            vendor,
+            name: id,
+            family: id,
+            version: '1',
+            maxInputTokens: 1000,
+            countTokens: async () => 0,
+            sendRequest: async () => ({}),
+        } as unknown as LanguageModelChat;
+    }
+
+    beforeEach(() => {
+        updateMock = vi.fn();
+        vscodeMocks.getExtension.mockReturnValue({});
+        vscodeMocks.getConfiguration.mockReturnValue({
+            get: <T>(_key: string, fallback?: T) => fallback,
+            update: updateMock,
+            inspect: vi.fn().mockReturnValue(undefined),
+        });
+        vscodeMocks.onDidChangeConfiguration.mockReturnValue({
+            dispose: vi.fn(),
+        });
+        gitMocks.createGit.mockResolvedValue({
+            getGitRoot: () => '/workspace',
+        });
+    });
+
+    it('offers the fallback when the default model is unavailable and persists the choice', async () => {
+        const config = await getConfig({ refreshWorkspace: true });
+        const [fallbackVendor, fallbackId] = defaultFallbackModelId.split(':');
+
+        // default model resolves to nothing; only the fallback is available
+        vscodeMocks.selectChatModels.mockImplementation(
+            async (selector?: { id?: string }) =>
+                selector?.id === fallbackId
+                    ? [fakeModel(fallbackId, fallbackVendor)]
+                    : []
+        );
+        vscodeMocks.showErrorMessage.mockResolvedValue(
+            `Switch to ${defaultFallbackModelName}`
+        );
+
+        const model = await config.getModel(defaultModelId);
+
+        expect(model.name).toBe(fallbackId);
+        expect(updateMock).toHaveBeenCalledWith(
+            'chatModel',
+            defaultFallbackModelId,
+            expect.anything()
+        );
+    });
+
+    it('does not offer the fallback for an explicitly chosen non-default model', async () => {
+        const config = await getConfig({ refreshWorkspace: true });
+
+        vscodeMocks.selectChatModels.mockResolvedValue([]);
+        vscodeMocks.showErrorMessage.mockResolvedValue(undefined);
+
+        await expect(config.getModel('copilot:some-model')).rejects.toThrow();
+
+        const offeredOptions =
+            vscodeMocks.showErrorMessage.mock.calls[0]?.slice(1) ?? [];
+        expect(offeredOptions).not.toContain(
+            `Switch to ${defaultFallbackModelName}`
+        );
+        expect(updateMock).not.toHaveBeenCalled();
     });
 });
