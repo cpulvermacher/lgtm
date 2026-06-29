@@ -135,6 +135,12 @@ describe('parseResponse', () => {
         expect(result).toEqual(responseExample);
     });
 
+    it('throws on empty response', () => {
+        expect(() => parseResponse('')).toThrow(
+            'The model returned an empty response'
+        );
+    });
+
     it('returns empty list with no comments', () => {
         const result = parseResponse('[]');
 

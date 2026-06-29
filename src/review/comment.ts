@@ -5,6 +5,9 @@ import { reasoningTag } from './prompt';
 
 /** Parse model response into individual comments  */
 export function parseResponse(response: string): ReviewComment[] {
+    if (response === '') {
+        throw new Error('The model returned an empty response');
+    }
     response = stripReasoning(response);
     const parsedArray = parseAsJsonArray(response);
     const comments: ReviewComment[] = [];
