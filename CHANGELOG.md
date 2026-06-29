@@ -2,6 +2,7 @@
 
 ## [1.7.1] (pre-release)
 - Offer to switch to GPT-4o mini when the default model (GPT-4.1) is unavailable, e.g. on free plans.
+- Properly detect empty model response as error.
 
 ## [1.7.0] (pre-release)
 - Reviews started via the `LGTM: Start Code Review` command now open in a new chat session instead of being appended to the current conversation. Previous chats remain available in the chat history.
