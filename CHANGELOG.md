@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.7.2]
+Same as 1.7.1.
+
 ## [1.7.1] (pre-release)
 - Offer to switch to GPT-4o mini when the default model (GPT-4.1) is unavailable, e.g. on free plans.
 - Properly detect empty model response as error.
