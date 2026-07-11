@@ -340,7 +340,7 @@
         "@vitest/coverage-v8": "^4.1.8",
         "@vscode/vsce": "^3.9.2",
         "esbuild": "^0.28.0",
-        "typescript": "^6.0.3",
+        "typescript": "^7.0.2",
         "vitest": "^4.1.8"
     },
     "dependencies": {
