@@ -1527,20 +1527,25 @@ line3`;
     });
 
     describe('checkoutTarget', () => {
-        const singleRemote = [
-            { name: 'origin', refs: { fetch: 'u', push: 'u' } },
-        ];
-
-        // Local-branch lookups (getLocalBranchForRemote / localBranchExists)
-        // both call branch(['--list', ...]); this stubs what they see.
-        const mockLocalBranches = (localBranches: string[]) => {
-            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
-                all: localBranches,
-            } as BranchSummary);
+        // Route branch() calls: `--remotes` lists remote-tracking branches
+        // (used by remoteBranchName), otherwise a `--list <name>` local-branch
+        // lookup (getLocalBranchForRemote / localBranchExists).
+        const mockBranch = (opts: {
+            remoteBranches?: string[];
+            localBranches?: string[];
+        }) => {
+            vi.mocked(mockSimpleGit.branch).mockImplementation(((
+                options?: unknown
+            ) => {
+                const args = (options as string[] | undefined) ?? [];
+                const all = args.includes('--remotes')
+                    ? (opts.remoteBranches ?? [])
+                    : (opts.localBranches ?? []);
+                return Promise.resolve({ all } as BranchSummary);
+            }) as typeof mockSimpleGit.branch);
         };
 
         it('checks out a local branch/tag/commit as-is', async () => {
-            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
             vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
 
             const result = await git.checkoutTarget('feature-x');
@@ -1552,25 +1557,28 @@ line3`;
             ]);
         });
 
-        it('treats a slashed name on an unknown remote as a local ref', async () => {
-            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
+        it('treats a slashed ref that is not a remote branch as a local ref', async () => {
+            // e.g. a tag `origin/v1` or a ref like `refs/heads/feature-x`: it
+            // has the shape of a remote branch but isn't an actual one.
+            mockBranch({ remoteBranches: ['origin/main'] });
             vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
 
-            const result = await git.checkoutTarget('feature/foo');
+            for (const ref of ['origin/v1', 'refs/heads/feature-x']) {
+                const result = await git.checkoutTarget(ref);
 
-            expect(result).toStrictEqual({
-                ref: 'feature/foo',
-                detached: false,
-            });
-            expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
-                '--end-of-options',
-                'feature/foo',
-            ]);
+                expect(result).toStrictEqual({ ref, detached: false });
+                expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
+                    '--end-of-options',
+                    ref,
+                ]);
+            }
         });
 
         it('uses an existing local branch at the same commit', async () => {
-            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
-            mockLocalBranches(['feature-x']);
+            mockBranch({
+                remoteBranches: ['origin/feature-x'],
+                localBranches: ['feature-x'],
+            });
             vi.mocked(mockSimpleGit.revparse)
                 .mockResolvedValueOnce('abc123') // local commit
                 .mockResolvedValueOnce('abc123'); // remote commit
@@ -1586,8 +1594,10 @@ line3`;
         });
 
         it('creates a local branch tracking the chosen remote branch', async () => {
-            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
-            mockLocalBranches([]);
+            mockBranch({
+                remoteBranches: ['origin/feature-x'],
+                localBranches: [],
+            });
             vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
 
             const result = await git.checkoutTarget('origin/feature-x');
@@ -1603,8 +1613,10 @@ line3`;
         });
 
         it('handles the remotes/ prefix form of a remote branch', async () => {
-            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
-            mockLocalBranches([]);
+            mockBranch({
+                remoteBranches: ['origin/feature-x'],
+                localBranches: [],
+            });
             vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
 
             const result = await git.checkoutTarget('remotes/origin/feature-x');
@@ -1619,13 +1631,34 @@ line3`;
             ]);
         });
 
+        it('handles remote branch names containing slashes', async () => {
+            mockBranch({
+                remoteBranches: ['origin/feature/foo'],
+                localBranches: [],
+            });
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            const result = await git.checkoutTarget('origin/feature/foo');
+
+            expect(result).toStrictEqual({
+                ref: 'feature/foo',
+                detached: false,
+            });
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
+                '-b',
+                'feature/foo',
+                '--track',
+                '--end-of-options',
+                'origin/feature/foo',
+            ]);
+        });
+
         it('tracks the named remote even if the branch exists on multiple remotes', async () => {
             // The ref names the remote explicitly, so there is no ambiguity.
-            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue([
-                { name: 'origin', refs: { fetch: 'u', push: 'u' } },
-                { name: 'upstream', refs: { fetch: 'u', push: 'u' } },
-            ]);
-            mockLocalBranches([]);
+            mockBranch({
+                remoteBranches: ['origin/feature-x', 'upstream/feature-x'],
+                localBranches: [],
+            });
             vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
 
             const result = await git.checkoutTarget('upstream/feature-x');
@@ -1641,8 +1674,10 @@ line3`;
         });
 
         it('checks out detached when a divergent local branch exists', async () => {
-            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
-            mockLocalBranches(['feature-x']);
+            mockBranch({
+                remoteBranches: ['origin/feature-x'],
+                localBranches: ['feature-x'],
+            });
             vi.mocked(mockSimpleGit.revparse)
                 .mockResolvedValueOnce('abc123') // local commit
                 .mockResolvedValueOnce('def456'); // remote commit (different)

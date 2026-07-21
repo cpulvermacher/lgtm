@@ -664,29 +664,25 @@ export class Git {
     ): Promise<{ ref: string; detached: boolean }> {
         const branchName = await this.remoteBranchName(ref);
         if (!branchName) {
-            // Local branch, tag or commit — check out as-is.
             await this.checkout(ref);
             return { ref, detached: false };
         }
 
-        // A local branch already tracks this commit — use it.
         const existingLocal = await this.getLocalBranchForRemote(ref);
         if (existingLocal) {
             await this.checkout(existingLocal);
             return { ref: existingLocal, detached: false };
         }
 
-        // A local branch of that name already exists (at a different commit):
-        // we can't create a tracking branch without clobbering it, and moving
-        // to the stale branch would review the wrong code. Check out detached
-        // and let the caller warn. (The ref names the remote explicitly, so the
-        // branch existing on multiple remotes is not ambiguous here.)
+        // A divergent local branch of that name already exists: creating a
+        // tracking branch would clobber it and switching to it would review the
+        // wrong code, so fall back to a detached checkout and let the caller
+        // warn.
         if (await this.localBranchExists(branchName)) {
             await this.checkout(ref);
             return { ref, detached: true };
         }
 
-        // Create a local branch tracking the explicitly chosen remote branch.
         await this.git.checkout([
             '-b',
             branchName,
@@ -698,9 +694,14 @@ export class Git {
     }
 
     /**
-     * If ref refers to a branch on a known remote (`origin/feature-x` or
-     * `remotes/origin/feature-x`), returns the bare branch name. Returns
-     * undefined for local branches, tags and commits.
+     * If ref is an existing remote-tracking branch (`origin/feature-x` or
+     * `remotes/origin/feature-x`), returns the bare branch name (without the
+     * remote). Returns undefined for local branches, tags and commits.
+     *
+     * The ref is validated against the actual list of remote-tracking branches
+     * rather than inferred from its shape, so a ref that merely contains a slash
+     * (e.g. `refs/heads/x`, or a tag `origin/v1`) is not misclassified as a
+     * remote branch.
      */
     private async remoteBranchName(ref: string): Promise<string | undefined> {
         const match = ref.match(remoteBranchPattern);
@@ -708,8 +709,18 @@ export class Git {
             return undefined;
         }
         const [, remoteName, branchName] = match;
-        const remotes = await this.getRemotes();
-        if (!remotes.some((remote) => remote.name === remoteName)) {
+
+        // `git branch --remotes` lists remote-tracking branches without the
+        // `remotes/` prefix (e.g. `origin/feature-x`). Pass the exact name as
+        // the list pattern so git filters instead of us enumerating all of them.
+        const remoteRef = `${remoteName}/${branchName}`;
+        const remoteBranches = await this.git.branch([
+            '--remotes',
+            '--list',
+            '--end-of-options',
+            remoteRef,
+        ]);
+        if (!remoteBranches.all.includes(remoteRef)) {
             return undefined;
         }
         return branchName;
