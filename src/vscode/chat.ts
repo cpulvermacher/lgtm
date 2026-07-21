@@ -152,14 +152,17 @@ async function maybeCheckoutTarget(
     try {
         stream.markdown(`Checking out \`${target}\`...`);
         const { ref, detached } = await config.git.checkoutTarget(target);
-        stream.markdown(' done.\n');
 
         if (detached) {
             stream.markdown(
-                `\n> Checked out \`${ref}\` in detached HEAD state because a ` +
+                `\n> Checked out branch in detached HEAD state because a ` +
                     `local branch of that name already exists at a different ` +
-                    `commit.\n`
+                    `commit.\n\n`
             );
+        } else if (ref !== target) {
+            stream.markdown(` Checked out local tracking branch \`${ref}\`.\n`);
+        } else {
+            stream.markdown(' done.\n');
         }
     } catch (error) {
         const errorMessage =
