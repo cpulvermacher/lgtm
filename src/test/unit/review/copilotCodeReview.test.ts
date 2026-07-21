@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type CancellationToken } from 'vscode';
+
 import { reviewDiffWithCopilotCodeReview } from '@/review/copilotCodeReview';
 import type { Config } from '@/types/Config';
 import { DiffFile } from '@/types/DiffFile';
