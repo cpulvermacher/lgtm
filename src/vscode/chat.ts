@@ -149,20 +149,22 @@ async function maybeCheckoutTarget(
         return;
     }
 
-    const localBranch = await config.git.getLocalBranchForRemote(target);
-    const checkoutRef = localBranch || target;
-
     try {
-        stream.markdown(`Checking out \`${checkoutRef}\`...`);
-        await config.git.checkout(checkoutRef);
-
+        stream.markdown(`Checking out \`${target}\`...`);
+        const { ref, detached } = await config.git.checkoutTarget(target);
         stream.markdown(' done.\n');
+
+        if (detached) {
+            stream.markdown(
+                `\n> Checked out \`${ref}\` in detached HEAD state because a ` +
+                    `local branch of that name already exists at a different ` +
+                    `commit.\n`
+            );
+        }
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
-        stream.markdown(
-            `\n> Failed to check out ${checkoutRef}: ${errorMessage}\n`
-        );
+        stream.markdown(`\n> Failed to check out ${target}: ${errorMessage}\n`);
     }
 }
 

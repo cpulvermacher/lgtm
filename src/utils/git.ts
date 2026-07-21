@@ -10,6 +10,8 @@ export const shortHashLength = 7;
 /** Git's empty tree object hash, useful when comparing against the initial commit. */
 export const GIT_EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
+const remoteBranchPattern = /^(?:remotes\/)?([^/]+)\/(.+)$/;
+
 /** Create a new Git instance */
 export async function createGit(workspaceRoot: string): Promise<Git> {
     const git = simpleGit(workspaceRoot);
@@ -599,7 +601,7 @@ export class Git {
      * Otherwise returns undefined.
      */
     async getLocalBranchForRemote(ref: string): Promise<string | undefined> {
-        const remoteBranchMatch = ref.match(/^(?:remotes\/)?([^/]+)\/(.+)$/);
+        const remoteBranchMatch = ref.match(remoteBranchPattern);
         if (!remoteBranchMatch) {
             return undefined;
         }
@@ -627,9 +629,90 @@ export class Git {
         return undefined;
     }
 
+    /** Returns true if a local branch with the given name exists. */
+    async localBranchExists(branchName: string): Promise<boolean> {
+        const branches = await this.git.branch([
+            '--list',
+            '--end-of-options',
+            branchName,
+        ]);
+        return branches.all.includes(branchName);
+    }
+
     /** checkout the given ref (possibly detached) */
     async checkout(ref: string) {
         await this.git.checkout(['--end-of-options', ref]);
+    }
+
+    /**
+     * Check out a review target, avoiding a detached HEAD for remote branches
+     * where possible.
+     *
+     * For a remote branch (e.g. `origin/feature-x`) we prefer landing on a real
+     * local branch:
+     *  - if a matching local branch already points at the same commit, use it;
+     *  - otherwise, if no local branch of that name exists, create one that
+     *    tracks the (explicitly chosen) remote branch;
+     *  - otherwise (a local branch of that name already exists at a different
+     *    commit) fall back to a detached checkout of the remote ref rather than
+     *    clobbering or silently moving to that local branch.
+     *
+     * Returns the ref that was actually checked out and whether HEAD is detached.
+     */
+    async checkoutTarget(
+        ref: string
+    ): Promise<{ ref: string; detached: boolean }> {
+        const branchName = await this.remoteBranchName(ref);
+        if (!branchName) {
+            // Local branch, tag or commit — check out as-is.
+            await this.checkout(ref);
+            return { ref, detached: false };
+        }
+
+        // A local branch already tracks this commit — use it.
+        const existingLocal = await this.getLocalBranchForRemote(ref);
+        if (existingLocal) {
+            await this.checkout(existingLocal);
+            return { ref: existingLocal, detached: false };
+        }
+
+        // A local branch of that name already exists (at a different commit):
+        // we can't create a tracking branch without clobbering it, and moving
+        // to the stale branch would review the wrong code. Check out detached
+        // and let the caller warn. (The ref names the remote explicitly, so the
+        // branch existing on multiple remotes is not ambiguous here.)
+        if (await this.localBranchExists(branchName)) {
+            await this.checkout(ref);
+            return { ref, detached: true };
+        }
+
+        // Create a local branch tracking the explicitly chosen remote branch.
+        await this.git.checkout([
+            '-b',
+            branchName,
+            '--track',
+            '--end-of-options',
+            ref,
+        ]);
+        return { ref: branchName, detached: false };
+    }
+
+    /**
+     * If ref refers to a branch on a known remote (`origin/feature-x` or
+     * `remotes/origin/feature-x`), returns the bare branch name. Returns
+     * undefined for local branches, tags and commits.
+     */
+    private async remoteBranchName(ref: string): Promise<string | undefined> {
+        const match = ref.match(remoteBranchPattern);
+        if (!match) {
+            return undefined;
+        }
+        const [, remoteName, branchName] = match;
+        const remotes = await this.getRemotes();
+        if (!remotes.some((remote) => remote.name === remoteName)) {
+            return undefined;
+        }
+        return branchName;
     }
 }
 

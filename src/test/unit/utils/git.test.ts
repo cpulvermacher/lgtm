@@ -1502,4 +1502,162 @@ line3`;
             ]);
         });
     });
+
+    describe('localBranchExists', () => {
+        it('returns true when the branch is listed', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: ['feature-x'],
+            } as BranchSummary);
+
+            expect(await git.localBranchExists('feature-x')).toBe(true);
+            expect(mockSimpleGit.branch).toHaveBeenCalledWith([
+                '--list',
+                '--end-of-options',
+                'feature-x',
+            ]);
+        });
+
+        it('returns false when the branch is not listed', async () => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: [],
+            } as unknown as BranchSummary);
+
+            expect(await git.localBranchExists('feature-x')).toBe(false);
+        });
+    });
+
+    describe('checkoutTarget', () => {
+        const singleRemote = [
+            { name: 'origin', refs: { fetch: 'u', push: 'u' } },
+        ];
+
+        // Local-branch lookups (getLocalBranchForRemote / localBranchExists)
+        // both call branch(['--list', ...]); this stubs what they see.
+        const mockLocalBranches = (localBranches: string[]) => {
+            vi.mocked(mockSimpleGit.branch).mockResolvedValue({
+                all: localBranches,
+            } as BranchSummary);
+        };
+
+        it('checks out a local branch/tag/commit as-is', async () => {
+            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            const result = await git.checkoutTarget('feature-x');
+
+            expect(result).toStrictEqual({ ref: 'feature-x', detached: false });
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
+                '--end-of-options',
+                'feature-x',
+            ]);
+        });
+
+        it('treats a slashed name on an unknown remote as a local ref', async () => {
+            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            const result = await git.checkoutTarget('feature/foo');
+
+            expect(result).toStrictEqual({
+                ref: 'feature/foo',
+                detached: false,
+            });
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
+                '--end-of-options',
+                'feature/foo',
+            ]);
+        });
+
+        it('uses an existing local branch at the same commit', async () => {
+            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
+            mockLocalBranches(['feature-x']);
+            vi.mocked(mockSimpleGit.revparse)
+                .mockResolvedValueOnce('abc123') // local commit
+                .mockResolvedValueOnce('abc123'); // remote commit
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            const result = await git.checkoutTarget('origin/feature-x');
+
+            expect(result).toStrictEqual({ ref: 'feature-x', detached: false });
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
+                '--end-of-options',
+                'feature-x',
+            ]);
+        });
+
+        it('creates a local branch tracking the chosen remote branch', async () => {
+            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
+            mockLocalBranches([]);
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            const result = await git.checkoutTarget('origin/feature-x');
+
+            expect(result).toStrictEqual({ ref: 'feature-x', detached: false });
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
+                '-b',
+                'feature-x',
+                '--track',
+                '--end-of-options',
+                'origin/feature-x',
+            ]);
+        });
+
+        it('handles the remotes/ prefix form of a remote branch', async () => {
+            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
+            mockLocalBranches([]);
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            const result = await git.checkoutTarget('remotes/origin/feature-x');
+
+            expect(result).toStrictEqual({ ref: 'feature-x', detached: false });
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
+                '-b',
+                'feature-x',
+                '--track',
+                '--end-of-options',
+                'remotes/origin/feature-x',
+            ]);
+        });
+
+        it('tracks the named remote even if the branch exists on multiple remotes', async () => {
+            // The ref names the remote explicitly, so there is no ambiguity.
+            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue([
+                { name: 'origin', refs: { fetch: 'u', push: 'u' } },
+                { name: 'upstream', refs: { fetch: 'u', push: 'u' } },
+            ]);
+            mockLocalBranches([]);
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            const result = await git.checkoutTarget('upstream/feature-x');
+
+            expect(result).toStrictEqual({ ref: 'feature-x', detached: false });
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
+                '-b',
+                'feature-x',
+                '--track',
+                '--end-of-options',
+                'upstream/feature-x',
+            ]);
+        });
+
+        it('checks out detached when a divergent local branch exists', async () => {
+            vi.mocked(mockSimpleGit.getRemotes).mockResolvedValue(singleRemote);
+            mockLocalBranches(['feature-x']);
+            vi.mocked(mockSimpleGit.revparse)
+                .mockResolvedValueOnce('abc123') // local commit
+                .mockResolvedValueOnce('def456'); // remote commit (different)
+            vi.mocked(mockSimpleGit.checkout).mockResolvedValue('');
+
+            const result = await git.checkoutTarget('origin/feature-x');
+
+            expect(result).toStrictEqual({
+                ref: 'origin/feature-x',
+                detached: true,
+            });
+            expect(mockSimpleGit.checkout).toHaveBeenCalledWith([
+                '--end-of-options',
+                'origin/feature-x',
+            ]);
+        });
+    });
 });
