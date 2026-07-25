@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.7.4]
+Same as 1.7.3.
+
 ## [1.7.3] (pre-release)
 - When checking out a remote branch, create a local tracking branch if none exists.
 
