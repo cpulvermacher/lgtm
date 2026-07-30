@@ -1,10 +1,10 @@
+minimumReleaseAge: 4320
+
 allowBuilds:
   '@vscode/vsce-sign': false
   esbuild: false
   keytar: false
 
-minimumReleaseAgeExclude:
-  - brace-expansion@5.0.8
 
 overrides:
   'brace-expansion@>=1.0.0 <=1.1.11': '>=1.1.12'
