@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.8.0]
+- Rename `LGTM: Select Chat Model` to `LGTM: Select Review Model`.
+
 ## [1.7.4]
 Same as 1.7.3.
 

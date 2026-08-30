@@ -76,7 +76,7 @@ await vscode.commands.executeCommand('lgtm.reviewChanges', {
 ## Features
 
 - **Only Copilot Required**: Defaults to using Copilot Chat for reviewing changes. Both free and paid plans are supported.
-- **Model Selection**: Choose from language models available to VS Code, including Copilot Code Review for the same review experience as assigning Copilot to a pull request. Use the **LGTM: Select Chat Model** command in the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) to change it.
+- **Model Selection**: Choose from language models available to VS Code, including Copilot Code Review for the same review experience as assigning Copilot to a pull request. Use the **LGTM: Select Review Model** command in the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) to change it.
 - **Pull Request Integration**: Review pull requests from the GitHub Pull Request or Bitbucket extensions.
 - **Automatic Fixes**: Use the `Fix` action on a review comment to fix it automatically. This will use the language model configured for inline chat.
 - **Chat Integration**: Review content remains in chat history for follow-up questions by omitting `@lgtm`.
@@ -91,12 +91,12 @@ await vscode.commands.executeCommand('lgtm.reviewChanges', {
 ## Limitations
 
 - Chat models listed under "Unsupported Models" can be selected but reviews will fail at runtime.
-- Non-Copilot models (e.g. those added by directly adding an API key) may fail to work. For Claude language models, try the [Claude Model Provider](https://marketplace.visualstudio.com/items?itemName=cpulvermacher.claude-model-provider) extension.
-- Large change sets may trigger chat model rate limits. Please wait before retrying.
+- Some models (e.g. those added by directly adding an API key) may fail to work. For Claude language models, try the [Claude Model Provider](https://marketplace.visualstudio.com/items?itemName=cpulvermacher.claude-model-provider) extension.
+- Large change sets may trigger model rate limits. Please wait before retrying.
 
 ## Data Usage
 
-Source code changes and commit messages selected for review are sent to the chat model configured in the extension settings.
+Source code changes and commit messages selected for review are sent to the configured review model/provider.
 
 ## Contributing
 

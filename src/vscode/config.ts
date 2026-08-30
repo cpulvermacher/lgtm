@@ -194,7 +194,7 @@ async function loadReviewProvider(modelId: string): Promise<Model> {
         }
 
         throw new Error(
-            `Couldn't find review provider. Please ensure the lgtm.chatModel setting is set to an available provider ID. You can use the 'LGTM: Select Chat Model' command to pick one.`
+            `Couldn't find review model/provider. Please ensure the lgtm.chatModel setting is set to an available ID. You can use the 'LGTM: Select Review Model' command to pick one.`
         );
     }
 }

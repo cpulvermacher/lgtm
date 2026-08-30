@@ -410,13 +410,13 @@ async function resolveModelSpecs(
 
     if (ambiguous.length > 0) {
         stream.markdown(
-            `Ambiguous model spec(s) — please be more specific: ${ambiguous.join('; ')}. Use the 'LGTM: Select Chat Model' command to see available IDs.`
+            `Ambiguous model spec(s) — please be more specific: ${ambiguous.join('; ')}. Use the 'LGTM: Select Review Model' command to see available IDs.`
         );
         return [];
     }
     if (notFound.length > 0) {
         stream.markdown(
-            `Model(s) not found: ${notFound.join(', ')}. Available model IDs can be found via the 'LGTM: Select Chat Model' command.`
+            `Model(s) not found: ${notFound.join(', ')}. Available model IDs can be found via the 'LGTM: Select Review Model' command.`
         );
         return [];
     }

@@ -37,7 +37,7 @@
         "commands": [
             {
                 "command": "lgtm.selectChatModel",
-                "title": "Select Chat Model...",
+                "title": "Select Review Model...",
                 "category": "LGTM"
             },
             {
@@ -236,7 +236,7 @@
                 "lgtm.chatModel": {
                     "type": "string",
                     "default": "copilot:gpt-4.1",
-                    "markdownDescription": "Default review provider to use for generating review comments. Use the 'LGTM: Select Chat Model' command to choose from available chat models or the special `copilot-code-review` provider. Note that non-default chat models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits."
+                    "markdownDescription": "Default review provider to use for generating review comments. Use the 'LGTM: Select Review Model' command to choose from available models or the special `copilot-code-review` provider. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits."
                 },
                 "lgtm.preferredModels": {
                     "type": "array",
@@ -262,7 +262,7 @@
                         "Use the provider defined in 'Chat Model'",
                         "Always ask which review provider to use when starting a new prompt (supports multi-selection)"
                     ],
-                    "markdownDescription": "Controls which review provider to use when starting a new review prompt. When set to 'Always ask', you can select multiple chat models and/or Copilot Code Review to compare their results."
+                    "markdownDescription": "Controls which review provider to use when starting a new review prompt. When set to 'Always ask', you can select multiple models and/or Copilot Code Review to compare their results."
                 },
                 "lgtm.outputModeWithMultipleModels": {
                     "type": "string",
@@ -280,14 +280,14 @@
                 "lgtm.maxInputTokensFraction": {
                     "type": "number",
                     "default": 0.8,
-                    "description": "Fraction of the chat model's input token limit to use for requests. Lower values may increase quality of e.g. function level comments, but reduce the available context; higher values may improve the models understanding on how different changes relate to each other. The maximum allowed value is 0.95 to avoid token limit errors.",
+                    "description": "Fraction of the model's input token limit to use for requests. Lower values may increase quality of e.g. function level comments, but reduce the available context; higher values may improve the models understanding on how different changes relate to each other. The maximum allowed value is 0.95 to avoid token limit errors.",
                     "minimum": 0.05,
                     "maximum": 0.95
                 },
                 "lgtm.maxConcurrentModelRequests": {
                     "type": "number",
                     "default": 4,
-                    "description": "Maximum number of concurrent requests to the chat model. Increase this to speed up reviews, but be aware that this may lead to rate limiting by the model provider.",
+                    "description": "Maximum number of concurrent requests to the model. Increase this to speed up reviews, but be aware that this may lead to rate limiting by the model provider.",
                     "minimum": 1,
                     "maximum": 10
                 },
