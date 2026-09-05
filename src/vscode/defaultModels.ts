@@ -8,10 +8,8 @@ export const defaultFallbackModelId = 'copilot:gpt-4o-mini';
 export const defaultFallbackModelName = 'GPT-4o mini';
 
 export const defaultPreferredModelIds = [
-    'copilot:claude-sonnet-4.5',
     'copilot:claude-sonnet-4.6',
     'copilot:claude-sonnet-5',
-    'claude-model-provider:claude-sonnet-4-5',
     'claude-model-provider:claude-sonnet-4-6',
     'claude-model-provider:claude-sonnet-5',
 ];
