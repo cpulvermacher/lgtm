@@ -235,7 +235,7 @@
                 },
                 "lgtm.chatModel": {
                     "type": "string",
-                    "default": "copilot:gpt-4.1",
+                    "default": "copilot:gpt-5.5",
                     "markdownDescription": "Default review provider to use for generating review comments. Use the 'LGTM: Select Review Model' command to choose from available models or the special `copilot-code-review` provider. Note that non-default models may not be available, may require changes to the [Copilot settings](https://github.com/settings/copilot), or have stricter rate limits."
                 },
                 "lgtm.preferredModels": {

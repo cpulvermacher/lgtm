@@ -167,7 +167,7 @@ async function loadReviewProvider(modelId: string): Promise<Model> {
             // reset to the default
             options.unshift(resetToDefaultOption);
         } else {
-            // the default itself is unavailable (e.g. gpt-4.1 on free plans):
+            // the default itself is unavailable (e.g. gpt-5.5 on free plans):
             // offer the broadly-available fallback and persist the choice
             options.unshift(useFallbackOption);
         }

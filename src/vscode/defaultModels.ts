@@ -1,4 +1,4 @@
-export const defaultModelId = 'copilot:gpt-4.1';
+export const defaultModelId = 'copilot:gpt-5.5';
 
 /**
  * Offered as a fallback when `defaultModelId` is unavailable.

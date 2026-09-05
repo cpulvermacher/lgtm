@@ -1,6 +1,8 @@
 # Change Log
 
 ## [1.8.0]
+- Change default model to GPT-5.5. (previous default GPT-4.1 was deprecated)
+- Add Claude Sonnet 5 to the Recommended Models list in the model selector.
 - Rename `LGTM: Select Chat Model` to `LGTM: Select Review Model`.
 
 ## [1.7.4]

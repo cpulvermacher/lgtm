@@ -47,7 +47,7 @@ const staged = await vscode.commands.executeCommand('lgtm.reviewChanges', 'stage
 const unstaged = await vscode.commands.executeCommand(
     'lgtm.reviewChanges',
     'unstaged',
-    'copilot:gpt-4.1'
+    'copilot:gpt-5.5'
 );
 
 // Review a topic/base pair with the configured default provider plus all configured preferred providers.
@@ -62,7 +62,7 @@ const branchReview = await vscode.commands.executeCommand(
 const optionsReview = await vscode.commands.executeCommand('lgtm.reviewChanges', {
     topic: 'feature-branch',
     base: 'origin/main',
-    models: ['copilot:gpt-4.1', 'copilot-code-review'],
+    models: ['copilot:gpt-5.5', 'copilot-code-review'],
 });
 
 // Equivalent staged/unstaged object forms are also supported.
