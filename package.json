@@ -326,7 +326,7 @@
         "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --define:__GIT_VERSION__=\\\"$GIT_VERSION\\\"",
         "watch": "pnpm esbuild-base --sourcemap --watch",
         "dev": "GIT_VERSION=$(git describe  --tags --long) pnpm build",
-        "build": "npx vsce package --no-dependencies",
+        "build": "pnpm exec vsce package --no-dependencies",
         "format": "pnpm exec biome check --write src/",
         "lint": "tsc --noEmit && pnpm exec biome check src/",
         "test": "vitest run",
@@ -338,7 +338,7 @@
         "@types/node": "24.x",
         "@types/vscode": "^1.104.0",
         "@vitest/coverage-v8": "^5.0.0",
-        "@vscode/vsce": "^3.9.2",
+        "@vscode/vsce": "^4.0.0",
         "esbuild": "^0.28.2",
         "typescript": "^7.0.2",
         "vitest": "^5.0.0"
