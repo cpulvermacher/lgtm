@@ -1,10 +1,11 @@
-import simpleGit, {
+import {
     BranchSummary,
     type BranchSummaryBranch,
     type DiffResult,
     LogResult,
     SimpleGit,
     type StatusResult,
+    simpleGit,
 } from 'simple-git';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,7 +38,7 @@ index 44cbb3f..887431b 100644
 `;
 
 vi.mock('simple-git', () => ({
-    default: vi.fn(),
+    simpleGit: vi.fn(),
 }));
 
 describe('git', () => {

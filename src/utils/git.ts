@@ -1,4 +1,4 @@
-import simpleGit, { SimpleGit } from 'simple-git';
+import { SimpleGit, simpleGit } from 'simple-git';
 
 import type { DiffFile } from '@/types/DiffFile';
 import { type Ref, UncommittedRef } from '@/types/Ref';
