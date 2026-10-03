@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.8.1] (pre-release)
+- Update dependencies, including simple-git v4. (Note: Potentially unsafe git environment variables are no longer passed to git)
+
 ## [1.8.0]
 - Change default model to GPT-5.5. (previous default GPT-4.1 was deprecated)
 - Add Claude Sonnet 5 to the Recommended Models list in the model selector.
