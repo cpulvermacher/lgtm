@@ -13,8 +13,10 @@ import type { ReviewRequest } from '@/types/ReviewRequest';
 import type { ReviewResult } from '@/types/ReviewResult';
 import {
     collectAttributedComments,
+    countHiddenComments,
     createSharedProgress,
     formatModelReviewError,
+    formatNoProblemsFoundMessage,
     formatReviewStartMessage,
     getModelDisplayName,
     getModelDisplayNames,
@@ -232,6 +234,48 @@ describe('Chat multi-model review', () => {
 
             // Single model should not show headings
             expect(results.length).toBe(1);
+        });
+    });
+
+    describe('hidden comments', () => {
+        const fileComments: FileComments[] = [
+            {
+                target: 'a.ts',
+                comments: [
+                    { file: 'a.ts', line: 1, comment: 'low', severity: 1 },
+                    { file: 'a.ts', line: 0, comment: 'medium', severity: 3 },
+                ],
+                maxSeverity: 3,
+            },
+            {
+                target: 'b.ts',
+                comments: [
+                    { file: 'b.ts', line: 2, comment: 'low', severity: 2 },
+                ],
+                maxSeverity: 2,
+            },
+        ];
+
+        it('should count comments below minSeverity across files', () => {
+            expect(countHiddenComments(fileComments, 1)).toBe(0);
+            expect(countHiddenComments(fileComments, 2)).toBe(1);
+            expect(countHiddenComments(fileComments, 4)).toBe(3);
+            expect(countHiddenComments([], 4)).toBe(0);
+        });
+
+        it('should only say "No problems found." if nothing is hidden', () => {
+            expect(formatNoProblemsFoundMessage(0, 2)).toBe(
+                'No problems found.'
+            );
+        });
+
+        it('should mention hidden comments and how to show them', () => {
+            expect(formatNoProblemsFoundMessage(1, 2)).toBe(
+                'No problems with severity 2 or higher found. 1 comment with lower severity is hidden, set `lgtm.minSeverity` to 1 to show all comments.'
+            );
+            expect(formatNoProblemsFoundMessage(3, 4)).toBe(
+                'No problems with severity 4 or higher found. 3 comments with lower severity are hidden, set `lgtm.minSeverity` to 1 to show all comments.'
+            );
         });
     });
 

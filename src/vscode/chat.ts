@@ -789,7 +789,13 @@ function showSeparateReviewResults(
         }
 
         if (noProblemsFound && result.errors.length === 0) {
-            stream.markdown('No problems found.\n');
+            const hiddenCount = countHiddenComments(
+                result.fileComments,
+                options.minSeverity
+            );
+            stream.markdown(
+                `${formatNoProblemsFoundMessage(hiddenCount, options.minSeverity)}\n`
+            );
         }
 
         if (!isTargetCheckedOut) {
@@ -802,6 +808,35 @@ function showSeparateReviewResults(
     }
 
     reportErrors(config.logger, allErrors, stream);
+}
+
+/** Counts comments hidden because their severity is below `minSeverity` */
+export function countHiddenComments(
+    fileComments: FileComments[],
+    minSeverity: number
+): number {
+    return fileComments
+        .flatMap((file) => file.comments)
+        .filter((comment) => comment.severity < minSeverity).length;
+}
+
+/**
+ * Message for a review without visible comments. Mentions comments hidden by
+ * `minSeverity`, so the result isn't mistaken for a clean review.
+ */
+export function formatNoProblemsFoundMessage(
+    hiddenCount: number,
+    minSeverity: number
+): string {
+    if (hiddenCount === 0) {
+        return 'No problems found.';
+    }
+
+    const hiddenComments =
+        hiddenCount === 1
+            ? '1 comment with lower severity is'
+            : `${hiddenCount} comments with lower severity are`;
+    return `No problems with severity ${minSeverity} or higher found. ${hiddenComments} hidden, set \`lgtm.minSeverity\` to 1 to show all comments.`;
 }
 
 /**
@@ -889,7 +924,13 @@ function showMergedReviewResults(
         // Check if there were any files to review
         const hasFilesToReview = results.some((r) => r.result.files.length > 0);
         if (hasFilesToReview) {
-            stream.markdown('\nNo problems found.\n');
+            const hiddenCount = countHiddenComments(
+                results.flatMap((r) => r.result.fileComments),
+                options.minSeverity
+            );
+            stream.markdown(
+                `\n${formatNoProblemsFoundMessage(hiddenCount, options.minSeverity)}\n`
+            );
         } else {
             stream.markdown('\nNo changes found.\n');
         }
