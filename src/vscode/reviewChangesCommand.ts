@@ -349,9 +349,7 @@ function flattenReviewComments(
 ): ReviewChangesComment[] {
     return fileComments.flatMap((fileComment) =>
         fileComment.comments
-            .filter(
-                (comment) => comment.severity >= minSeverity && comment.line > 0
-            )
+            .filter((comment) => comment.severity >= minSeverity)
             .map((comment) => ({
                 ...comment,
                 modelId,

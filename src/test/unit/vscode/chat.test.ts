@@ -368,7 +368,7 @@ describe('Chat multi-model review', () => {
             expect(comments?.[0].comment).toBe('High severity issue');
         });
 
-        it('should filter out comments with non-positive line numbers', () => {
+        it('should keep file-level comments (line 0) and sort them first', () => {
             const results: ModelReviewResult[] = [
                 {
                     modelId: 'copilot:gpt-4',
@@ -379,14 +379,14 @@ describe('Chat multi-model review', () => {
                             comments: [
                                 {
                                     file: 'test.ts',
-                                    line: 0,
-                                    comment: 'Zero-line comment',
+                                    line: 5,
+                                    comment: 'Line comment',
                                     severity: 3,
                                 },
                                 {
                                     file: 'test.ts',
-                                    line: 5,
-                                    comment: 'Valid comment',
+                                    line: 0,
+                                    comment: 'File-level comment',
                                     severity: 3,
                                 },
                             ],
@@ -398,8 +398,10 @@ describe('Chat multi-model review', () => {
 
             const grouped = collectAttributedComments(results, 1);
             const comments = grouped.get('test.ts');
-            expect(comments).toHaveLength(1);
-            expect(comments?.[0].comment).toBe('Valid comment');
+            expect(comments?.map((c) => c.comment)).toEqual([
+                'File-level comment',
+                'Line comment',
+            ]);
         });
 
         it('should group comments by file and sort by line', () => {

@@ -63,7 +63,7 @@ function createReviewResult(
                     {
                         file: 'src/file.ts',
                         line: 0,
-                        comment: 'Invalid line',
+                        comment: 'File-level issue',
                         severity: 5,
                     },
                 ],
@@ -189,6 +189,11 @@ describe('reviewChangesCommand', () => {
                 comment: 'Issue from copilot:gpt-4.1',
                 modelId: 'copilot:gpt-4.1',
                 modelName: 'GPT 4.1',
+            }),
+            expect.objectContaining({
+                comment: 'File-level issue',
+                line: 0,
+                modelId: 'copilot:gpt-4.1',
             }),
         ]);
         expect(result.errors).toEqual([

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import { reviewDiff } from '@/review/review';
 import { Config } from '@/types/Config';
+import { FileComments } from '@/types/FileComments';
 import { Logger } from '@/types/Logger';
 import { UncommittedRef } from '@/types/Ref';
 import { ReviewComment } from '@/types/ReviewComment';
@@ -237,9 +238,10 @@ function buildComment(
     const markdown = new vscode.MarkdownString();
     markdown.appendMarkdown('\n - ');
 
-    // Add line number anchor
+    // Add line number anchor (line 0: comment on removed lines or a deleted file, link to the file instead)
     const uri = toUri(config, comment.file, comment.line);
-    markdown.appendMarkdown(`[Line ${comment.line}](${uri.toString()})`);
+    const locationLabel = comment.line > 0 ? `Line ${comment.line}` : 'File';
+    markdown.appendMarkdown(`[${locationLabel}](${uri.toString()})`);
 
     // Show which model flagged this issue (if multiple models)
     if (showAttribution && comment.model) {
@@ -768,8 +770,7 @@ function showSeparateReviewResults(
             }
 
             const filteredFileComments = file.comments.filter(
-                (comment) =>
-                    comment.severity >= options.minSeverity && comment.line > 0
+                (comment) => comment.severity >= options.minSeverity
             );
 
             if (filteredFileComments.length > 0) {
@@ -841,9 +842,9 @@ export function formatNoProblemsFoundMessage(
 
 /**
  * Collect all review comments from multiple models into a flat list with
- * model attribution.  Comments below `minSeverity` or with non-positive
- * line numbers are filtered out.  The returned list is grouped by file
- * and sorted by line number within each file.
+ * model attribution.  Comments below `minSeverity` are filtered out.  The
+ * returned list is grouped by file and sorted by line number within each
+ * file, with file-level comments (line 0) first.
  */
 export function collectAttributedComments(
     results: ModelReviewResult[],
@@ -854,7 +855,7 @@ export function collectAttributedComments(
     for (const { modelName, result } of results) {
         for (const file of result.fileComments) {
             for (const comment of file.comments) {
-                if (comment.severity < minSeverity || comment.line <= 0) {
+                if (comment.severity < minSeverity) {
                     continue;
                 }
                 all.push({
