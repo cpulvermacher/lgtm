@@ -35,7 +35,7 @@ custom prompt
 <output_format>
 Respond with a JSON array of comment objects. Each object should contain:
 - `file`: The path of the file (from the diff header)
-- `line`: The first affected LINE NUMBER
+- `line`: The first affected LINE NUMBER (for removed lines, use the next non-removed line; 0 if none)
 - `comment`: A string describing the issue
 - `severity`: An integer from 1 (likely irrelevant) to 5 (critical)
 </output_format>

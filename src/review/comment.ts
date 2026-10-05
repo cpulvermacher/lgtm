@@ -48,11 +48,12 @@ export function parseComment(comment: unknown): ReviewComment {
         throw new Error('Missing `comment` field');
     }
 
-    let line = 1;
+    let line = 0; // fallback to file-level comment in case of invalid values
     if (
         'line' in comment &&
         typeof comment.line === 'number' &&
-        comment.line >= 0 // keep 0 to know if we got invalid values
+        Number.isInteger(comment.line) &&
+        comment.line >= 0
     ) {
         line = comment.line;
     }

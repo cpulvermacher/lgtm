@@ -34,7 +34,7 @@ describe('parseComment', () => {
         expect(result).toEqual({
             file: 'a.js',
             comment: 'Some review comment',
-            line: 1,
+            line: 0,
             severity: 1,
         });
     });
@@ -50,9 +50,20 @@ describe('parseComment', () => {
         expect(result).toEqual({
             file: 'a.js',
             comment: 'Some review comment',
-            line: 1,
+            line: 0,
             severity: 4,
         });
+    });
+
+    it('uses default for non-integer line', () => {
+        const result = parseComment({
+            file: 'a.js',
+            comment: 'Some review comment',
+            line: 12.5,
+            severity: 4,
+        });
+
+        expect(result.line).toBe(0);
     });
 
     it('uses default for out-of-range severity', () => {
