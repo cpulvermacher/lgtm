@@ -271,10 +271,10 @@ describe('Chat multi-model review', () => {
 
         it('should mention hidden comments and how to show them', () => {
             expect(formatNoProblemsFoundMessage(1, 2)).toBe(
-                'No problems with severity 2 or higher found. 1 comment with lower severity is hidden, set `lgtm.minSeverity` to 1 to show all comments.'
+                'No problems with severity 2 or higher found. 1 comment with lower severity is hidden, lower the `Lgtm: Min Severity` setting to show them.'
             );
             expect(formatNoProblemsFoundMessage(3, 4)).toBe(
-                'No problems with severity 4 or higher found. 3 comments with lower severity are hidden, set `lgtm.minSeverity` to 1 to show all comments.'
+                'No problems with severity 4 or higher found. 3 comments with lower severity are hidden, lower the `Lgtm: Min Severity` setting to show them.'
             );
         });
     });
