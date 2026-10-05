@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.8.2] (pre-release)
+- Show comments on removed lines and deleted files. (previously dropped)
+- If no problems are found, mention number of comments hidden by `Lgtm: Min Severity` setting.
+
 ## [1.8.1] (pre-release)
 - Update dependencies, including simple-git v4. (Note: Potentially unsafe git environment variables are no longer passed to git)
 

@@ -837,7 +837,7 @@ export function formatNoProblemsFoundMessage(
         hiddenCount === 1
             ? '1 comment with lower severity is'
             : `${hiddenCount} comments with lower severity are`;
-    return `No problems with severity ${minSeverity} or higher found. ${hiddenComments} hidden, set \`lgtm.minSeverity\` to 1 to show all comments.`;
+    return `No problems with severity ${minSeverity} or higher found. ${hiddenComments} hidden, lower the \`Lgtm: Min Severity\` setting to show them.`;
 }
 
 /**
