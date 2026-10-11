@@ -19,7 +19,7 @@ jobs:
     - uses: actions/setup-node@v6
       with:
         node-version: 24.x
-        cache: 'pnpm'
+        package-manager-cache: false
     - run: pnpm i
     - run: pnpm test
     - run: pnpm lint
