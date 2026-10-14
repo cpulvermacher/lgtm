@@ -2,9 +2,10 @@ import type { PromptType } from '../types/PromptType';
 import type { ReviewContextFile } from '../types/ReviewContextFile';
 import { createReviewPromptV2 } from './promptV2';
 import { createReviewPromptV2Think } from './promptV2Think';
+import { createReviewPromptV3 } from './promptV3';
 
-export const defaultPromptType: PromptType = 'v2think';
-const promptTypes: PromptType[] = ['v2', 'v2think'];
+export const defaultPromptType: PromptType = 'v3';
+const promptTypes: PromptType[] = ['v2', 'v2think', 'v3'];
 
 export const reasoningTag = 'code_review_process';
 
@@ -41,9 +42,16 @@ export function createReviewPrompt(
                 customPrompt,
                 contextFiles
             );
-        // case 'v2think': // fallthrough to default
-        default:
+        case 'v2think':
             return createReviewPromptV2Think(
+                changeDescription,
+                diff,
+                customPrompt,
+                contextFiles
+            );
+        // case 'v3': // fallthrough to default
+        default:
+            return createReviewPromptV3(
                 changeDescription,
                 diff,
                 customPrompt,
