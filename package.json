@@ -352,5 +352,5 @@
     "extensionDependencies": [
         "github.copilot-chat"
     ],
-    "packageManager": "pnpm@12.4.1"
+    "packageManager": "pnpm@12.10.1"
 }
