@@ -9,7 +9,7 @@
         "url": "https://github.com/cpulvermacher/lgtm.git"
     },
     "engines": {
-        "vscode": "^1.104.0"
+        "vscode": "^1.125.0"
     },
     "categories": [
         "AI",
@@ -336,7 +336,7 @@
     "devDependencies": {
         "@biomejs/biome": "2.4.16",
         "@types/node": "24.x",
-        "@types/vscode": "^1.104.0",
+        "@types/vscode": "1.125.0",
         "@vitest/coverage-v8": "^5.0.4",
         "@vscode/vsce": "^4.0.0",
         "esbuild": "^0.28.2",
