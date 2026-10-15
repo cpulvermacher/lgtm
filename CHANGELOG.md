@@ -1,8 +1,9 @@
 # Change Log
 
-## [1.8.2] (pre-release)
-- Show comments on removed lines and deleted files. (previously dropped)
+## [1.9.0] (pre-release)
+- Show comments on deleted files, if any. (previously dropped)
 - If no problems are found, mention number of comments hidden by `Lgtm: Min Severity` setting.
+- Raise minimum VS Code version to 1.125.0.
 
 ## [1.8.1] (pre-release)
 - Update dependencies, including simple-git v4. (Note: Potentially unsafe git environment variables are no longer passed to git)
