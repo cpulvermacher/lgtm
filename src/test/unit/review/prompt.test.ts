@@ -15,7 +15,9 @@ describe('createReviewPrompt', () => {
             diff,
             customPrompt
         );
-        await expect(prompt).toMatchFileSnapshot('review-prompt-v3.snap');
+        await expect(prompt).toMatchFileSnapshot(
+            'review-prompt-v2think-custom-prompt.snap'
+        );
     });
 
     it('creates prompt with v2 type', async () => {
@@ -55,7 +57,7 @@ describe('createReviewPrompt', () => {
             customPrompt,
             'v1' as PromptType
         );
-        await expect(prompt).toMatchFileSnapshot('review-prompt-v3.snap');
+        await expect(prompt).toMatchFileSnapshot('review-prompt-v2think.snap');
     });
 
     it('adds configured context files to the prompt', () => {

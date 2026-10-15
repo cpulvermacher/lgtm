@@ -1,10 +1,8 @@
 # Change Log
 
-## [1.9.0] (pre-release)
+## [1.8.2] (pre-release)
 - Show comments on removed lines and deleted files. (previously dropped)
 - If no problems are found, mention number of comments hidden by `Lgtm: Min Severity` setting.
-- Update prompt for models with built-in reasoning. (fixes rejections and empty responses from Claude Sonnet 5.5 and Opus 5.5)
-- Replace Claude Sonnet 4.6 with Claude Sonnet 5.5 in the Recommended Models list.
 
 ## [1.8.1] (pre-release)
 - Update dependencies, including simple-git v4. (Note: Potentially unsafe git environment variables are no longer passed to git)
