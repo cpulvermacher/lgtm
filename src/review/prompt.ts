@@ -3,9 +3,10 @@ import type { ReviewContextFile } from '../types/ReviewContextFile';
 import { createReviewPromptV2 } from './promptV2';
 import { createReviewPromptV2Think } from './promptV2Think';
 import { createReviewPromptV3 } from './promptV3';
+import { createReviewPromptV4 } from './promptV4';
 
 export const defaultPromptType: PromptType = 'v2think';
-const promptTypes: PromptType[] = ['v2', 'v2think', 'v3'];
+const promptTypes: PromptType[] = ['v2', 'v2think', 'v3', 'v4'];
 
 export const reasoningTag = 'code_review_process';
 
@@ -44,6 +45,13 @@ export function createReviewPrompt(
             );
         case 'v3':
             return createReviewPromptV3(
+                changeDescription,
+                diff,
+                customPrompt,
+                contextFiles
+            );
+        case 'v4':
+            return createReviewPromptV4(
                 changeDescription,
                 diff,
                 customPrompt,

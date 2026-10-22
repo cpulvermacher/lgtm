@@ -50,6 +50,16 @@ describe('createReviewPrompt', () => {
         await expect(prompt).toMatchFileSnapshot('review-prompt-v3.snap');
     });
 
+    it('creates prompt with v4 type', async () => {
+        const prompt = createReviewPrompt(
+            changeDescription,
+            diff,
+            customPrompt,
+            'v4'
+        );
+        await expect(prompt).toMatchFileSnapshot('review-prompt-v4.snap');
+    });
+
     it('falls back to default on unknown prompt type', async () => {
         const prompt = createReviewPrompt(
             changeDescription,
