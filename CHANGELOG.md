@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.9.1] (pre-release)
+- Add v3 and v4 prompt types (off by default, only available via `lgtm.comparePromptTypes`).
+
 ## [1.9.0] (pre-release)
 - Show comments on deleted files, if any. (previously dropped)
 - If no problems are found, mention number of comments hidden by `Lgtm: Min Severity` setting.
