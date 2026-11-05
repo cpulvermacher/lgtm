@@ -488,19 +488,19 @@ describe('Model quick pick items', () => {
     it('should label the default preferred section as recommended models', () => {
         const items = getModelQuickPickItems([
             fakeModel({ id: 'gpt-4.1', vendor: 'copilot' }),
-            fakeModel({ id: 'claude-sonnet-4.5', vendor: 'copilot' }),
             fakeModel({ id: 'claude-sonnet-4.6', vendor: 'copilot' }),
-            fakeModel({ id: 'claude-sonnet-5', vendor: 'copilot' }),
-            fakeModel({
-                id: 'claude-sonnet-4-5',
-                vendor: 'claude-model-provider',
-            }),
+            fakeModel({ id: 'claude-sonnet-5.5', vendor: 'copilot' }),
+            fakeModel({ id: 'claude-opus-5.5', vendor: 'copilot' }),
             fakeModel({
                 id: 'claude-sonnet-4-6',
                 vendor: 'claude-model-provider',
             }),
             fakeModel({
-                id: 'claude-sonnet-5',
+                id: 'claude-sonnet-5-5',
+                vendor: 'claude-model-provider',
+            }),
+            fakeModel({
+                id: 'claude-opus-5-5',
                 vendor: 'claude-model-provider',
             }),
         ]);

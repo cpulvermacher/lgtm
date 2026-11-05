@@ -5,7 +5,7 @@ import { createReviewPromptV2Think } from './promptV2Think';
 import { createReviewPromptV3 } from './promptV3';
 import { createReviewPromptV4 } from './promptV4';
 
-export const defaultPromptType: PromptType = 'v2think';
+export const defaultPromptType: PromptType = 'v4';
 const promptTypes: PromptType[] = ['v2', 'v2think', 'v3', 'v4'];
 
 export const reasoningTag = 'code_review_process';
@@ -50,16 +50,16 @@ export function createReviewPrompt(
                 customPrompt,
                 contextFiles
             );
-        case 'v4':
-            return createReviewPromptV4(
+        case 'v2think':
+            return createReviewPromptV2Think(
                 changeDescription,
                 diff,
                 customPrompt,
                 contextFiles
             );
-        // case 'v2think': // fallthrough to default
+        // case 'v4': // fallthrough to default
         default:
-            return createReviewPromptV2Think(
+            return createReviewPromptV4(
                 changeDescription,
                 diff,
                 customPrompt,
