@@ -48,7 +48,7 @@ async function handleChat(
     if (chatRequest.command !== 'review') {
         stream.markdown(
             'Please use the /review command:\n' +
-                ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively. Use `/review staged` or `/review unstaged` to review uncommitted changes. Use `model:modelId` to specify review providers inline, e.g. `/review model:copilot-code-review develop main` or `/review model:gpt-5.5 develop main`. Use `context:path` to override which context files are attached, or `context:none` to disable context for a single review.'
+                ' - `@lgtm /review` to review changes between two branches, commits, or tags. You can specify git refs using e.g. `/review develop main`, or omit the second or both arguments to select refs interactively. Use `/review staged` or `/review unstaged` to review uncommitted changes. Use `model:modelId` to specify review providers inline, e.g. `/review model:copilot-code-review develop main` or `/review model:gpt-6.1-sol develop main`. Use `context:path` to override which context files are attached, or `context:none` to disable context for a single review.'
         );
         return;
     }
@@ -56,7 +56,7 @@ async function handleChat(
     const config = await getConfig({ refreshWorkspace: true });
     const availableModels = await vscode.lm.selectChatModels();
 
-    // Check if models were specified inline in the prompt (e.g. model:gpt-5.5)
+    // Check if models were specified inline in the prompt (e.g. model:gpt-6.1-sol)
     const { modelIds: promptModelSpecs, remaining: refTokens } =
         extractModelSpecs(chatRequest.prompt);
 

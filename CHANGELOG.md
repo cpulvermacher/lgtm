@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.10.1]
+- Change default model to GPT-6.1 Sol. (previous default GPT-5.5 was deprecated)
+
 ## [1.10.0]
 - Adjust default prompt to work better with reasoning models. Before this, newer Claude models would frequently refuse review requests.
 - Recommend Claude Sonnet 5.5 and Claude Opus 5.5 in the model selector, replacing Sonnet 4.6 and 5.

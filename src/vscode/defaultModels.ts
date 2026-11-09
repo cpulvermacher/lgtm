@@ -1,4 +1,4 @@
-export const defaultModelId = 'copilot:gpt-5.5';
+export const defaultModelId = 'copilot:gpt-6.1-sol';
 
 /**
  * Offered as a fallback when `defaultModelId` is unavailable.
@@ -10,7 +10,7 @@ export const defaultFallbackModelName = 'GPT-4o mini';
 export const defaultPreferredModelIds = [
     'copilot:claude-sonnet-5.5',
     'copilot:claude-opus-5.5',
-    'copilot:gpt-5.5',
+    'copilot:gpt-6.1-sol',
     'claude-model-provider:claude-sonnet-5-5',
     'claude-model-provider:claude-opus-5-5',
 ];
